@@ -190,7 +190,7 @@
 
 <script>
 export default {
-  name: "FormSearch",
+  name: "search",
   directives: {
     "el-select-loadmore": {
       bind(el, binding) {

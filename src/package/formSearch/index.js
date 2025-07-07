@@ -1,7 +1,7 @@
-import OlFormSearch from "./src/index.vue";
+import OlSearch from "./src/index.vue";
 
-OlFormSearch.install = function (Vue) {
-  Vue.component("ol-formSearch ", OlFormSearch );
+OlSearch.install = function (Vue) {
+  Vue.component("ol-search ", OlSearch );
 };
 
-export default OlFormSearch;
+export default OlSearch;
