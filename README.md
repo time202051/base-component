@@ -243,7 +243,7 @@ export default {
 export default {
   data() {
     return {
-                    form: {
+            form: {
                 dialogFormVisible: false,
                 title: "",
                 model: [
