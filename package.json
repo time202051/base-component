@@ -1,6 +1,6 @@
 {
-  "name": "bases-component",
-  "version": "0.1.1",
+  "name": "base-component",
+  "version": "0.1.2",
   "private": false,
   "main": "dist/js/app.f06356ec.js",
   "scripts": {
