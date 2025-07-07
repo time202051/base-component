@@ -1,5 +1,5 @@
 {
-  "name": "base-components",
+  "name": "ol-base-components",
   "version": "0.1.2",
   "private": false,
   "main": "dist/js/app.f06356ec.js",
@@ -40,7 +40,7 @@
     "rules": {}
   },
   "keywords": [
-    "base-components"
+    "ol-base-components"
   ],
   "description": "二次封装的通用组件库。table，form",
   "browserslist": [
