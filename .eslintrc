@@ -1,0 +1,8 @@
+// {
+//   "rules": {
+//     "no-console": "off", // 关闭 console 相关的警告
+//     "no-unused-vars": "off", // 关闭未使用变量的警告
+//     "vue/no-mutating-props": "off", // 关闭对 props 的修改警告
+//     "no-undef": "off" // 关闭未定义变量的警告
+//   }
+// }
