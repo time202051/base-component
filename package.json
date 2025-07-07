@@ -40,7 +40,7 @@
     "rules": {}
   },
   "keywords": [
-    "bases-element"
+    "base-element"
   ],
   "description": "二次封装的通用组件库。table，form",
   "browserslist": [
