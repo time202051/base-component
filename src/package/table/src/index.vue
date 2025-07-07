@@ -169,7 +169,7 @@
           >·
         </el-table-column>
         <div slot="empty" class="empty">
-          <img v-if="tableData.rows.length == 0" src="@/assets/nodata.jpg" />
+          <img v-if="tableData.rows.length == 0" :src="require('@/assets/nodata.jpg')" />
         </div>
       </el-table>
     </div>
