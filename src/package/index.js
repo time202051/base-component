@@ -1,5 +1,5 @@
 import OlTable from "./table";
-import OlFormSearch from "./src/formSearch.vue";
+import OlFormSearch from "./formSearch";
 
 const components = [OlTable, OlFormSearch];
 
