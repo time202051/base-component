@@ -1,7 +1,8 @@
 import OlTable from "./table";
 import OlSearch from "./formSearch";
+import Dialog from "./dialog";
 
-const components = [OlTable, OlSearch];
+const components = [OlTable, OlSearch, Dialog];
 
 const install = function (Vue) {
   // 遍历所有组件
