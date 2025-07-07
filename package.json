@@ -1,8 +1,8 @@
 {
   "name": "bases-component",
-  "version": "0.1.0",
-  "private": true,
-  "main": "dist/js/app.f06356ec.js" ,
+  "version": "0.1.1",
+  "private": false,
+  "main": "dist/js/app.f06356ec.js",
   "scripts": {
     "serve": "vue-cli-service serve --no-verify",
     "build": "vue-cli-service build",
@@ -39,6 +39,10 @@
     },
     "rules": {}
   },
+  "keywords": [
+    "bases-element"
+  ],
+  "description": "二次封装的通用组件库。table，form",
   "browserslist": [
     "> 1%",
     "last 2 versions",
