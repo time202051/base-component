@@ -1,4 +1,4 @@
-import OlFormSearch from "./src/formSearch.vue";
+import OlFormSearch from "./src/index.vue";
 
 OlFormSearch.install = function (Vue) {
   Vue.component("ol-formSearch ", OlFormSearch );
