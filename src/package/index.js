@@ -1,6 +1,7 @@
 import OlTable from "./table";
+import OlFormSearch from "./src/formSearch.vue";
 
-const components = [OlTable];
+const components = [OlTable, OlFormSearch];
 
 const install = function (Vue) {
   // 遍历所有组件
