@@ -1,8 +1,8 @@
 {
   "name": "ol-base-components",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": false,
-  "main": "dist/js/app.f06356ec.js",
+  "main": "src/package/index.js",
   "scripts": {
     "serve": "vue-cli-service serve --no-verify",
     "build": "vue-cli-service build",
