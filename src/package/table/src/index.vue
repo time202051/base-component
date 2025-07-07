@@ -213,7 +213,7 @@
 </template>
 <script>
 import printTemplate from "./printTable.vue";
-import nodata from "@/assets/nodata.jpg";
+import nodata from "./nodata.jpg";
 export default {
   name: "table",
   components: {
