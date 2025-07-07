@@ -169,7 +169,7 @@
           >·
         </el-table-column>
         <div slot="empty" class="empty">
-          <img v-if="tableData.rows.length == 0" :src="require('@/assets/nodata.jpg')" />
+          <img v-if="tableData.rows.length == 0" :src="nodata" />
         </div>
       </el-table>
     </div>
@@ -213,8 +213,9 @@
 </template>
 <script>
 import printTemplate from "./printTable.vue";
-
+import nodata from "@/assets/nodata.jpg";
 export default {
+  name: "table",
   components: {
     printTemplate,
     // 函数式组件注册
@@ -316,6 +317,7 @@ export default {
   },
   data() {
     return {
+      nodata,
       tableRef: this.tableData.tableRef || "tableRef", // ref
       toggleRowFlage: this.tableData.toggleRowFlage || false, // 点击行高亮select标识
       // screenWidth: 0,
