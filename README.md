@@ -10,6 +10,10 @@
 npm install ol-base-components
 ```
 
+## 效果图
+
+![Local demo](./src/assets/effectPicture.png "Local demo")
+
 ## 使用说明
 
 在您的 Vue 项目中，您需要在入口文件（通常是 `main.js` 或 `app.js`）中导入并使用该组件库：
