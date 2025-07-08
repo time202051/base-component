@@ -247,54 +247,48 @@ export default {
 export default {
   data() {
     return {
-                    form: {
-                dialogFormVisible: false,
-                title: "",
-                model: [
-
-                    {
-                        label: "字典编码",
-                        type: "input",
-                        prop: "code",
-                    },
-                    {
-                        label: "字典名称",
-                        type: "input",
-                        prop: "displayName",
-                    },
-
-                    // {
-                    //     label: "启用",
-                    //     type: "switch",
-                    //     prop: "enabled",
-                    // },
-
-                    {
-                        label: "备注",
-                        type: "textarea",
-                        prop: "remark",
-                    },
-                ],
-                rules: {
-                    displayName: [{ required: true, message: "必填", trigger: "blur" }],
-                    code: [{ required: true, message: "必填", trigger: "blur" }],
-                },
-                value: {
-                    code: "",
-                    displayName: "",
-                    // enabled: true,
-                    remark: "",
-                },
-                requestData: {
-                    flage: "add",
-                    url: PublicAggregate.dictionaries,
-                    fn: this.getTable,
-                },
+      form: {
+        dialogFormVisible: false,
+        title: "",
+        model: [
+            {
+                label: "字典编码",
+                type: "input",
+                prop: "code",
             },
+            {
+                label: "字典名称",
+                type: "input",
+                prop: "displayName",
+            },
+            // {
+            //     label: "启用",
+            //     type: "switch",
+            //     prop: "enabled",
+            // },
+            {
+                label: "备注",
+                type: "textarea",
+                prop: "remark",
+            },
+        ],
+        rules: {
+            displayName: [{ required: true, message: "必填", trigger: "blur" }],
+            code: [{ required: true, message: "必填", trigger: "blur" }],
+        },
+        value: {
+            code: "",
+            displayName: "",
+            // enabled: true,
+            remark: "",
+        },
+        requestData: {
+            flage: "add",
+            url: PublicAggregate.dictionaries,
+            fn: this.getTable,
+        },
+      ,
     };
-  },
-  methods: {
-
   },
 };
 </script>
