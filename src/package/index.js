@@ -1,6 +1,7 @@
 import OlTable from "./table";
 import OlSearch from "./formSearch";
 import Dialog from "./dialog";
+import Swagger from "@/utils/swagger";
 
 const consoleTooltip = () => {
   // 定义颜色和样式
@@ -25,14 +26,24 @@ ${cyan}感谢使用我们的组件库，期待你的精彩应用！${reset}
 
 const components = [OlTable, OlSearch, Dialog];
 
-const install = function (Vue) {
+const install = function (
+  Vue,
+  option = {
+    swaggerUrl: "",
+  }
+) {
+  // "http://220.179.249.140:20019/swagger/v1/swagger.json"
+  const swaggerInstance = new Swagger(option?.swaggerUrl);
+  Vue.prototype.$swagger = swaggerInstance;
   // 遍历所有组件
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);
   });
+
   consoleTooltip();
 };
 
 // 判断是否引入文件
 export default install; //全局导入
 export { OlTable, OlSearch, Dialog }; //按需导入
+export { Swagger };

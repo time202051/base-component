@@ -2,15 +2,16 @@
   <div class="table_list_fix">
     <!-- 扩展性内容 -->
     <slot name="content_context" />
-    <template
-      v-if="
+    <template v-if="
         btnlist.length ||
         tableData.options.headTool ||
         tableData.options.refreshBtn ||
         tableData.options.downloadBtn
-      "
-    >
-      <div v-if="showBtnBox" class="btnbox">
+      ">
+      <div
+        v-if="showBtnBox"
+        class="btnbox"
+      >
         <!-- 左侧按钮 -->
         <div>
           <el-button
@@ -20,7 +21,10 @@
             :type="btn.types ? btn.types : 'primary'"
             @click="btn.method"
           >
-            <i v-if="btn.icon" :class="btn.icon" />
+            <i
+              v-if="btn.icon"
+              :class="btn.icon"
+            />
             {{ btn.title }}
           </el-button>
         </div>
@@ -36,14 +40,17 @@
                 <i class="el-icon-s-operation" />
               </div>
             </div>
-            <el-dropdown-menu slot="dropdown" style="padding: 5px">
+            <el-dropdown-menu
+              slot="dropdown"
+              style="padding: 5px"
+            >
               <el-checkbox-group v-model="checkedTableColumns">
                 <el-checkbox
                   v-for="column in checkedTableList"
                   :key="column.prop"
                   class="checkbox"
                   :label="column.prop"
-                  >{{ column.label }}
+                >{{ column.label }}
                 </el-checkbox>
               </el-checkbox-group>
             </el-dropdown-menu>
@@ -123,12 +130,21 @@
                 <span>{{ item.label }}</span>
               </el-tooltip>
             </template>
-            <template v-if="item.render" v-slot="scope">
+            <template
+              v-if="item.render"
+              v-slot="scope"
+            >
               <!-- 使用函数式组件进行dom渲染 -->
               <render-dom :render="() => item.render(scope.row)" />
             </template>
-            <template v-else-if="item.renderSlot" v-slot="scope">
-              <slot :row="scope.row" :name="item.prop" />
+            <template
+              v-else-if="item.renderSlot"
+              v-slot="scope"
+            >
+              <slot
+                :row="scope.row"
+                :name="item.prop"
+              />
             </template>
           </el-table-column>
         </template>
@@ -158,18 +174,23 @@
                       btn.disabled && btn.disabled(scope.row, scope.$index)
                     "
                     @click.stop="btn.method(scope.row, scope.$index)"
-                    >{{ btn.label
+                  >{{ btn.label
                     }}{{
                       tableData.operates.length >= 2 ? "&nbsp;&nbsp;" : ""
-                    }}</el-button
-                  >
+                    }}</el-button>
                 </span>
               </template>
-            </div> </template
-          >·
+            </div>
+          </template>·
         </el-table-column>
-        <div slot="empty" class="empty">
-          <img v-if="tableData.rows.length == 0" :src="nodata" />
+        <div
+          slot="empty"
+          class="empty"
+        >
+          <img
+            v-if="tableData.rows.length == 0"
+            :src="nodata"
+          />
         </div>
       </el-table>
     </div>
@@ -234,6 +255,10 @@ export default {
     event: "SelectionChange",
   },
   props: {
+    url: {
+      type: String,
+      default: "",
+    }, // 接口地址
     printListObj: {
       type: Object,
       default: () => {
@@ -329,9 +354,49 @@ export default {
   },
   computed: {
     bindTableColumns() {
-      return this.tableData.columns.filter((column) =>
+      // 读取接口和类型获取表头数据
+
+      console.log(9999, this.$swagger.specification, this.url);
+      const tableColumns = this.$swagger.specification.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties
+      console.log(4445, tableColumns);
+      let swaggerColumns = Object.keys(tableColumns).reduce((acc, key) => {
+        const column = tableColumns[key];
+        if (column.description) {
+          acc.push({
+            prop: key,
+            label: column.description,
+            minWidth: column.minWidth || "150px",
+            sortable: true,
+            show: true,
+            attrs: {},
+          })
+        }
+        return acc;
+      }, []);
+
+      this.tableData.columns.filter((column) =>
         Object.keys(column).includes("show") ? column.show : true
       );
+
+      console.log(123, swaggerColumns, this.tableData.columns);
+      const mergedColumns = [];
+      this.tableData.columns.forEach(dataColumn => {
+        const tempIndex = swaggerColumns.findIndex((item) => item.prop == dataColumn.prop)
+        if (tempIndex == -1) {
+          swaggerColumns.push(dataColumn)
+        } else {
+          Object.assign(swaggerColumns[tempIndex], dataColumn)
+        }
+      })
+
+      // 如果options.selection有多选框直接加
+      swaggerColumns.unshift({
+        label: "",
+        minWidth: "",
+        type: "selection",
+        show: true,
+      });
+      return swaggerColumns
     },
     checkedTableList: {
       get() {
