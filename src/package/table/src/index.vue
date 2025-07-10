@@ -507,13 +507,8 @@ export default {
   color: dodgerblue;
 }
 
-.pagination {
-  text-align: center;
-}
-
 .tablebox {
   box-sizing: border-box;
-  min-height: 240px;
   flex: 1;
   overflow: auto;
 }

@@ -2,6 +2,9 @@
 
 二次封装的通用组件库，包含表格（Table）和表单（Form）等组件。
 
+- [在线演示](https://mqtt-a.vercel.app/home)
+- [在线文档](https://github.com/time202051/base-component)
+
 ## 安装
 
 您可以通过 npm 安装这个组件库：
