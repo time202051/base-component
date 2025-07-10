@@ -34,7 +34,5 @@ const install = function (Vue) {
 };
 
 // 判断是否引入文件
-export default {
-  install,
-  ...components,
-};
+export default install; //全局导入
+export { OlTable, OlSearch, Dialog }; //按需导入
