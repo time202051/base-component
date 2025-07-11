@@ -10,8 +10,6 @@ import App from "./App.vue";
 // Vue.config.productionTip = false;
 Vue.use(ElementUI);
 
-setTimeout(() => {
-  new Vue({
-    render: (h) => h(App),
-  }).$mount("#app");
-}, 20000);
+new Vue({
+  render: (h) => h(App),
+}).$mount("#app");

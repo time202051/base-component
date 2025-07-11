@@ -32,26 +32,25 @@ export const SwaggerHandler = async (Vue, swaggerUrl) => {
 
 const components = [OlTable, OlSearch, Dialog];
 
-const install = function (
+const install = async function (
   Vue,
   options = {
     swaggerUrl: "",
   }
 ) {
-  if (options && options.swaggerUrl) {
-    // "http://220.179.249.140:20019/swagger/v1/swagger.json"
-    const client = new SwaggerClient(options.swaggerUrl);
-    Vue.prototype.$swagger = { specification: client.spec };
-  }
   // 遍历所有组件
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);
   });
 
+  if (options && options.swaggerUrl) {
+    // "http://220.179.249.140:20019/swagger/v1/swagger.json"
+    const client = await new SwaggerClient(options.swaggerUrl);
+    Vue.prototype.$swagger = { specification: client.spec };
+  }
   consoleTooltip();
 };
 
 // 判断是否引入文件
 export default install; //全局导入
 export { OlTable, OlSearch, Dialog }; //按需导入
-// export { Swagger };
