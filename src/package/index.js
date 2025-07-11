@@ -24,10 +24,8 @@ ${cyan}感谢使用我们的组件库，期待你的精彩应用！${reset}
 `);
 };
 
-export const SwaggerHandler = async (Vue) => {
-  const client = await new SwaggerClient(
-    "http://220.179.249.140:20019/swagger/v1/swagger.json"
-  );
+export const SwaggerHandler = async (Vue, swaggerUrl) => {
+  const client = await new SwaggerClient(swaggerUrl);
   console.log("client", client);
   Vue.prototype.$swagger = { specification: client.spec };
 };
