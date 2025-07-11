@@ -356,9 +356,7 @@ export default {
     bindTableColumns() {
       // 读取接口和类型获取表头数据
 
-      console.log(9999, this.$swagger.specification, this.url);
       const tableColumns = this.$swagger.specification.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties
-      console.log(4445, tableColumns);
       let swaggerColumns = Object.keys(tableColumns).reduce((acc, key) => {
         const column = tableColumns[key];
         if (column.description) {
@@ -378,8 +376,6 @@ export default {
         Object.keys(column).includes("show") ? column.show : true
       );
 
-      console.log(123, swaggerColumns, this.tableData.columns);
-      const mergedColumns = [];
       this.tableData.columns.forEach(dataColumn => {
         const tempIndex = swaggerColumns.findIndex((item) => item.prop == dataColumn.prop)
         if (tempIndex == -1) {
@@ -396,6 +392,7 @@ export default {
         type: "selection",
         show: true,
       });
+      console.log('表头数据', swaggerColumns)
       return swaggerColumns
     },
     checkedTableList: {
