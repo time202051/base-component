@@ -43,9 +43,9 @@ const install = function (
     swaggerUrl: "",
   }
 ) {
-  if (option && option.swaggerUrl) {
+  if (options && options.swaggerUrl) {
     // "http://220.179.249.140:20019/swagger/v1/swagger.json"
-    const swaggerInstance = new Swagger(option.swaggerUrl);
+    const swaggerInstance = new Swagger(options.swaggerUrl);
     Vue.prototype.$swagger = swaggerInstance;
   }
   Vue.use(ElementUI);
