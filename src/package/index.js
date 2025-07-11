@@ -2,6 +2,7 @@ import OlTable from "./table";
 import OlSearch from "./formSearch";
 import Dialog from "./dialog";
 import Swagger from "../utils/swagger";
+import SwaggerClient from "swagger-client";
 
 const consoleTooltip = () => {
   // 定义颜色和样式
@@ -24,20 +25,22 @@ ${cyan}感谢使用我们的组件库，期待你的精彩应用！${reset}
 `);
 };
 
+export const SwaggerHandler = async (Vue) => {
+  const client = await new SwaggerClient(
+    "http://220.179.249.140:20019/swagger/v1/swagger.json"
+  );
+  console.log("client", client);
+  Vue.prototype.$swagger = { specification: client.spec };
+};
+
 const components = [OlTable, OlSearch, Dialog];
 
-const install = function (
-  Vue,
-  option = {
-    swaggerUrl: "",
-  }
-) {
-  console.log(3333333333, option);
-  if (option.swaggerUrl) {
-    // "http://220.179.249.140:20019/swagger/v1/swagger.json"
-    const swaggerInstance = new Swagger(option.swaggerUrl);
-    Vue.prototype.$swagger = swaggerInstance;
-  }
+const install = function (Vue) {
+  // if (option.swaggerUrl) {
+  //   // "http://220.179.249.140:20019/swagger/v1/swagger.json"
+  //   const swaggerInstance = new Swagger(option.swaggerUrl);
+  //   Vue.prototype.$swagger = swaggerInstance;
+  // }
   // 遍历所有组件
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);

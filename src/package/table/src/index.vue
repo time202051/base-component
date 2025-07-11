@@ -355,7 +355,9 @@ export default {
   computed: {
     bindTableColumns() {
       // 读取接口和类型获取表头数据
-
+      if (!this.$swagger) return this.tableData.columns.filter((column) =>
+        Object.keys(column).includes("show") ? column.show : true
+      );
       const tableColumns = this.$swagger.specification.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties
       let swaggerColumns = Object.keys(tableColumns).reduce((acc, key) => {
         const column = tableColumns[key];
