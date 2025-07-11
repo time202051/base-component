@@ -1,7 +1,9 @@
 import OlTable from "./table";
 import OlSearch from "./formSearch";
 import Dialog from "./dialog";
-import Swagger from "../utils/swagger";
+// import Swagger from "../utils/swagger";
+import ElementUI from "element-ui";
+import "element-ui/lib/theme-chalk/index.css";
 import SwaggerClient from "swagger-client";
 
 const consoleTooltip = () => {
@@ -35,12 +37,18 @@ export const SwaggerHandler = async (Vue) => {
 
 const components = [OlTable, OlSearch, Dialog];
 
-const install = function (Vue) {
-  // if (option.swaggerUrl) {
-  //   // "http://220.179.249.140:20019/swagger/v1/swagger.json"
-  //   const swaggerInstance = new Swagger(option.swaggerUrl);
-  //   Vue.prototype.$swagger = swaggerInstance;
-  // }
+const install = function (
+  Vue,
+  options = {
+    swaggerUrl: "",
+  }
+) {
+  if (option && option.swaggerUrl) {
+    // "http://220.179.249.140:20019/swagger/v1/swagger.json"
+    const swaggerInstance = new Swagger(option.swaggerUrl);
+    Vue.prototype.$swagger = swaggerInstance;
+  }
+  Vue.use(ElementUI);
   // 遍历所有组件
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);
@@ -52,4 +60,4 @@ const install = function (Vue) {
 // 判断是否引入文件
 export default install; //全局导入
 export { OlTable, OlSearch, Dialog }; //按需导入
-export { Swagger };
+// export { Swagger };
