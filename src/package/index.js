@@ -42,8 +42,8 @@ const install = function (
 ) {
   if (options && options.swaggerUrl) {
     // "http://220.179.249.140:20019/swagger/v1/swagger.json"
-    const swaggerInstance = new SwaggerClient(options.swaggerUrl);
-    Vue.prototype.$swagger = swaggerInstance;
+    const client = new SwaggerClient(options.swaggerUrl);
+    Vue.prototype.$swagger = { specification: client.spec };
   }
   // 遍历所有组件
   components.map((item) => {
