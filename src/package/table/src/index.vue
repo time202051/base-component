@@ -235,6 +235,7 @@
 <script>
 import printTemplate from "./printTable.vue";
 import nodata from "./nodata.jpg";
+import { getData } from '../../index.js'
 export default {
   name: "table",
   components: {
@@ -403,37 +404,42 @@ export default {
   },
   methods: {
     init() {
-      const swaggerColumns = this.$swagger.specification.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties
+      // 从 IndexedDB 中获取 Swagger 数据
+      getData().then((swaggerData) => {
+        const swaggerColumns = swaggerData.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties;
 
-      Object.keys(swaggerColumns).forEach(key => {
-        const item = swaggerColumns[key]
-        let tempItem = this.tableData.columns.find((e) => e.prop == key)
-        if (tempItem) {
-          tempItem = { ...item, ...tempItem }
-        } else if (item.description) {
-          this.tableData.columns.push({
-            prop: key,
-            label: item.description,
-            show: true,
-            sortable: false,
-            attrs: {}
-          })
-        }
-      })
-
-      // 一定加上selection,通过show显示隐藏
-      const itemSelection = this.tableData.columns.find((item) => item.type == "selection");
-      const hasSelection = this.tableData.options.selection;
-      if (itemSelection) {
-        itemSelection.show = !!hasSelection;
-      } else {
-        this.tableData.columns.unshift({
-          label: "",
-          minWidth: "",
-          type: "selection",
-          show: !!hasSelection,
+        Object.keys(swaggerColumns).forEach(key => {
+          const item = swaggerColumns[key];
+          let tempItem = this.tableData.columns.find((e) => e.prop == key);
+          if (tempItem) {
+            tempItem = { ...item, ...tempItem };
+          } else if (item.description) {
+            this.tableData.columns.push({
+              prop: key,
+              label: item.description,
+              show: true,
+              sortable: false,
+              attrs: {}
+            });
+          }
         });
-      }
+
+        // 一定加上selection,通过show显示隐藏
+        const itemSelection = this.tableData.columns.find((item) => item.type == "selection");
+        const hasSelection = this.tableData.options.selection;
+        if (itemSelection) {
+          itemSelection.show = !!hasSelection;
+        } else {
+          this.tableData.columns.unshift({
+            label: "",
+            minWidth: "",
+            type: "selection",
+            show: !!hasSelection,
+          });
+        }
+      }).catch((error) => {
+        console.error("获取 Swagger 数据失败:", error);
+      });
     },
     radioChange() {
       this.$emit("radioChange", this.twinPage);
