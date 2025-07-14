@@ -82,7 +82,10 @@
     </template>
 
     <!--  表格  -->
-    <div class="tablebox">
+    <div
+      class="tablebox"
+      :key="tableData.columns.length"
+    >
       <el-table
         :ref="tableRef"
         v-loading="tableData.loading"
