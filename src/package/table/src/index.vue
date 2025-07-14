@@ -340,6 +340,10 @@ export default {
       default: true,
     },
   },
+  created() {
+    // 通过swagger完善columns
+    this.init()
+  },
   data() {
     return {
       nodata,
@@ -354,33 +358,33 @@ export default {
   },
   computed: {
     bindTableColumns() {
-      if (!this.$swagger) return this.tableData.columns.filter((column) =>
-        Object.keys(column).includes("show") ? column.show : true
-      );
-
-      const swaggerColumns = this.$swagger.specification.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties
-      swaggerColumns.forEach(item => {
-        const tempItem = this.tableData.columns.find((e) => e.prop == item.prop)
-        tempItem ? tempItem = { ...item, ...tempItem } : this.tableData.columns.push(item)
-      })
-
-      // 一定加上selection,通过show显示隐藏
-      const itemSelection = this.tableData.columns.find((item) => item.type == "selection");
-      const hasSelection = this.tableData.options.selection;
-      if (itemSelection) {
-        itemSelection.show = !!hasSelection;
-      } else {
-        this.tableData.columns.unshift({
-          label: "",
-          minWidth: "",
-          type: "selection",
-          show: !!hasSelection,
-        });
-      }
-
       return this.tableData.columns.filter((column) =>
         Object.keys(column).includes("show") ? column.show : true
       );
+
+      // const swaggerColumns = this.$swagger.specification.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties
+      // swaggerColumns.forEach(item => {
+      //   const tempItem = this.tableData.columns.find((e) => e.prop == item.prop)
+      //   tempItem ? tempItem = { ...item, ...tempItem } : this.tableData.columns.push(item)
+      // })
+
+      // // 一定加上selection,通过show显示隐藏
+      // const itemSelection = this.tableData.columns.find((item) => item.type == "selection");
+      // const hasSelection = this.tableData.options.selection;
+      // if (itemSelection) {
+      //   itemSelection.show = !!hasSelection;
+      // } else {
+      //   this.tableData.columns.unshift({
+      //     label: "",
+      //     minWidth: "",
+      //     type: "selection",
+      //     show: !!hasSelection,
+      //   });
+      // }
+
+      // return this.tableData.columns.filter((column) =>
+      //   Object.keys(column).includes("show") ? column.show : true
+      // );
     },
     // bindTableColumns1() {
     //   // 读取接口和类型获取表头数据
@@ -465,6 +469,27 @@ export default {
     },
   },
   methods: {
+    init() {
+      const swaggerColumns = this.$swagger.specification.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties
+      swaggerColumns.forEach(item => {
+        const tempItem = this.tableData.columns.find((e) => e.prop == item.prop)
+        tempItem ? tempItem = { ...item, ...tempItem } : this.tableData.columns.push(item)
+      })
+
+      // 一定加上selection,通过show显示隐藏
+      const itemSelection = this.tableData.columns.find((item) => item.type == "selection");
+      const hasSelection = this.tableData.options.selection;
+      if (itemSelection) {
+        itemSelection.show = !!hasSelection;
+      } else {
+        this.tableData.columns.unshift({
+          label: "",
+          minWidth: "",
+          type: "selection",
+          show: !!hasSelection,
+        });
+      }
+    },
     radioChange() {
       this.$emit("radioChange", this.twinPage);
     },
