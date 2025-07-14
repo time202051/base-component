@@ -104,10 +104,67 @@ function getLoginStatus() {
   return localStorage.getItem(LOGIN_STATUS_KEY) === "true";
 }
 
-export const SwaggerHandler = async (Vue, swaggerUrl) => {
-  const client = await new SwaggerClient(swaggerUrl);
-  console.log("client", client);
-  Vue.prototype.$swagger = { specification: client.spec };
+export const swaggerInstall = async (
+  Vue,
+  options = {
+    swaggerUrl: "",
+    successSwaggerCallback: null,
+  }
+) => {
+  // 检查登录状态
+  const isLoggedIn = getLoginStatus();
+
+  // 如果 $swagger 已经存在，直接返回
+  if (Vue.prototype.$swagger) {
+    if (
+      options.successSwaggerCallback &&
+      typeof options.successSwaggerCallback === "function"
+    ) {
+      options.successSwaggerCallback();
+    }
+    return; // 数据已加载，直接返回
+  }
+
+  if (options && options.swaggerUrl) {
+    // 检查 IndexedDB 中是否存在 Swagger 数据
+    if (isLoggedIn) {
+      try {
+        const cachedData = await getData();
+        if (cachedData) {
+          Vue.prototype.$swagger = { specification: cachedData };
+          if (
+            options.successSwaggerCallback &&
+            typeof options.successSwaggerCallback === "function"
+          ) {
+            options.successSwaggerCallback();
+          }
+          return; // 数据已加载，直接返回
+        }
+      } catch (error) {
+        console.error("获取缓存数据失败:", error);
+      }
+    }
+
+    // 用户未登录或缓存数据不存在，重新请求 Swagger 数据
+    try {
+      showLoading();
+      const client = await SwaggerClient(options.swaggerUrl);
+      const swaggerData = client.spec; // 获取 Swagger 数据
+      await storeData(swaggerData); // 缓存数据到 IndexedDB
+      Vue.prototype.$swagger = { specification: swaggerData };
+      storeLoginStatus(true); // 设置用户为已登录状态
+      if (
+        options.successSwaggerCallback &&
+        typeof options.successSwaggerCallback === "function"
+      ) {
+        options.successSwaggerCallback();
+        hideLoading();
+      }
+    } catch (error) {
+      console.error("获取 Swagger 数据失败:", error);
+    }
+  }
+  consoleTooltip();
 };
 
 const components = [OlTable, OlSearch, Dialog];
@@ -184,59 +241,7 @@ const install = async function (
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);
   });
-  // 检查登录状态
-  const isLoggedIn = getLoginStatus();
-
-  // 如果 $swagger 已经存在，直接返回
-  if (Vue.prototype.$swagger) {
-    if (
-      options.successSwaggerCallback &&
-      typeof options.successSwaggerCallback === "function"
-    ) {
-      options.successSwaggerCallback();
-    }
-    return; // 数据已加载，直接返回
-  }
-
-  if (options && options.swaggerUrl) {
-    // 检查 IndexedDB 中是否存在 Swagger 数据
-    if (isLoggedIn) {
-      try {
-        const cachedData = await getData();
-        if (cachedData) {
-          Vue.prototype.$swagger = { specification: cachedData };
-          if (
-            options.successSwaggerCallback &&
-            typeof options.successSwaggerCallback === "function"
-          ) {
-            options.successSwaggerCallback();
-          }
-          return; // 数据已加载，直接返回
-        }
-      } catch (error) {
-        console.error("获取缓存数据失败:", error);
-      }
-    }
-
-    // 用户未登录或缓存数据不存在，重新请求 Swagger 数据
-    try {
-      showLoading();
-      const client = await SwaggerClient(options.swaggerUrl);
-      const swaggerData = client.spec; // 获取 Swagger 数据
-      await storeData(swaggerData); // 缓存数据到 IndexedDB
-      Vue.prototype.$swagger = { specification: swaggerData };
-      storeLoginStatus(true); // 设置用户为已登录状态
-      if (
-        options.successSwaggerCallback &&
-        typeof options.successSwaggerCallback === "function"
-      ) {
-        options.successSwaggerCallback();
-        hideLoading();
-      }
-    } catch (error) {
-      console.error("获取 Swagger 数据失败:", error);
-    }
-  }
+  swaggerInstall(Vue, options);
   consoleTooltip();
 };
 
