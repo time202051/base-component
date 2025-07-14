@@ -404,9 +404,21 @@ export default {
   methods: {
     init() {
       const swaggerColumns = this.$swagger.specification.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties
-      swaggerColumns.forEach(item => {
-        const tempItem = this.tableData.columns.find((e) => e.prop == item.prop)
-        tempItem ? tempItem = { ...item, ...tempItem } : this.tableData.columns.push(item)
+
+      Object.keys(swaggerColumns).forEach(key => {
+        const item = swaggerColumns[key]
+        let tempItem = this.tableData.columns.find((e) => e.prop == key)
+        if (tempItem) {
+          tempItem = { ...item, ...tempItem }
+        } else if (item.description) {
+          this.tableData.columns.push({
+            prop: key,
+            label: item.description,
+            show: true,
+            sortable: false,
+            attrs: {}
+          })
+        }
       })
 
       // 一定加上selection,通过show显示隐藏
