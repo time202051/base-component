@@ -45,18 +45,17 @@ import App from "./App.vue";
 import OlBaseComponents from "ol-base-components"; // 导入组件库
 
 // 使用组件库
-Vue.use(OlBaseComponents, {
-  swaggerUrl: "http://192.168.xxx.xxx:20019/swagger/v1/swagger.json",
-  successSwaggerCallback: () => {
-    new Vue({
-      el: "#app",
-      router,
-      store,
-      i18n,
-      render: h => h(App)
-    });
-  }
-});
+Vue.use(OlBaseComponents);
+
+//安装，可以在登录
+import {swaggerInstall} from "ol-base-components"; 
+swaggerInstall("http://220.179.249.140:20019/swagger/v1/swagger.json").then(() => {
+  // 成功获取swagger数据后加载页面， 这里可以写登录接口成功后执行的逻辑
+})
+
+// 卸载
+import { swaggerUnload } from "ol-base-components";
+swaggerUnload()
 ```
 
 
