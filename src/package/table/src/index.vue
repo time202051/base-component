@@ -361,75 +361,8 @@ export default {
       return this.tableData.columns.filter((column) =>
         Object.keys(column).includes("show") ? column.show : true
       );
-
-      // const swaggerColumns = this.$swagger.specification.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties
-      // swaggerColumns.forEach(item => {
-      //   const tempItem = this.tableData.columns.find((e) => e.prop == item.prop)
-      //   tempItem ? tempItem = { ...item, ...tempItem } : this.tableData.columns.push(item)
-      // })
-
-      // // 一定加上selection,通过show显示隐藏
-      // const itemSelection = this.tableData.columns.find((item) => item.type == "selection");
-      // const hasSelection = this.tableData.options.selection;
-      // if (itemSelection) {
-      //   itemSelection.show = !!hasSelection;
-      // } else {
-      //   this.tableData.columns.unshift({
-      //     label: "",
-      //     minWidth: "",
-      //     type: "selection",
-      //     show: !!hasSelection,
-      //   });
-      // }
-
-      // return this.tableData.columns.filter((column) =>
-      //   Object.keys(column).includes("show") ? column.show : true
-      // );
     },
-    // bindTableColumns1() {
-    //   // 读取接口和类型获取表头数据
-    //   if (!this.$swagger) return this.tableData.columns.filter((column) =>
-    //     Object.keys(column).includes("show") ? column.show : true
-    //   );
-    //   const tableColumns = this.$swagger.specification.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties
-    //   let swaggerColumns = Object.keys(tableColumns).reduce((acc, key) => {
-    //     const column = tableColumns[key];
-    //     if (column.description) {
-    //       acc.push({
-    //         prop: key,
-    //         label: column.description,
-    //         minWidth: column.minWidth || "150px",
-    //         sortable: true,
-    //         show: true,
-    //         attrs: {},
-    //       })
-    //     }
-    //     return acc;
-    //   }, []);
 
-    //   this.tableData.columns.filter((column) =>
-    //     Object.keys(column).includes("show") ? column.show : true
-    //   );
-
-    //   this.tableData.columns.forEach(dataColumn => {
-    //     const tempIndex = swaggerColumns.findIndex((item) => item.prop == dataColumn.prop)
-    //     if (tempIndex == -1) {
-    //       swaggerColumns.push(dataColumn)
-    //     } else {
-    //       Object.assign(swaggerColumns[tempIndex], dataColumn)
-    //     }
-    //   })
-
-    //   // 如果options.selection有多选框直接加
-    //   swaggerColumns.unshift({
-    //     label: "",
-    //     minWidth: "",
-    //     type: "selection",
-    //     show: true,
-    //   });
-    //   console.log('表头数据', swaggerColumns)
-    //   return swaggerColumns
-    // },
     checkedTableList: {
       get() {
         // 返回选中的列名
