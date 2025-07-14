@@ -106,6 +106,13 @@
           :index="computeTableIndex"
           label="序号"
         />
+        <el-table-column
+          v-if="tableData.options && tableData.options.selection"
+          width="60"
+          align="center"
+          type="selection"
+          label=""
+        />
         <template v-for="(item, index) in bindTableColumns">
           <el-table-column
             :key="index"
@@ -423,20 +430,6 @@ export default {
             });
           }
         });
-
-        // 一定加上selection,通过show显示隐藏
-        const itemSelection = this.tableData.columns.find((item) => item.type == "selection");
-        const hasSelection = this.tableData.options.selection;
-        if (itemSelection) {
-          itemSelection.show = !!hasSelection;
-        } else {
-          this.tableData.columns.unshift({
-            label: "",
-            minWidth: "",
-            type: "selection",
-            show: !!hasSelection,
-          });
-        }
       }).catch((error) => {
         console.error("获取 Swagger 数据失败:", error);
       });

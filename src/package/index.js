@@ -147,6 +147,7 @@ function showLoading() {
     #loading {
       background: linear-gradient(135deg, #a8c8e0, #f0f4f8); /* 更柔和的渐变背景 */
       color: #333; /* 文本颜色 */
+      z-index:9999999;
     }
    `;
   document.head.appendChild(style);
@@ -184,18 +185,11 @@ function hideLoading() {
   }
 }
 
-const install = async function (
-  Vue,
-  options = {
-    swaggerUrl: "",
-    successSwaggerCallback: null,
-  }
-) {
+const install = async function (Vue) {
   // 遍历所有组件
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);
   });
-  await swaggerInstall(Vue, options);
   consoleTooltip();
 };
 
