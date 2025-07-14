@@ -19,8 +19,10 @@ npm install ol-base-components
 
 ## 使用说明
 
-在您的 Vue 项目中，您需要在入口文件（通常是 `main.js` 或 `app.js`）中导入并使用该组件库：
+- **基本用法**：通用常规组件，ol-table   ol-search   ol-dialogTemplate
+- **带 Swagger 支持的用法**：适用于需要从 Swagger API 获取数据的场景。通过传入 `swaggerUrl` 和 `successSwaggerCallback`，可以在成功获取 Swagger 数据后初始化 Vue 实例。
 
+### 1. 基本用法
 ```javascript
 // main.js
 import Vue from "vue";
@@ -34,6 +36,29 @@ new Vue({
   render: (h) => h(App),
 }).$mount("#app");
 ```
+
+### 2. 带 Swagger 支持的用法
+```javascript
+// main.js
+import Vue from "vue";
+import App from "./App.vue";
+import OlBaseComponents from "ol-base-components"; // 导入组件库
+
+// 使用组件库
+Vue.use(OlBaseComponents, {
+  swaggerUrl: "http://192.168.xxx.xxx:20019/swagger/v1/swagger.json",
+  successSwaggerCallback: () => {
+    new Vue({
+      el: "#app",
+      router,
+      store,
+      i18n,
+      render: h => h(App)
+    });
+  }
+});
+```
+
 
 ## 组件示例
 
