@@ -49,7 +49,7 @@ Vue.use(OlBaseComponents);
 
 //安装，可以在登录
 import {swaggerInstall} from "ol-base-components"; 
-swaggerInstall("http://220.179.249.140:20019/swagger/v1/swagger.json").then(() => {
+swaggerInstall("http://192.168.xxx.xxx:20019/swagger/v1/swagger.json").then(() => {
   // 成功获取swagger数据后加载页面， 这里可以写登录接口成功后执行的逻辑
 })
 
