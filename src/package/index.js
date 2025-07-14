@@ -27,7 +27,6 @@ ${cyan}感谢使用我们的组件库，期待你的精彩应用！${reset}
 const DB_NAME = "SwaggerDB";
 const DB_VERSION = 1;
 const STORE_NAME = "swaggerDataStore";
-const LOGIN_STATUS_KEY = "isLoggedIn"; // 存储登录状态的键
 
 // 打开数据库
 function openDatabase() {
@@ -94,40 +93,22 @@ function clearData() {
   });
 }
 
-// 存储登录状态
-function storeLoginStatus(isLoggedIn) {
-  localStorage.setItem(LOGIN_STATUS_KEY, isLoggedIn);
-}
-
-// 获取登录状态
-function getLoginStatus() {
-  return localStorage.getItem(LOGIN_STATUS_KEY) === "true";
-}
-
 // 注册
 const swaggerInstall = async (swaggerUrl) => {
-  if (!swaggerUrl) return Promise.reject();
-  // 检查登录状态
-  const isLoggedIn = getLoginStatus();
+  if (!swaggerUrl) return Promise.reject(new Error("Swagger URL is required.")); // 检查 Swagger URL
 
-  if (isLoggedIn) {
-    try {
-      const cachedData = await getData();
-      if (cachedData) {
-        consoleTooltip();
-        return Promise.resolve(cachedData);
-      }
-    } catch (error) {
-      console.error("获取缓存数据失败:", error);
-    }
+  // 尝试从 IndexedDB 获取 Swagger 数据
+  const cachedData = await getData();
+  if (cachedData) {
+    consoleTooltip();
+    return Promise.resolve(cachedData); // 返回已解析的 Promise
   } else {
-    // 用户未登录或缓存数据不存在，重新请求 Swagger 数据
+    // 如果没有缓存数据，重新请求 Swagger 数据
     try {
       showLoading();
       const client = await SwaggerClient(swaggerUrl);
       const swaggerData = client.spec; // 获取 Swagger 数据
       await storeData(swaggerData); // 缓存数据到 IndexedDB
-      storeLoginStatus(true); // 设置用户为已登录状态
       hideLoading();
       consoleTooltip();
       return Promise.resolve(swaggerData); // 返回已解析的 Promise
@@ -137,12 +118,9 @@ const swaggerInstall = async (swaggerUrl) => {
       return Promise.reject(error); // 返回拒绝的 Promise
     }
   }
-  return Promise.reject(new Error("Swagger URL is required.")); // 返回拒绝的 Promise
 };
 // 销毁
 const swaggerUnload = async function () {
-  // 重置登录状态
-  storeLoginStatus(false); // 清除 localStorage 中的登录状态
   await clearData(); // 清空 IndexedDB 中的缓存数据
 };
 
