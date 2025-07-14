@@ -97,25 +97,25 @@ function clearData() {
 const swaggerInstall = async (swaggerUrl) => {
   if (!swaggerUrl) return Promise.reject(new Error("Swagger URL is required.")); // 检查 Swagger URL
 
-  // 尝试从 IndexedDB 获取 Swagger 数据
+  // IndexedDB 获取 Swagger 数据
   const cachedData = await getData();
   if (cachedData) {
     consoleTooltip();
-    return Promise.resolve(cachedData); // 返回已解析的 Promise
+    return Promise.resolve(cachedData);
   } else {
     // 如果没有缓存数据，重新请求 Swagger 数据
     try {
       showLoading();
       const client = await SwaggerClient(swaggerUrl);
-      const swaggerData = client.spec; // 获取 Swagger 数据
-      await storeData(swaggerData); // 缓存数据到 IndexedDB
+      const swaggerData = client.spec;
+      await storeData(swaggerData);
       hideLoading();
       consoleTooltip();
-      return Promise.resolve(swaggerData); // 返回已解析的 Promise
+      return Promise.resolve(swaggerData);
     } catch (error) {
       hideLoading();
       console.error("获取 Swagger 数据失败:", error);
-      return Promise.reject(error); // 返回拒绝的 Promise
+      return Promise.reject(error);
     }
   }
 };
@@ -128,7 +128,6 @@ const components = [OlTable, OlSearch, Dialog];
 
 // 自定义加载指示器
 function showLoading() {
-  // 创建样式
   const style = document.createElement("style");
   style.innerHTML = `
      @keyframes spin {
@@ -160,10 +159,10 @@ function showLoading() {
   loadingDiv.style.left = "0";
   loadingDiv.style.width = "100%";
   loadingDiv.style.height = "100%";
-  loadingDiv.style.display = "flex"; // 使用 flexbox
-  loadingDiv.style.flexDirection = "column"; // 设置为上下排列
-  loadingDiv.style.justifyContent = "center"; // 垂直居中
-  loadingDiv.style.alignItems = "center"; // 水平居中
+  loadingDiv.style.display = "flex";
+  loadingDiv.style.flexDirection = "column";
+  loadingDiv.style.justifyContent = "center";
+  loadingDiv.style.alignItems = "center";
 
   // 创建旋转的加载图标
   const spinner = document.createElement("div");
@@ -186,14 +185,12 @@ function hideLoading() {
 }
 
 const install = async function (Vue) {
-  // 遍历所有组件
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);
   });
   consoleTooltip();
 };
 
-// 判断是否引入文件
-export default install; //全局导入
-export { OlTable, OlSearch, Dialog }; //按需导入
+export default install;
+export { OlTable, OlSearch, Dialog };
 export { swaggerInstall, swaggerUnload };
