@@ -45,7 +45,7 @@ const install = async function (
 
   if (options && options.swaggerUrl) {
     // "http://220.179.249.140:20019/swagger/v1/swagger.json"
-    const client = await new SwaggerClient(options.swaggerUrl);
+    const client = await SwaggerClient(options.swaggerUrl);
     Vue.prototype.$swagger = { specification: client.spec };
   }
   consoleTooltip();
