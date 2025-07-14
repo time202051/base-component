@@ -134,7 +134,9 @@ export default {
 
 ### 表格组件
 
-您可以在您的组件中使用表格组件组件，例如：
+1.您可以在您的组件中使用表格组件组件
+2.您可以在ol-table添加url参数接收完整的swagger地址，会自动帮您生成tableData.columns。您也可以在columns中添加，当prop相同时候，会自动合并，且columns权限大。
+例如：
 
 ```vue
 <template>
