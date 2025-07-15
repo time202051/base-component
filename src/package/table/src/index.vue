@@ -318,10 +318,6 @@ export default {
       type: Boolean,
       default: true,
     },
-    displayDetail: {
-      type: Boolean,
-      default: true,
-    },
     pageSizes: {
       type: Array,
       default: () => {
@@ -399,17 +395,10 @@ export default {
             this.$set(column, "show", false);
           }
         });
-      },
-    },
-  },
-  watch: {
-    displayDetail: {
-      handler() {
         this.$nextTick(() => {
-          this.$refs[this.tableRef].doLayout();
-        });
+          this.$refs.tableRef.doLayout()
+        })
       },
-      deep: true,
     },
   },
   methods: {
