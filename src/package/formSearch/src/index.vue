@@ -351,26 +351,30 @@ export default {
         }
       })
 
-      //  单独处理创建时间 就是BeginTime，EndTime
-      const requiredNames = ['BeginTime', 'EndTime'];
-      const hseCreatedTime = requiredNames.every(name =>
-        swaggersearchColumns.some(item => item.name === name)
-      );
-      if (hseCreatedTime) {
-        this.formSearchData.tableSearch.push({
-          label: "创建时间",
-          value: "createdTime",
-          inputType: "picker",
-          props: {
-            type: "datetimerange",
-            startPlaceholder: "开始时间",
-            endPlaceholder: "结束时间",
-            placeholder: "选择时间范围",
-            valueFormat: "yyyy-MM-dd HH:mm:ss",
-            format: "yyyy/MM/dd HH:mm:ss"
-          }
-        })
+      const tableHasCreatedTime = this.formSearchData.tableSearch.some((e) => e.value === 'createdTime')
+      if (!tableHasCreatedTime) {
+        //  单独处理创建时间 就是BeginTime，EndTime
+        const requiredNames = ['BeginTime', 'EndTime'];
+        const hseCreatedTime = requiredNames.every(name =>
+          swaggersearchColumns.some(item => item.name === name)
+        );
+        if (hseCreatedTime) {
+          this.formSearchData.tableSearch.push({
+            label: "创建时间",
+            value: "createdTime",
+            inputType: "picker",
+            props: {
+              type: "datetimerange",
+              startPlaceholder: "开始时间",
+              endPlaceholder: "结束时间",
+              placeholder: "选择时间范围",
+              valueFormat: "yyyy-MM-dd HH:mm:ss",
+              format: "yyyy/MM/dd HH:mm:ss"
+            }
+          })
+        }
       }
+
       console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch)
     },
     // 树形下拉
