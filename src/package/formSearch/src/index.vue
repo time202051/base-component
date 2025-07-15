@@ -284,10 +284,7 @@ export default {
   },
   data() {
     return {
-      findTableSearch:
-        this.formSearchData.tableSearch.length > this.tableSearchSlice
-          ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
-          : this.formSearchData.tableSearch,
+      findTableSearch: {},
       expend: !this.formSearchData.expendShow,
       formSearch: {
         ...this.formSearchData.value,
@@ -374,7 +371,9 @@ export default {
           })
         }
       }
-
+      this.findTableSearch = this.formSearchData.tableSearch.length > this.tableSearchSlice
+        ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
+        : this.formSearchData.tableSearch
       console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch)
     },
     // 树形下拉
