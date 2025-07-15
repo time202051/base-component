@@ -149,15 +149,14 @@
             size="small"
             type="primary"
             @click="handleSearch('formSearch')"
-            >查询
+          >查询
           </el-button>
           <el-button
             v-if="formSearchData.reset"
             plain
             size="small"
             @click="handleReset('formSearch')"
-            >重置</el-button
-          >
+          >重置</el-button>
           <el-button
             v-if="formSearchData.expendShow"
             plain
@@ -165,8 +164,7 @@
             :icon="expend ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"
             @click="handleExpend('formSearch')"
           >
-            {{ expend ? "收起" : "展开" }}</el-button
-          >
+            {{ expend ? "收起" : "展开" }}</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -189,6 +187,8 @@
 </template>
 
 <script>
+import { getData } from '../../index.js'
+
 export default {
   name: "search",
   directives: {
@@ -250,6 +250,10 @@ export default {
     },
   },
   props: {
+    url: {
+      type: String,
+      default: '',
+    },
     formSearchData: {
       type: Object,
       default: () => {
@@ -298,11 +302,13 @@ export default {
       optionBox: [],
     };
   },
+  async created() {
+    this.init()
+  },
   watch: {
     "formSearchData.value": {
       handler: function (newVal, OldVal) {
         if (newVal) {
-          console.log(newVal, "newVal");
           return (this.formSearch = {
             ...newVal,
           });
@@ -313,20 +319,80 @@ export default {
     },
   },
   methods: {
+    async init() {
+      const swaggerData = await getData()
+      const swaggersearchColumns = swaggerData.paths[this.url].get.parameters || []
+      swaggersearchColumns.forEach((item) => {
+        let tempItem = this.formSearchData.tableSearch.find(e => e.value.toLowerCase() === item.name.toLowerCase())
+        if (tempItem) {
+          // 匹配到
+          tempItem = { ...item, ...tempItem }
+        } else if (item.description) {
+          // 未匹配到
+          const pushItem = {
+            value: item.name,
+            label: item.description,
+            inputType: 'text',
+            props: {}
+          }
+          if (item.schema.enum && Array.isArray(item.schema.enum)) {
+            //枚举值
+            pushItem.inputType = 'select'
+            pushItem.children = item.schema.enum.map(e => ({ key: e, value: e }))
+          } else if (item.schema.format === 'date-time') {
+            //日期
+            pushItem.inputType = 'picker'
+            pushItem.props.valueFormat = 'yyyy-MM-dd'
+            pushItem.props.format = 'yyyy/MM/dd'
+          } else if (item.schema && item.schema.type === 'string') {
+            pushItem.inputType = 'text'
+          }
+          this.formSearchData.tableSearch.push(pushItem)
+        }
+      })
+
+      //  单独处理创建时间 就是BeginTime，EndTime
+      const requiredNames = ['BeginTime', 'EndTime'];
+      const hseCreatedTime = requiredNames.every(name =>
+        swaggersearchColumns.some(item => item.name === name)
+      );
+      if (hseCreatedTime) {
+        this.formSearchData.tableSearch.push({
+          label: "创建时间",
+          value: "createdTime",
+          inputType: "picker",
+          props: {
+            type: "datetimerange",
+            startPlaceholder: "开始时间",
+            endPlaceholder: "结束时间",
+            placeholder: "选择时间范围",
+            valueFormat: "yyyy-MM-dd HH:mm:ss",
+            format: "yyyy/MM/dd HH:mm:ss"
+          }
+        })
+      }
+      console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch)
+    },
     // 树形下拉
     getValue(val) {
       this.$emit("getTreeSelectValue", val);
     },
     // 搜索查询按钮
     handleSearch(formName, item) {
+      if (this.formSearch.createdTime) {
+        this.formSearch.BeginTime = this.formSearch.createdTime[0];
+        this.formSearch.EndTime = this.formSearch.createdTime[1];
+      }
+      const tempFormSearch = Object.assign({}, this.formSearch)
       if (this.formSearchData.rules) {
         return this.$refs[formName].validate((valid) => {
           if (!valid) return false;
-
-          this.$emit("handleSearch", Object.assign({}, this.formSearch), item);
+          this.$emit("handleSearch", tempFormSearch, item);
         });
       }
-      this.$emit("handleSearch", Object.assign({}, this.formSearch), item);
+      this.$emit("handleSearch", tempFormSearch, item);
+      console.log(`\x1b[36m\x1b[4mol插件-搜索框查询`, tempFormSearch)
+
     },
     loadmore(obj) {
       this.$emit("loadmore", obj);
@@ -374,9 +440,9 @@ export default {
       this.expend = !this.expend; // 展开和收起
       this.findTableSearch = this.expend
         ? this.formSearchData.tableSearch.slice(
-            0,
-            this.formSearchData.tableSearch.length
-          )
+          0,
+          this.formSearchData.tableSearch.length
+        )
         : this.formSearchData.tableSearch.slice(0, this.tableSearchSlice);
 
       this.$emit("btnHandleExpend", this.expend);
