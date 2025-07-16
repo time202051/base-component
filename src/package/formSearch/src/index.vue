@@ -385,6 +385,9 @@ export default {
       if (this.formSearch.createdTime) {
         this.formSearch.BeginTime = this.formSearch.createdTime[0];
         this.formSearch.EndTime = this.formSearch.createdTime[1];
+      } else {
+        this.formSearch.BeginTime = null;
+        this.formSearch.EndTime = null;
       }
       const tempFormSearch = Object.assign({}, this.formSearch)
       if (this.formSearchData.rules) {
