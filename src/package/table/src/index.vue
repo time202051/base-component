@@ -422,6 +422,7 @@ export default {
             });
           }
         });
+        console.log(`\x1b[36m\x1b[4mol插件-表格`, this.tableData.columns)
       }).catch((error) => {
         console.error("获取 Swagger 数据失败:", error);
       });
