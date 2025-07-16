@@ -11,6 +11,7 @@
 
 ```bash
 npm install ol-base-components
+npm install swagger-client@3.0.1
 ```
 
 ## 效果图
