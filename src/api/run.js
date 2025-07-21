@@ -84,12 +84,14 @@ const generateApiModules = (swagger) => {
     for (const [method, details] of Object.entries(methods)) {
       // 获取接口的tags
       const tags = details.tags || [];
+      //   const summary = details.summary.replace(/\s+/g, "");
       tags.forEach((tag) => {
         const key = generateKeyName(url, method);
         if (apiModules[tag]) {
+          const summary = details.summary || "";
           apiModules[tag][key] = `${key}: "${removeCurlyBraces(
             url
-          )}", //${method} ${details.summary}\n`;
+          )}", //${method} ${summary}\n`;
         }
       });
     }
@@ -98,6 +100,8 @@ const generateApiModules = (swagger) => {
   // 生成最终的输出字符串
   let output = "";
   for (const [moduleName, methods] of Object.entries(apiModules)) {
+    const description = tags.find((e) => e.name === moduleName).description;
+    output += `// ${description}\n`;
     output += `export const ${moduleName} = {\n`;
     for (const method of Object.values(methods)) {
       output += `  ${method}`;
