@@ -1,4 +1,3 @@
-const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const SwaggerClient = require("swagger-client");
@@ -20,7 +19,7 @@ SwaggerClient(swaggerUrl)
     Object.keys(apiModules).forEach((fileName) => {
       const outputPath = path.join(modulesDir, `${fileName}.js`);
       fs.writeFileSync(outputPath, apiModules[fileName], "utf-8");
-      console.log(`API地址对象已生成并保存到 ${outputPath}`);
+      console.log(`API接口已生成并保存到 ${outputPath}`);
     });
   })
   .catch((err) => {
@@ -181,7 +180,7 @@ const generateApiModules = (swagger) => {
             method
           )} = (${functionParams}) => {\n`;
 
-          functionDoc += ` return this.${MethodEnum[method]}({\n`;
+          functionDoc += ` return ${MethodEnum[method]}({\n`;
           functionDoc += `  url: \`${url.replace(/{/g, "${")}\`,\n`;
           if (hasQuery) functionDoc += `  params,\n`;
           if (hasBody) functionDoc += `  data: body,\n`;
