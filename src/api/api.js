@@ -179,13 +179,13 @@ const generateApiModules = (swagger) => {
           let functionParams = [];
           if (hasQuery) functionParams.push("params");
           if (hasBody) functionParams.push("body");
-          functionParams = functionParams.concat(pathParameters);
-          functionParams = functionParams.push("options = {}").join(", ");
+          Object.assign(functionParams, pathParameters);
+          functionParams.push("options = {}");
           // 函数
           functionDoc += `export const ${generateKeyName(
             url,
             method
-          )} = (${functionParams}, options = {}) => {\n`;
+          )} = (${functionParams.join(", ")}) => {\n`;
 
           functionDoc += ` return api({\n`;
           functionDoc += `  url: \`${url.replace(/{/g, "${")}\`,\n`;
