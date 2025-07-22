@@ -9,7 +9,7 @@ const path = require("path");
 const swaggerUrl = process.argv[2]
   ? `${process.argv[2]}/swagger/v1/swagger.json`
   : "";
-const outputPath = process.argv[3] || path.join(__dirname, "swagger.js");
+const outputPath = process.argv[3] || "src/api/swagger.js" || "swagger.js";
 
 http
   .get(swaggerUrl, (response) => {
