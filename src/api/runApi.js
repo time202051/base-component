@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const SwaggerClient = require("swagger-client");
 const Vue = require("vue"); // 引入 Vue
-import globalData from "../globalData";
+const globalData = require("../globalData");
 
 // const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
 const swaggerUrl = getGlobalData("swaggerUrl") || "";
