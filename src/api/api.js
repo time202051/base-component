@@ -29,10 +29,22 @@ SwaggerClient(swaggerUrl)
       fs.writeFileSync(outputPath, apiModules[fileName], "utf-8");
       console.log(`API接口已生成并保存到 ${outputPath}`);
     });
+
+    // 生成index.js入口文件
+    createIndexFile(apiModules);
   })
   .catch((err) => {
     console.error("获取 Swagger 数据时出错:", err);
   });
+
+function createIndexFile(apiModules) {
+  let str = "";
+  Object.keys(apiModules).forEach((fileName) => {
+    str += `import * from "./${fileName}.js"\n`;
+  });
+  const outputPath = path.join(modulesDir, `index.js`);
+  fs.writeFileSync(outputPath, str, "utf-8");
+}
 
 // url转成键名规则
 function generateKeyName(url, method) {
