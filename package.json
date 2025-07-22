@@ -1,11 +1,11 @@
 {
   "name": "ol-base-components",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "private": false,
   "main": "src/package/index.js",
   "bin": {
     "run": "src/api/run.js",
-    "runApi": "src/api/runApi.js"
+    "runApi": "src/api/api.js"
   },
   "scripts": {
     "serve": "vue-cli-service serve --no-verify",

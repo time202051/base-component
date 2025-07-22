@@ -2,12 +2,15 @@
 const fs = require("fs");
 const path = require("path");
 const SwaggerClient = require("swagger-client");
-const Vue = require("vue"); // 引入 Vue
-const globalData = require("../globalData");
+
+// eg：node api http://220.179.249.140:20019 ./modules
 
 // const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
-const swaggerUrl = globalData.swaggerUrl || "";
-const modulesDir = globalData.outputDir || path.join(__dirname, "./modules");
+const swaggerUrl = process.argv[2]
+  ? `${process.argv[2]}/swagger/v1/swagger.json`
+  : "";
+const modulesDir = process.argv[3] ? process.argv[3] : "src/api/modules";
+// process.argv[3] || "src/api/modules" || path.join(__dirname, "./modules");
 
 SwaggerClient(swaggerUrl)
   .then((client) => {

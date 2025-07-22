@@ -3,7 +3,13 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
+// eg：node api http://220.179.249.140:20019 swagger.js
+
+// const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
+const swaggerUrl = process.argv[2]
+  ? `${process.argv[2]}/swagger/v1/swagger.json`
+  : "";
+const outputPath = process.argv[3] || path.join(__dirname, "swagger.js");
 
 http
   .get(swaggerUrl, (response) => {
@@ -20,7 +26,7 @@ http
       const apiEndpoints = generateApiModules(swaggerData);
 
       // 输出到文件
-      const outputPath = path.join(__dirname, "swagger.js");
+      // const outputPath = path.join(__dirname, "swagger.js");
       fs.writeFileSync(outputPath, apiEndpoints, "utf-8");
       console.log(`API地址对象已生成并保存到 ${outputPath}`);
     });
