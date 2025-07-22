@@ -105,7 +105,7 @@ const generateApiModules = (swagger) => {
   tags.forEach((tag) => {
     apiModules[
       tag.name
-    ] = `import { get, post, put, del } from "@/api/request/sendRuest"\n`;
+    ] = `import { api } from "@/api/request/sendRuest"\n`;
   });
 
   for (const [url, methods] of Object.entries(paths)) {
@@ -188,8 +188,9 @@ const generateApiModules = (swagger) => {
             method
           )} = (${functionParams}) => {\n`;
 
-          functionDoc += ` return ${MethodEnum[method]}({\n`;
+          functionDoc += ` return api({\n`;
           functionDoc += `  url: \`${url.replace(/{/g, "${")}\`,\n`;
+          functionDoc += `  method: ${MethodEnum[method]},\n`;
           if (hasQuery) functionDoc += `  params,\n`;
           if (hasBody) functionDoc += `  data: body,\n`;
           functionDoc += ` });\n`;
