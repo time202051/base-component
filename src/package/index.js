@@ -187,10 +187,12 @@ function hideLoading() {
 const install = async function (
   Vue,
   options = {
-    url: "",
+    swaggerUrl: "",
+    outputDir:''
   }
 ) {
-  if (options && options.url) Vue.prototype.$swaggerUrl = options.url;
+  if (options && options.swaggerUrl) Vue.prototype.$swaggerUrl = options.swaggerUrl;
+  if (options && options.outputDir) Vue.prototype.$outputDir = options.outputDir;
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);
   });

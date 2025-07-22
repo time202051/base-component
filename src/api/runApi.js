@@ -6,7 +6,8 @@ const Vue = require("vue"); // 引入 Vue
 // const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
 
 const swaggerUrl = Vue.prototype.$swaggerUrl || ""; // 使用 Vue.prototype 中的 url
-const modulesDir = Vue.prototype.$outputDir || path.join(__dirname, "./modules"); // 使用 Vue.prototype 中的 outputDir
+const modulesDir =
+  Vue.prototype.$outputDir || path.join(__dirname, "./modules"); // 使用 Vue.prototype 中的 outputDir
 
 SwaggerClient(swaggerUrl)
   .then((client) => {
