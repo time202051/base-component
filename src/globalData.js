@@ -1,17 +1,7 @@
-// globalData.js
-class GlobalData {
-  constructor() {
-    this.data = {};
-  }
+// data.js
+let globalData = {
+  swaggerUrl: "",
+  outputDir: "",
+};
 
-  set(key, value) {
-    this.data[key] = value;
-  }
-
-  get(key) {
-    return this.data[key];
-  }
-}
-
-const instance = new GlobalData();
-export default instance;
+module.exports = globalData;

@@ -192,10 +192,8 @@ const install = async function (
     outputDir: "",
   }
 ) {
-  if (options && options.swaggerUrl)
-    globalData.set("swaggerUrl", options.swaggerUrl);
-  if (options && options.outputDir)
-    globalData.set("outputDir", options.outputDir);
+  if (options && options.swaggerUrl) globalData.swaggerUrl = options.swaggerUrl;
+  if (options && options.outputDir) globalData.outputDir = options.outputDir;
 
   // 设置全局数据
   components.map((item) => {

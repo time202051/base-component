@@ -6,9 +6,8 @@ const Vue = require("vue"); // 引入 Vue
 const globalData = require("../globalData");
 
 // const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
-const swaggerUrl = getGlobalData("swaggerUrl") || "";
-const modulesDir =
-  getGlobalData("outputDir") || path.join(__dirname, "./modules");
+const swaggerUrl = globalData.swaggerUrl || "";
+const modulesDir = globalData.outputDir || path.join(__dirname, "./modules");
 
 SwaggerClient(swaggerUrl)
   .then((client) => {
