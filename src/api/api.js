@@ -179,7 +179,8 @@ const generateApiModules = (swagger) => {
           let functionParams = [];
           if (hasQuery) functionParams.push("params");
           if (hasBody) functionParams.push("body");
-          functionParams = functionParams.concat(pathParameters).join(", ");
+          functionParams = functionParams.concat(pathParameters);
+          functionParams = functionParams.push("options = {}").join(", ");
           // 函数
           functionDoc += `export const ${generateKeyName(
             url,
