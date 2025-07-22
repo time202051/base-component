@@ -1,13 +1,14 @@
 #!/usr/bin/env node
+const fs = require("fs");
 const path = require("path");
 const SwaggerClient = require("swagger-client");
 const Vue = require("vue"); // 引入 Vue
+import globalData from "../globalData";
 
 // const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
-
-const swaggerUrl = Vue.prototype.$swaggerUrl || ""; // 使用 Vue.prototype 中的 url
+const swaggerUrl = getGlobalData("swaggerUrl") || "";
 const modulesDir =
-  Vue.prototype.$outputDir || path.join(__dirname, "./modules"); // 使用 Vue.prototype 中的 outputDir
+  getGlobalData("outputDir") || path.join(__dirname, "./modules");
 
 SwaggerClient(swaggerUrl)
   .then((client) => {

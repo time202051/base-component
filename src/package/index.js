@@ -2,6 +2,7 @@ import OlTable from "./table";
 import OlSearch from "./formSearch";
 import Dialog from "./dialog";
 import SwaggerClient from "swagger-client";
+import globalData from "../globalData";
 
 const consoleTooltip = () => {
   // 定义颜色和样式
@@ -188,11 +189,15 @@ const install = async function (
   Vue,
   options = {
     swaggerUrl: "",
-    outputDir:''
+    outputDir: "",
   }
 ) {
-  if (options && options.swaggerUrl) Vue.prototype.$swaggerUrl = options.swaggerUrl;
-  if (options && options.outputDir) Vue.prototype.$outputDir = options.outputDir;
+  if (options && options.swaggerUrl)
+    globalData.set("swaggerUrl", options.swaggerUrl);
+  if (options && options.outputDir)
+    globalData.set("outputDir", options.outputDir);
+
+  // 设置全局数据
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);
   });
