@@ -1,6 +1,6 @@
 {
   "name": "ol-base-components",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "private": false,
   "main": "src/package/index.js",
   "bin": {

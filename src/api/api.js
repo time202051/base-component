@@ -184,7 +184,7 @@ const generateApiModules = (swagger) => {
           functionDoc += `export const ${generateKeyName(
             url,
             method
-          )} = (${functionParams}, options) => {\n`;
+          )} = (${functionParams}, options = {}) => {\n`;
 
           functionDoc += ` return api({\n`;
           functionDoc += `  url: \`${url.replace(/{/g, "${")}\`,\n`;
