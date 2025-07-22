@@ -184,7 +184,13 @@ function hideLoading() {
   }
 }
 
-const install = async function (Vue) {
+const install = async function (
+  Vue,
+  options = {
+    url: "",
+  }
+) {
+  if (options && options.url) Vue.prototype.$swaggerUrl = options.url;
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);
   });

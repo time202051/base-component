@@ -1,8 +1,12 @@
-const fs = require("fs");
+#!/usr/bin/env node
 const path = require("path");
 const SwaggerClient = require("swagger-client");
+const Vue = require("vue"); // 引入 Vue
 
-const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
+// const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
+
+const swaggerUrl = Vue.prototype.$swaggerUrl || ""; // 使用 Vue.prototype 中的 url
+const modulesDir = Vue.prototype.$outputDir || path.join(__dirname, "./modules"); // 使用 Vue.prototype 中的 outputDir
 
 SwaggerClient(swaggerUrl)
   .then((client) => {
@@ -10,7 +14,7 @@ SwaggerClient(swaggerUrl)
 
     const apiModules = generateApiModules(swaggerData);
     //   创建文件夹
-    const modulesDir = path.join(__dirname, "./modules");
+    // const modulesDir = path.join(__dirname, "./modules");
     if (!fs.existsSync(modulesDir)) {
       fs.mkdirSync(modulesDir);
       console.log(`创建了文件夹: ${modulesDir}`);
