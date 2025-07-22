@@ -191,7 +191,7 @@ const generateApiModules = (swagger) => {
           functionDoc += `  method: "${MethodEnum[method]}",\n`;
           if (hasQuery) functionDoc += `  params,\n`;
           if (hasBody) functionDoc += `  data: body,\n`;
-          functionDoc += `  ...options,\n`;
+          functionDoc += `  ...options\n`;
           functionDoc += ` });\n`;
           functionDoc += `};\n\n`;
           apiModules[tag] += functionDoc;
