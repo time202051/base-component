@@ -47,7 +47,7 @@
   "keywords": [
     "ol-base-components"
   ],
-  "description": "二次封装的通用组件库。table，form",
+  "description": "二次封装的通用组件库。table，form。核心解决前后端字段联调问题。",
   "browserslist": [
     "> 1%",
     "last 2 versions",
