@@ -9,8 +9,19 @@ SwaggerClient(swaggerUrl)
   .then((client) => {
     const swaggerData = client.spec; // 获取 Swagger 数据
 
-    // 你可以在这里调用 generateApiModules 函数来处理 swaggerData
-    const apiEndpoints = generateApiModules(swaggerData);
+    const apiModules = generateApiModules(swaggerData);
+    //   创建文件夹
+    const modulesDir = path.join(__dirname, "./modules");
+    if (!fs.existsSync(modulesDir)) {
+      fs.mkdirSync(modulesDir);
+      console.log(`创建了文件夹: ${modulesDir}`);
+    }
+
+    Object.keys(apiModules).forEach((fileName) => {
+      const outputPath = path.join(modulesDir, `${fileName}.js`);
+      fs.writeFileSync(outputPath, apiModules[fileName], "utf-8");
+      console.log(`API地址对象已生成并保存到 ${outputPath}`);
+    });
   })
   .catch((err) => {
     console.error("获取 Swagger 数据时出错:", err);
@@ -80,7 +91,6 @@ const MethodEnum = {
   put: "put",
   delete: "del",
 };
-
 const generateApiModules = (swagger) => {
   const { tags, paths } = swagger;
   const apiModules = {};
@@ -97,7 +107,6 @@ const generateApiModules = (swagger) => {
       const parameters = details.parameters || [];
       const requestBody = details.requestBody || {};
       tags.forEach((tag) => {
-        const key = generateKeyName(url, method);
         if (Object.keys(apiModules).includes(tag)) {
           // 生成 JSDoc 注释
           let functionDoc = ``;
@@ -105,43 +114,11 @@ const generateApiModules = (swagger) => {
           functionDoc += ` * ${details.summary || "无描述"}\n`;
 
           let pathParameters = [];
-          //   如果有requestBody
-          if (
-            Object.keys(requestBody).length > 0 &&
-            requestBody.content &&
-            requestBody.content["text/json"] &&
-            requestBody.content["text/json"].schema
-          ) {
-            const schema = requestBody.content["text/json"].schema;
-            const { type, properties } = schema;
-            //目前只有这两种入参结构
-            if (type === "object") {
-              functionDoc += ` * @param {Object} params - 请求参数\n`;
-
-              Object.keys(properties).forEach((key) => {
-                // 是否必填
-                const isRequired =
-                  schema.required &&
-                  Array.isArray(schema.required) &&
-                  schema.required.includes(key);
-
-                const temp = isRequired ? `params.${key}` : `[params.${key}]`;
-                functionDoc += ` * @param {${javaTypeToJsType(
-                  properties[key].type
-                )}} ${temp} - ${properties[key].description || ""}\n`;
-              });
-            } else if (type === "array") {
-              // 公司swagger一定是接收id数组的
-              functionDoc += ` * @param {Array<string>} params - 数组类型的入参\n`;
-            }
-          }
-
+          let hasQuery = false;
+          let hasBody = false;
           //parameters此参数
           if (Object.keys(details).includes("parameters")) {
             functionDoc += ` * @param {Object} params - 请求参数\n`;
-            // 添加参数到 JSDoc
-            parameters.length > 1 && console.log(5555, parameters, url);
-
             parameters.forEach((param) => {
               const paramType = param.schema
                 ? javaTypeToJsType(param.schema.type)
@@ -155,21 +132,59 @@ const generateApiModules = (swagger) => {
               }\n`;
             });
             pathParameters = getPathParameters(parameters);
+            // 是否有query参数
+            hasQuery = parameters.some((e) => e.in === "query");
+          }
+
+          //   如果有requestBody
+          if (
+            Object.keys(requestBody).length > 0 &&
+            requestBody.content &&
+            requestBody.content["text/json"] &&
+            requestBody.content["text/json"].schema
+          ) {
+            const schema = requestBody.content["text/json"].schema;
+            const { type, properties } = schema;
+            //目前只有这两种入参结构
+            if (type === "object") {
+              functionDoc += ` * @param {Object} body - 请求参数\n`;
+
+              Object.keys(properties).forEach((key) => {
+                // 是否必填
+                const isRequired =
+                  schema.required &&
+                  Array.isArray(schema.required) &&
+                  schema.required.includes(key);
+
+                const temp = isRequired ? `body.${key}` : `[body.${key}]`;
+                functionDoc += ` * @param {${javaTypeToJsType(
+                  properties[key].type
+                )}} ${temp} - ${properties[key].description || ""}\n`;
+              });
+              if (Object.keys(properties).length > 1) hasBody = true;
+            } else if (type === "array") {
+              // 公司入参是数组的swagger一定是接收id数组的
+              functionDoc += ` * @param {Array<string>} body - 数组类型的入参\n`;
+              hasBody = true;
+            }
           }
 
           functionDoc += `*/\n`;
           // 接口入参
-          let functionParams = "";
-          pathParameters.unshift("params");
+          let functionParams = [];
+          if (hasQuery) functionParams.push("params");
+          if (hasBody) functionParams.push("body");
+          functionParams = functionParams.concat(pathParameters).join(", ");
           // 函数
           functionDoc += `export const ${generateKeyName(
             url,
             method
-          )} = (${pathParameters.join(", ")}) => {\n`;
+          )} = (${functionParams}) => {\n`;
 
           functionDoc += ` return this.${MethodEnum[method]}({\n`;
           functionDoc += `  url: \`${url.replace(/{/g, "${")}\`,\n`;
-          functionDoc += `  data: params,\n`;
+          if (hasQuery) functionDoc += `  params,\n`;
+          if (hasBody) functionDoc += `  data: body,\n`;
           functionDoc += ` });\n`;
           functionDoc += `};\n\n`;
           apiModules[tag] += functionDoc;
@@ -177,16 +192,6 @@ const generateApiModules = (swagger) => {
       });
     }
   }
-  //   创建文件夹
-  const modulesDir = path.join(__dirname, "./modules");
-  if (!fs.existsSync(modulesDir)) {
-    fs.mkdirSync(modulesDir);
-    console.log(`创建了文件夹: ${modulesDir}`);
-  }
 
-  Object.keys(apiModules).forEach((fileName) => {
-    const outputPath = path.join(modulesDir, `${fileName}.js`);
-    fs.writeFileSync(outputPath, apiModules[fileName], "utf-8");
-    console.log(`API地址对象已生成并保存到 ${outputPath}`);
-  });
+  return apiModules;
 };
