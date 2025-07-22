@@ -74,7 +74,7 @@ npx api http://192.168.xxx.xxx [outputPath]
 - **参数**：
   - `http://192.168.xxx.xxx` 是 Swagger API 的基础 URL。
   - `[outputPath]` 是可选参数，指定生成的文件路径，默认为 `src/api/swagger.js`。
-- **作用**：该脚本会自动生成 Swagger 数据的 API 模块，并保存到指定的目录中。
+- **作用**：该脚本会自动生成 Swagger 数据的 API 接口模块，并保存到指定的目录中，且包含JSDoc，方便查看接口入参及类型。
 
 #### 效果图
 
@@ -93,7 +93,7 @@ npx run http://192.168.xxx.xxx [outputPath]
 - **参数**：
   - `http://192.168.xxx.xxx` 是 Swagger API 的基础 URL。
   - `[outputPath]` 是可选参数，指定生成的文件路径，默认为 `src/api/modules`。
-- **作用**：该脚本会从指定的 Swagger URL 下载 Swagger JSON 数据，并生成相应的 API 接口文件，且包含JSDoc，方便查看接口入参及类型。
+- **作用**：该脚本会从指定的 Swagger URL 下载 Swagger JSON 数据，并生成相应的 API 接口路径文件。
 
 #### 效果图
 
