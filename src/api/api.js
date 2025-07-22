@@ -190,7 +190,7 @@ const generateApiModules = (swagger) => {
 
           functionDoc += ` return api({\n`;
           functionDoc += `  url: \`${url.replace(/{/g, "${")}\`,\n`;
-          functionDoc += `  method: ${MethodEnum[method]},\n`;
+          functionDoc += `  method: "${MethodEnum[method]}",\n`;
           if (hasQuery) functionDoc += `  params,\n`;
           if (hasBody) functionDoc += `  data: body,\n`;
           functionDoc += ` });\n`;
