@@ -59,6 +59,38 @@ import { swaggerUnload } from "ol-base-components";
 swaggerUnload()
 ```
 
+## API 脚本
+
+### 1. `api.js`
+
+`api.js` 脚本用于从指定的 Swagger URL 获取 API 数据，并生成相应的 API 模块文件。
+
+#### 使用方法
+
+```bash
+npx api http://192.168.xxx.xxx [outputPath]
+```
+
+- **参数**：
+  - `http://192.168.xxx.xxx` 是 Swagger API 的基础 URL。
+  - `[outputPath]` 是可选参数，指定生成的文件路径，默认为 `src/api/swagger.js`。
+- **作用**：该脚本会自动生成 Swagger 数据的 API 模块，并保存到指定的目录中。
+
+### 2. `run.js`
+
+`run.js` 脚本用于从指定的 Swagger URL 下载 Swagger JSON 文件，并生成相应的 API 模块文件。
+
+#### 使用方法
+
+```bash
+npx run http://192.168.xxx.xxx [outputPath]
+```
+
+- **参数**：
+  - `http://192.168.xxx.xxx` 是 Swagger API 的基础 URL。
+  - `[outputPath]` 是可选参数，指定生成的文件路径，默认为 `src/api/modules`。
+- **作用**：该脚本会从指定的 Swagger URL 下载 Swagger JSON 数据，并生成相应的 API 模块文件。
+
 
 ## 组件示例
 
