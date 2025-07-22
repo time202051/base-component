@@ -40,7 +40,7 @@ SwaggerClient(swaggerUrl)
 function createIndexFile(apiModules) {
   let str = "";
   Object.keys(apiModules).forEach((fileName) => {
-    str += `import * from "./${fileName}.js"\n`;
+    str += `export * from "./${fileName}";\n`;
   });
   const outputPath = path.join(modulesDir, `index.js`);
   fs.writeFileSync(outputPath, str, "utf-8");
