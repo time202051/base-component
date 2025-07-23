@@ -97,7 +97,43 @@ npx run http://192.168.xxx.xxx [outputPath]
 
 #### 效果图
 
+![Local demo](./src/assets/init.png "Local demo")
+
+
+### 3 `init.js` 命令
+
+`init.js` 脚本用于创建新的模块。它会根据提供的模块名称在指定路径下生成一个新的文件夹，并在其中创建一个 Vue 组件文件。
+
+#### 使用方法
+
+你可以通过以下命令来执行 `init.js` 脚本：
+
+```bash
+npx init <moduleName> -p <customPath>
+```
+
+- **参数**：
+  - `<moduleName>`: 要创建的模块名称（必填）。
+  - `-p <customPath>`: 指定创建模块的自定义路径。如 src/view
+
+#### 示例
+
+```bash
+npx init aaa -p src/view
+```
+
+这将会在 `./src/view` 目录下创建一个名为 `aaa` 的文件夹，并在其中生成一个 `index.vue` 文件，文件内容将基于模板生成。
+
+#### 效果图
+
 ![Local demo](./src/assets/run.png "Local demo")
+
+
+
+#### 注意事项
+
+- 确保在执行命令之前已经安装了 `ol-base-components` 包。
+- 如果指定的路径已存在同名文件夹，脚本将提示创建失败。
 
 ## 组件示例
 
