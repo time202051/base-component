@@ -1,16 +1,18 @@
 {
   "name": "ol-base-components",
-  "version": "2.2.8",
+  "version": "2.3.0",
   "private": false,
   "main": "src/package/index.js",
   "bin": {
     "run": "src/api/run.js",
-    "api": "src/api/api.js"
+    "api": "src/api/api.js",
+    "init": "src/bin/init.js"
   },
   "scripts": {
     "serve": "vue-cli-service serve --no-verify",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "init": "node src/bin/init.js"
   },
   "dependencies": {
     "core-js": "^3.8.3",
