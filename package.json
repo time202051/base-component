@@ -1,6 +1,6 @@
 {
   "name": "ol-base-components",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "private": false,
   "main": "src/package/index.js",
   "bin": {
@@ -15,6 +15,7 @@
     "init": "node src/bin/init.js"
   },
   "dependencies": {
+    "commander": "^14.0.0",
     "core-js": "^3.8.3",
     "element-ui": "^2.15.14",
     "eslint": "^8.57.1",

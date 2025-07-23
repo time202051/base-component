@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const { Command } = require("commander");
 const fs = require("fs");
 const path = require("path");
@@ -14,8 +15,7 @@ program
       fs.mkdirSync(dir);
       console.log(`创建文件夹: ${dir}`);
       const templateContent = vue2Template(moduleName);
-      fs.writeFileSync(path.join(dir, `${moduleName}.vue`), templateContent);
-      console.log(`创建文件: ${moduleName}.vue`);
+      fs.writeFileSync(path.join(dir, `index.vue`), templateContent);
     } else {
       console.log(`创建失败，文件夹 ${dir} 已存在`);
     }

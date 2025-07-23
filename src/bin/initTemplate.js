@@ -30,7 +30,7 @@ const vue2Template = (moduleName) => {
 import { getAdmissioninfoPagedresult } from "@/api/modules";
 import { AdmissionInfo } from '@/api/swagger'
 export default {
-  name: "test",
+  name: "${moduleName}",
   data() {
     return {
       swaggerUrl: AdmissionInfo,
