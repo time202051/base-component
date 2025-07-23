@@ -97,7 +97,7 @@ npx run http://192.168.xxx.xxx [outputPath]
 
 #### 效果图
 
-![Local demo](./src/assets/init.png "Local demo")
+![Local demo](./src/assets/run.png "Local demo")
 
 
 ### 3 `init.js` 命令
@@ -105,8 +105,6 @@ npx run http://192.168.xxx.xxx [outputPath]
 `init.js` 脚本用于创建新的模块。它会根据提供的模块名称在指定路径下生成一个新的文件夹，并在其中创建一个 Vue 组件文件。
 
 #### 使用方法
-
-你可以通过以下命令来执行 `init.js` 脚本：
 
 ```bash
 npx init <moduleName> -p <customPath>
@@ -126,7 +124,7 @@ npx init aaa -p src/view
 
 #### 效果图
 
-![Local demo](./src/assets/run.png "Local demo")
+![Local demo](./src/assets/init.png "Local demo")
 
 
 
