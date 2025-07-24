@@ -55,5 +55,9 @@
     "> 1%",
     "last 2 versions",
     "not dead"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/time202051/base-component/issues",
+    "email": "809949003@qq.com"
+  }
 }
