@@ -21,6 +21,17 @@ const spinner = setInterval(() => {
   dotCount = (dotCount + 1) % (maxDots + 1);
 }, 300);
 
+// 设置文件为只读权限
+function setFileReadOnly(filePath) {
+  try {
+    // 设置只读权限 (444: 所有者、组、其他用户都只有读权限)
+    fs.chmodSync(filePath, 0o444);
+    console.log(`🔒 已设置文件为只读: ${filePath}`);
+  } catch (error) {
+    console.warn(`⚠️ 设置文件权限失败: ${filePath}`, error.message);
+  }
+}
+
 http
   .get(swaggerUrl, (response) => {
     let data = "";
@@ -41,6 +52,8 @@ http
       clearInterval(spinner);
       process.stdout.write("\r");
       console.log(`API地址对象已生成并保存到 ${outputPath}`);
+      // 设置文件为只读
+      setFileReadOnly(outputPath);
     });
   })
   .on("error", (err) => {
@@ -118,7 +131,12 @@ const generateApiModules = (swagger) => {
   }
 
   // 生成最终的输出字符串
-  let output = "";
+  let output = `/**
+ * ⚠️  警告：此文件由脚本自动生成，请勿手动编辑！
+ * ��  如需修改，请重新运行生成脚本
+ * 📅  生成时间: ${new Date().toLocaleString()}
+ * 
+ */\n\n`;
   for (const [moduleName, methods] of Object.entries(apiModules)) {
     const description = tags.find((e) => e.name === moduleName).description;
     output += `// ${description}\n`;

@@ -10,6 +10,12 @@ const swaggerUrl = process.argv[2]
   : "";
 const modulesDir = process.argv[3] ? process.argv[3] : "src/api/modules";
 
+let defaultRemark = `/**
+ * ⚠️  警告：此文件由脚本自动生成，请勿手动编辑！
+ * ��  如需修改，请重新运行生成脚本
+ * 📅  生成时间: ${new Date().toLocaleString()}
+ * 
+ */\n\n`;
 const spinnerChars = ["|", "/", "-", "\\"];
 let spinnerIndex = 0;
 let dotCount = 0;
@@ -20,6 +26,18 @@ const spinner = setInterval(() => {
   spinnerIndex = (spinnerIndex + 1) % spinnerChars.length;
   dotCount = (dotCount + 1) % (maxDots + 1);
 }, 300);
+
+// 设置文件为只读权限
+function setFileReadOnly(filePath) {
+  try {
+    // 获取当前文件权限
+    const stats = fs.statSync(filePath);
+    // 设置只读权限 (444: 所有者、组、其他用户都只有读权限)
+    fs.chmodSync(filePath, 0o444);
+  } catch (error) {
+    console.warn(`⚠️ 设置文件权限失败: ${filePath}`, error.message);
+  }
+}
 
 SwaggerClient(swaggerUrl)
   .then((client) => {
@@ -35,7 +53,8 @@ SwaggerClient(swaggerUrl)
     Object.keys(apiModules).forEach((fileName) => {
       const outputPath = path.join(modulesDir, `${fileName}.js`);
       fs.writeFileSync(outputPath, apiModules[fileName], "utf-8");
-      console.log(`API接口已生成并保存到 ${outputPath}`);
+      setFileReadOnly(outputPath);
+      console.log(`API接口已生成并保存到 ${outputPath}（只读）`);
     });
 
     // 生成index.js入口文件
@@ -50,12 +69,15 @@ SwaggerClient(swaggerUrl)
   });
 
 function createIndexFile(apiModules) {
-  let str = "";
+  let str = defaultRemark;
   Object.keys(apiModules).forEach((fileName) => {
     str += `export * from "./${fileName}";\n`;
   });
   const outputPath = path.join(modulesDir, `index.js`);
   fs.writeFileSync(outputPath, str, "utf-8");
+  // 设置 index.js 也为只读
+  setFileReadOnly(outputPath);
+  console.log(`API接口已生成并保存到 ${outputPath}（只读）`);
 }
 
 // url转成键名规则
@@ -127,7 +149,7 @@ const generateApiModules = (swagger) => {
   const apiModules = {};
   // 初始化模块对象
   tags.forEach((tag) => {
-    apiModules[tag.name] = `import { api } from "@/api/request/sendRuest"\n`;
+    apiModules[tag.name] = `${defaultRemark}import { api } from "@/api/request/sendRuest"\n`;
   });
 
   for (const [url, methods] of Object.entries(paths)) {
