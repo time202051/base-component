@@ -40,18 +40,18 @@ try {
       "BusinessReport"
     )
     .action((moduleName, options) => {
-      console.log(111, options);
-
       const dir = path.join(options.path || process.cwd(), moduleName);
       // 启动加载动画
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
-        console.log(`创建文件夹: ${dir}`);
-
+        // console.log(`创建文件夹: ${dir}`);
         const templateContent = vue2Template(moduleName, options);
-        fs.writeFileSync(path.join(dir, `index.vue`), templateContent);
+        const outputPath = path.join(dir, `index.vue`)
+        fs.writeFileSync(outputPath, templateContent);
+        console.log(`✅ 模板 已生成并保存到 ${outputPath}`);
+
       } else {
-        console.log(`创建失败，文件夹 ${dir} 已存在`);
+        console.log(`❌ 创建失败，文件夹 ${dir} 已存在`);
       }
       if (options.debug) {
         console.log("调试信息:", options);

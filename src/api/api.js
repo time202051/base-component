@@ -149,7 +149,9 @@ const generateApiModules = (swagger) => {
   const apiModules = {};
   // 初始化模块对象
   tags.forEach((tag) => {
-    apiModules[tag.name] = `${defaultRemark}import { api } from "@/api/request/sendRuest"\n`;
+    apiModules[
+      tag.name
+    ] = `${defaultRemark}import { api } from "@/api/request/sendRuest"\n`;
   });
 
   for (const [url, methods] of Object.entries(paths)) {
