@@ -115,4 +115,4 @@ export default {
 `;
 };
 
-module.exports = vue2Template; // Use CommonJS export
+module.exports = vue2Template;
