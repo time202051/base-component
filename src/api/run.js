@@ -24,9 +24,9 @@ const spinner = setInterval(() => {
 // 设置文件为只读权限
 function setFileReadOnly(filePath) {
   try {
+    const stats = fs.statSync(filePath);
     // 设置只读权限 (444: 所有者、组、其他用户都只有读权限)
     fs.chmodSync(filePath, 0o444);
-    console.log(`🔒 已设置文件为只读: ${filePath}`);
   } catch (error) {
     console.warn(`⚠️ 设置文件权限失败: ${filePath}`, error.message);
   }
@@ -51,7 +51,7 @@ http
       fs.writeFileSync(outputPath, apiEndpoints, "utf-8");
       clearInterval(spinner);
       process.stdout.write("\r");
-      console.log(`API地址对象已生成并保存到 ${outputPath}`);
+      console.log(`API地址对象已生成并保存到 ${outputPath}（只读）`);
       // 设置文件为只读
       setFileReadOnly(outputPath);
     });

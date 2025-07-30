@@ -103,7 +103,7 @@ npx run http://192.168.xxx.xxx [outputPath]
 
 ![Local demo](./src/assets/run.png "Local demo")
 
-### 3 `init.js` 命令（推荐）
+### 3. `init.js` 命令（推荐）
 
 `init.js` 就是同时执行 api.js 和 run.js 的命令。生成的文件路径为默认路径（不支持自定义输出路径）
 
@@ -112,7 +112,7 @@ npx run http://192.168.xxx.xxx [outputPath]
 npx init http://192.168.xxx.xxx:20019
 ```
 
-### 4 `add.js` 命令
+### 4. `add.js` 命令
 
 `add.js` 脚本用于创建新的模块。它会根据提供的模块名称在指定路径下生成一个新的文件夹，并在其中创建一个 Vue 组件文件。
 
