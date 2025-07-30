@@ -5,12 +5,21 @@ const SwaggerClient = require("swagger-client");
 
 // eg：node api http://220.179.249.140:20019 ./modules
 
-// const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
 const swaggerUrl = process.argv[2]
   ? `${process.argv[2]}/swagger/v1/swagger.json`
   : "";
 const modulesDir = process.argv[3] ? process.argv[3] : "src/api/modules";
-// process.argv[3] || "src/api/modules" || path.join(__dirname, "./modules");
+
+const spinnerChars = ["|", "/", "-", "\\"];
+let spinnerIndex = 0;
+let dotCount = 0;
+const maxDots = 3;
+const spinner = setInterval(() => {
+  const dots = ".".repeat(dotCount);
+  process.stdout.write(`\r${spinnerChars[spinnerIndex]} 正在玩命加载中${dots}`);
+  spinnerIndex = (spinnerIndex + 1) % spinnerChars.length;
+  dotCount = (dotCount + 1) % (maxDots + 1);
+}, 300);
 
 SwaggerClient(swaggerUrl)
   .then((client) => {
@@ -18,7 +27,6 @@ SwaggerClient(swaggerUrl)
 
     const apiModules = generateApiModules(swaggerData);
     //   创建文件夹
-    // const modulesDir = path.join(__dirname, "./modules");
     if (!fs.existsSync(modulesDir)) {
       fs.mkdirSync(modulesDir);
       console.log(`创建了文件夹: ${modulesDir}`);
@@ -35,6 +43,10 @@ SwaggerClient(swaggerUrl)
   })
   .catch((err) => {
     console.error("获取 Swagger 数据时出错:", err);
+  })
+  .finally(() => {
+    clearInterval(spinner);
+    process.stdout.write("\r");
   });
 
 function createIndexFile(apiModules) {

@@ -23,6 +23,25 @@ ${cyan}${bold}${star.repeat(
 ${cyan}感谢使用我们的组件库，期待你的精彩应用！${reset}
 `);
 };
+const consoleSwagger = () => {
+  // 定义颜色和样式
+  const reset = "\x1b[0m"; // 重置样式
+  const green = "\x1b[32m"; // 绿色
+  const cyan = "\x1b[36m"; // 青色
+  const bold = "\x1b[1m"; // 粗体
+  const underline = "\x1b[4m"; // 下划线
+
+  // 定义图案
+  const star = "⭐";
+  const checkMark = "✔️";
+
+  // 输出成功提示
+  console.log(`
+${cyan}${bold}${star.repeat(
+    3
+  )}${green}${bold}${underline}ol-base-components swagger服务加载成功！ ${checkMark}
+`);
+};
 
 const DB_NAME = "SwaggerDB";
 const DB_VERSION = 1;
@@ -100,7 +119,7 @@ const swaggerInstall = async (swaggerUrl) => {
   // IndexedDB 获取 Swagger 数据
   const cachedData = await getData();
   if (cachedData) {
-    consoleTooltip();
+    consoleSwagger();
     return Promise.resolve(cachedData);
   } else {
     // 如果没有缓存数据，重新请求 Swagger 数据
@@ -110,7 +129,7 @@ const swaggerInstall = async (swaggerUrl) => {
       const swaggerData = client.spec;
       await storeData(swaggerData);
       hideLoading();
-      consoleTooltip();
+      consoleSwagger();
       return Promise.resolve(swaggerData);
     } catch (error) {
       hideLoading();
@@ -184,13 +203,7 @@ function hideLoading() {
   }
 }
 
-const install = async function (
-  Vue,
-  options = {
-    swaggerUrl: "",
-    outputDir: "",
-  }
-) {
+const install = async function (Vue) {
   // 设置全局数据
   components.map((item) => {
     Vue.component(`ol-${item.name}`, item);

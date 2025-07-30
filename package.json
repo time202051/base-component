@@ -1,18 +1,19 @@
 {
   "name": "ol-base-components",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "private": false,
   "main": "src/package/index.js",
   "bin": {
+    "init": "src/api/init.js",
     "run": "src/api/run.js",
     "api": "src/api/api.js",
-    "init": "src/bin/init.js"
+    "add": "src/bin/add.js"
   },
   "scripts": {
     "serve": "vue-cli-service serve --no-verify",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "init": "node src/bin/init.js"
+    "add": "node src/bin/add.js"
   },
   "dependencies": {
     "commander": "^14.0.0",
@@ -59,5 +60,7 @@
   "bugs": {
     "url": "https://github.com/time202051/base-component/issues",
     "email": "809949003@qq.com"
-  }
+  },
+  "license": "MIT",
+  "author": "lijiapeng"
 }

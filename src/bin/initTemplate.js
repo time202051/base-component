@@ -1,4 +1,49 @@
-const vue2Template = (moduleName) => {
+function generateKeyName(url, method) {
+  // 移除前缀 "/api/app"
+  const cleanedUrl = url.replace(/\/api\/app/, "");
+  const arr = cleanedUrl.split("/");
+
+  // 处理 {xxx} 转换为 ByXxx
+  const processedArr = arr.map(
+    (item) =>
+      item
+        .replace(
+          /{(.*?)}/,
+          (_, param) => `By${param.charAt(0).toUpperCase() + param.slice(1)}`
+        ) // 处理 {xxx}
+        .replace(/[-_]/g, "") // 去除 - 和 _
+  );
+
+  // 删除第一个空项
+  if (processedArr[0] === "") {
+    processedArr.shift();
+  }
+
+  // 去重和拼接相邻相同的项
+  const resultArr = [];
+  for (let i = 0; i < processedArr.length; i++) {
+    if (i === 0 || processedArr[i] !== processedArr[i - 1]) {
+      // 将每项首字母大写
+      const capitalizedItem =
+        processedArr[i].charAt(0).toUpperCase() + processedArr[i].slice(1);
+      resultArr.push(capitalizedItem);
+    }
+  }
+  const key = resultArr.join("");
+  return `${method.toLowerCase()}${key}`;
+}
+
+const vue2Template = (moduleName, options = {}) => {
+  // 只有当提供了 URL 时才调用 generateKeyName
+  let pageUrl = "";
+  let exportUrl = "";
+  if (options.url) {
+    pageUrl = generateKeyName(options.url, "get");
+  }
+  if (options.export) {
+    exportUrl = generateKeyName(options.export, "post");
+  }
+
   return `<!--
   Filename: ${moduleName}.vue
   name: ${moduleName}
@@ -8,13 +53,13 @@ const vue2Template = (moduleName) => {
 <template>
   <div>
     <ol-search
-      :url="swaggerUrl.getAdmissioninfoPagedresult"
+      :url="swaggerUrl.${pageUrl}"
       :form-search-data="formSearchData"
       @handleSearch="handleSearch"
       @handleReset="handleReset"
     />
     <ol-table
-      :url="swaggerUrl.getAdmissioninfoPagedresult"
+      :url="swaggerUrl.${pageUrl}"
       :paginations="paginations"
       :btnlist="this.hasBtn(this)"
       :empty-img="tableData.emptyImg"
@@ -27,13 +72,13 @@ const vue2Template = (moduleName) => {
   </div>
 </template>
 <script>
-import { getAdmissioninfoPagedresult } from "@/api/modules";
-import { AdmissionInfo } from '@/api/swagger'
+import { ${pageUrl} } from "@/api/modules";
+import { ${options.swaggerModule} } from '@/api/swagger'
 export default {
   name: "${moduleName}",
   data() {
     return {
-      swaggerUrl: AdmissionInfo,
+      swaggerUrl: ${options.swaggerModule},
       multipleSelection: [],
       // 查询表单
       formSearchData: {
@@ -77,7 +122,7 @@ export default {
         Page: this.paginations.page,
         MaxResultCount: this.paginations.limit
       };
-      const { result: { items = [], totalCount = 0 } = {} } = await getAdmissioninfoPagedresult(params, {
+      const { result: { items = [], totalCount = 0 } = {} } = await ${pageUrl}(params, {
         isLoading: true
       });
       this.tableData.rows = items;
@@ -106,6 +151,23 @@ export default {
     handleindexChange(val) {
       this.paginations.page = val;
       this.init();
+    },
+    export() {
+      let timer = this.formSearchData.value.createdTime
+        ;
+      this.formSearchData.value.BeginTime = timer ? timer[0] : "";
+      this.formSearchData.value.EndTime = timer ? timer[1] : "";
+      this.post({
+        url: ${options.swaggerModule}.${exportUrl},
+        isLoading: true,
+        responseType: "blob",
+        data: Object.assign(this.formSearchData.value, {
+          Page: this.paginations.page,
+          MaxResultCount: this.paginations.limit
+        })
+      }).then(res => {
+        this.fnexsl(res);
+      });
     },
   }
 }

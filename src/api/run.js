@@ -5,11 +5,21 @@ const path = require("path");
 
 // eg：node api http://220.179.249.140:20019 swagger.js
 
-// const swaggerUrl = "http://220.179.249.140:20019/swagger/v1/swagger.json";
 const swaggerUrl = process.argv[2]
   ? `${process.argv[2]}/swagger/v1/swagger.json`
   : "";
-const outputPath = process.argv[3] || "src/api/swagger.js" || "swagger.js";
+const outputPath = process.argv[3] || "src/api/swagger.js";
+
+const spinnerChars = ["|", "/", "-", "\\"];
+let spinnerIndex = 0;
+let dotCount = 0;
+const maxDots = 3;
+const spinner = setInterval(() => {
+  const dots = ".".repeat(dotCount);
+  process.stdout.write(`\r${spinnerChars[spinnerIndex]} 正在玩命加载中${dots}`);
+  spinnerIndex = (spinnerIndex + 1) % spinnerChars.length;
+  dotCount = (dotCount + 1) % (maxDots + 1);
+}, 300);
 
 http
   .get(swaggerUrl, (response) => {
@@ -28,10 +38,14 @@ http
       // 输出到文件
       // const outputPath = path.join(__dirname, "swagger.js");
       fs.writeFileSync(outputPath, apiEndpoints, "utf-8");
+      clearInterval(spinner);
+      process.stdout.write("\r");
       console.log(`API地址对象已生成并保存到 ${outputPath}`);
     });
   })
   .on("error", (err) => {
+    clearInterval(spinner);
+    process.stdout.write("\r");
     console.error("获取swagger.json时出错:", err);
   });
 
@@ -91,7 +105,6 @@ const generateApiModules = (swagger) => {
     for (const [method, details] of Object.entries(methods)) {
       // 获取接口的tags
       const tags = details.tags || [];
-      //   const summary = details.summary.replace(/\s+/g, "");
       tags.forEach((tag) => {
         const key = generateKeyName(url, method);
         if (apiModules[tag]) {
