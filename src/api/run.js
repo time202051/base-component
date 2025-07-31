@@ -10,6 +10,11 @@ const swaggerUrl = process.argv[2]
   : "";
 const outputPath = process.argv[3] || "src/api/swagger.js";
 
+let defaultRemark = `/**
+ * ⚠️  警告：此文件由脚本自动生成，请勿手动编辑！
+ * ��  如需修改，请重新运行生成脚本
+ * 📅  生成时间: ${new Date().toLocaleString()}
+ */\n\n`;
 const spinnerChars = ["|", "/", "-", "\\"];
 let spinnerIndex = 0;
 let dotCount = 0;
@@ -131,12 +136,7 @@ const generateApiModules = (swagger) => {
   }
 
   // 生成最终的输出字符串
-  let output = `/**
- * ⚠️  警告：此文件由脚本自动生成，请勿手动编辑！
- * ��  如需修改，请重新运行生成脚本
- * 📅  生成时间: ${new Date().toLocaleString()}
- * 
- */\n\n`;
+  let output = defaultRemark;
   for (const [moduleName, methods] of Object.entries(apiModules)) {
     const description = tags.find((e) => e.name === moduleName).description;
     output += `// ${description}\n`;

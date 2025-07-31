@@ -101,6 +101,7 @@
         @select-all="selectAll"
         @row-click="rowClick"
       >
+
         <el-table-column
           v-if="tableData.options && tableData.options.index"
           width="60"
@@ -116,48 +117,65 @@
           type="selection"
           label=""
         />
-        <template v-for="(item, index) in bindTableColumns">
-          <el-table-column
-            :key="index"
-            :label="item.label"
-            :prop="item.prop"
-            :min-width="item.minWidth || '150px'"
-            :show-overflow-tooltip="item.overHidden || true"
-            :type="item.type || 'normal'"
-            v-bind="{
+        <!-- 新增插槽，允许父组件自定义表头 -->
+        <template v-if="tableData.options && tableData.options.useSlotHeader">
+          <slot
+            name="table-columns"
+            :columns="bindTableColumns"
+          >
+            <template v-for="(item, index) in bindTableColumns">
+              <my-table-column
+                :column="item"
+                :key="index"
+              />
+            </template>
+          </slot>
+        </template>
+        <!-- 防止之前逻辑出现纰漏，故保留之前逻辑再扩展自定义插槽方式渲染 -->
+        <template v-else>
+          <template v-for="(item, index) in bindTableColumns">
+            <el-table-column
+              :key="index"
+              :label="item.label"
+              :prop="item.prop"
+              :min-width="item.minWidth || '150px'"
+              :show-overflow-tooltip="item.overHidden || true"
+              :type="item.type || 'normal'"
+              v-bind="{
               align: 'center',
               width: item.width,
               fixed: item.fixed || false,
               sortable: item.sortable || false,
               ...item.attrs,
             }"
-          >
-            <template v-slot:header>
-              <el-tooltip
-                :content="`${item.label} ${item.prop}`"
-                placement="top"
+            >
+              <template v-slot:header>
+                <el-tooltip
+                  :content="`${item.label} ${item.prop}`"
+                  placement="top"
+                >
+                  <span>{{ item.label }}</span>
+                </el-tooltip>
+              </template>
+              <template
+                v-if="item.render"
+                v-slot="scope"
               >
-                <span>{{ item.label }}</span>
-              </el-tooltip>
-            </template>
-            <template
-              v-if="item.render"
-              v-slot="scope"
-            >
-              <!-- 使用函数式组件进行dom渲染 -->
-              <render-dom :render="() => item.render(scope.row)" />
-            </template>
-            <template
-              v-else-if="item.renderSlot"
-              v-slot="scope"
-            >
-              <slot
-                :row="scope.row"
-                :name="item.prop"
-              />
-            </template>
-          </el-table-column>
+                <render-dom :render="() => item.render(scope.row)" />
+              </template>
+              <template
+                v-else-if="item.renderSlot"
+                v-slot="scope"
+              >
+                <slot
+                  :row="scope.row"
+                  :name="item.prop"
+                />
+              </template>
+            </el-table-column>
+          </template>
         </template>
+
         <el-table-column
           v-if="tableData.operates && tableData.operates.length > 0"
           label="操作"
@@ -260,6 +278,77 @@ export default {
         return <div>{renDom.props.render()}</div>;
       },
     },
+    myTableColumn: {
+      functional: true,
+      props: {
+        column: { type: Object, required: true }
+      },
+      render(h, ctx) {
+        const col = ctx.props.column;
+
+        // 多级表头处理
+        if (col.children && col.children.length) {
+          return h(
+            'el-table-column',
+            {
+              props: {
+                label: col.label,
+                ...col.attrs
+              }
+            },
+            col.children.map((child, idx) =>
+              h(ctx.parent.$options.components.myTableColumn, {
+                props: { column: child },
+                key: idx
+              })
+            )
+          );
+        }
+
+        // 单列表头处理
+        return h(
+          'el-table-column',
+          {
+            props: {
+              label: col.label,
+              prop: col.prop,
+              minWidth: col.minWidth || '150px',
+              showOverflowTooltip: col.overHidden || true,
+              type: col.type || 'normal',
+              align: 'center',
+              width: col.width,
+              fixed: col.fixed || false,
+              sortable: col.sortable || false,
+              ...col.attrs
+            }
+          },
+          [
+            // 表头插槽 - 添加 el-tooltip
+            h('template', { slot: 'header' }, [
+              h('el-tooltip', {
+                props: {
+                  content: `${col.label} ${col.prop}`,
+                  placement: 'top'
+                }
+              }, [
+                h('span', col.label)
+              ])
+            ]),
+            // 内容插槽 - 支持自定义渲染
+            col.render ? h('template', { slot: 'default' }, {
+              render: (scope) => h(ctx.parent.$options.components.renderDom, {
+                props: { render: () => col.render(scope.row) }
+              })
+            }) : null,
+            // 插槽渲染
+            col.renderSlot ? h('template', { slot: 'default' }, {
+              render: (scope) => ctx.parent.$scopedSlots[col.prop] ?
+                ctx.parent.$scopedSlots[col.prop](scope) : null
+            }) : null
+          ].filter(Boolean)
+        );
+      }
+    }
   },
   model: {
     prop: "multipleSelection",
@@ -305,6 +394,7 @@ export default {
             headTool: true, // 开启头部工具栏
             refreshBtn: true, // 开启表格头部刷新按钮
             downloadBtn: true, // 开启表格头部下载按钮
+            useSlotHeader: false, // 使用插槽自定义表头
           }, // 序号和复选框
           rows: [], // 表数据
           columns: [], // 表头
@@ -402,30 +492,103 @@ export default {
     },
   },
   methods: {
+    // init() {
+    //   // 从 IndexedDB 中获取 Swagger 数据
+    //   getData().then((swaggerData) => {
+    //     const swaggerColumns = swaggerData.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties;
+
+    //     Object.keys(swaggerColumns).forEach(key => {
+    //       const item = swaggerColumns[key];
+    //       let tempItem = this.tableData.columns.find((e) => e.prop == key);
+    //       if (tempItem) {
+    //         tempItem = { ...item, ...tempItem };
+    //       } else if (item.description) {
+    //         this.tableData.columns.push({
+    //           prop: key,
+    //           label: item.description,
+    //           show: true,
+    //           sortable: false,
+    //           attrs: {}
+    //         });
+    //       }
+    //     });
+    //     console.log(`\x1b[36m\x1b[4mol插件-表格`, this.tableData.columns)
+    //   }).catch((error) => {
+    //     console.error("获取 Swagger 数据失败:", error);
+    //   });
+    // },
+    // 支持多级表头 useSlotHeader: true，且支持排序，通过columns中的顺序实现
+    //  columns: [
+    //       {
+    //         label: '一级表头',
+    //         children: [{ prop: 'bindStateEnum', label: '112' }, { prop: 'tagNumber' }]
+    //       },
+    //       {
+    //         prop: "remark",
+    //         label: "备注123",
+    //       },
+    //     ],
     init() {
       // 从 IndexedDB 中获取 Swagger 数据
       getData().then((swaggerData) => {
         const swaggerColumns = swaggerData.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties;
 
+        // 递归映射函数
+        const mapSwaggerToColumns = (columns) => {
+          columns.forEach(column => {
+            if (column.children && column.children.length) {
+              mapSwaggerToColumns(column.children);
+            } else {
+              if (column.prop && swaggerColumns[column.prop]) {
+                const swaggerItem = swaggerColumns[column.prop];
+                Object.assign(column, {
+                  label: swaggerItem.description,
+                  show: true,
+                  sortable: false,
+                  ...column
+                });
+              }
+            }
+          });
+        };
+
+        mapSwaggerToColumns(this.tableData.columns);
+
         Object.keys(swaggerColumns).forEach(key => {
           const item = swaggerColumns[key];
-          let tempItem = this.tableData.columns.find((e) => e.prop == key);
-          if (tempItem) {
-            tempItem = { ...item, ...tempItem };
-          } else if (item.description) {
+          const existingColumn = this.findColumnByProp(this.tableData.columns, key);
+          if (!existingColumn && item.description) {
             this.tableData.columns.push({
               prop: key,
               label: item.description,
               show: true,
               sortable: false,
-              attrs: {}
+              attrs: {},
+              ...item
             });
           }
         });
+
         console.log(`\x1b[36m\x1b[4mol插件-表格`, this.tableData.columns)
       }).catch((error) => {
         console.error("获取 Swagger 数据失败:", error);
       });
+    },
+    // 递归查找列配置的辅助方法
+    findColumnByProp(columns, prop) {
+      for (const column of columns) {
+        if (column.children && column.children.length) {
+          const found = this.findColumnByProp(column.children, prop);
+          if (found) return found;
+        } else if (column.prop === prop) {
+          return column;
+        }
+      }
+      return null;
+    },
+    // 多级表头转换
+    multilevelHeader() {
+
     },
     radioChange() {
       this.$emit("radioChange", this.twinPage);
