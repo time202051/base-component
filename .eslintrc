@@ -1,8 +1,59 @@
-// {
-//   "rules": {
-//     "no-console": "off", // 关闭 console 相关的警告
-//     "no-unused-vars": "off", // 关闭未使用变量的警告
-//     "vue/no-mutating-props": "off", // 关闭对 props 的修改警告
-//     "no-undef": "off" // 关闭未定义变量的警告
-//   }
-// }
+{
+  "extends": [
+    "plugin:vue/essential", // Vue规则 官方 ESLint 插件 eslint-plugin-vue
+    "eslint:recommended", // 基础规则 ESLint 自带的推荐规则
+    "prettier", // 关闭所有和 Prettier 冲突的 ESLint 规则
+    "plugin:prettier/recommended" //启用 prettier 插件，让 ESLint 把 Prettier 的格式问题当成 ESLint 报错
+  ],
+  "parserOptions": {
+    "parser": "@babel/eslint-parser",
+    "requireConfigFile": false,
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "es6": true
+  },
+  "rules": {
+    "no-console": "warn",
+    "no-debugger": "warn",
+    "no-unused-vars": "warn",
+    "vue/no-unused-components": "warn",
+    "vue/no-unused-vars": "warn",
+    "vue/multi-word-component-names": "off",
+    "vue/no-v-html": "off",
+    "vue/require-default-prop": "off",
+    "vue/require-prop-types": "off",
+    "vue/no-mutating-props": "warn",
+    "vue/no-side-effects-in-computed-properties": "warn",
+    "vue/valid-v-for": "error",
+    "vue/valid-v-if": "error",
+    "vue/valid-v-model": "error",
+    "vue/valid-template-root": "error",
+    "vue/no-duplicate-attributes": "error",
+    "vue/no-parsing-error": "error",
+    "vue/require-v-for-key": "error",
+    "vue/valid-v-bind": "error",
+    "vue/valid-v-on": "error",
+    "vue/valid-v-slot": "error",
+    "vue/valid-v-text": "error",
+    "vue/valid-v-html": "error",
+    "vue/valid-v-pre": "error",
+    "vue/valid-v-cloak": "error",
+    "vue/valid-v-once": "error",
+    "vue/valid-v-show": "error",
+    "vue/valid-v-else": "error",
+    "vue/valid-v-else-if": "error",
+    "prefer-const": "warn",
+    "no-var": "error",
+    "eqeqeq": "error",
+    "no-undef": "error",
+    "no-redeclare": "error",
+    "no-unreachable": "error",
+    "strict": ["error", "global"],
+    "no-implicit-globals": "error",
+    "no-unused-expressions": "error"
+  }
+}

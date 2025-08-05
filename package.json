@@ -1,6 +1,6 @@
 {
   "name": "ol-base-components",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "private": false,
   "main": "src/package/index.js",
   "bin": {
@@ -30,6 +30,9 @@
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.8",
     "sass": "^1.89.2",
     "sass-loader": "^16.0.5",
     "vue-template-compiler": "^2.6.14"
