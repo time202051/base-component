@@ -412,6 +412,130 @@ export default {
 </script>
 ```
 
+# 表格组件多级表头使用说明
+
+## 功能简介
+
+本表格组件基于 Element-UI，支持：
+
+- 多级表头（嵌套 children）
+- 多级表头顺序可通过 `beforeProp` 字段灵活控制
+- 表头字段顺序优先以 `columns` 配置为准，后补充 swagger 字段
+- 目前 `beforeProp` 仅支持多级表头，普通字段暂不支持
+
+## 1. 多级表头配置方法
+
+### 基本结构
+
+```js
+tableData: {
+  columns: [
+    // 普通字段
+    { prop: "unit", show: false },
+    // 多级表头
+    {
+      label: "多级表头",
+      beforeProp: "qty", // 该多级表头会插入到 qty 字段之后
+      show: true,
+      children: [
+        {
+          label: "子表头1",
+          children: [
+            { prop: "creationTime" },
+            { prop: "orginalBillNo" }
+          ]
+        },
+        { prop: "tagNumber" },
+        { prop: "batch" }
+      ]
+    },
+    // 另一个多级表头
+    {
+      label: "2222",
+      beforeProp: "containerType", // 插入到 containerType 字段之后
+      children: [
+        { prop: "regionCode" },
+        { prop: "taskNo" }
+      ]
+    }
+    // ... 其它字段
+  ],
+  rows: [
+    // 数据行
+  ],
+  // 其它配置
+}
+```
+
+### 说明
+
+- **多级表头**通过 `children` 字段递归嵌套实现。
+- 每个多级表头对象可包含：
+  - `label`：表头名称
+  - `beforeProp`：插入到指定字段（prop）之后
+  - `show`：是否显示
+  - `children`：子表头数组
+- **beforeProp** 仅支持在多级表头对象上设置，用于指定该多级表头插入到哪个字段（prop）之后。
+- 普通字段（非多级表头）暂不支持 `beforeProp`，只能手动在 `columns` 中调整顺序。
+
+## 2. 字段顺序规则
+
+- 表头字段顺序优先以 `columns` 配置为准。
+- 如果有 swagger 字段未在 `columns` 中出现，会自动补充到表头最后。
+- 多级表头的位置可通过 `beforeProp` 字段灵活调整。
+- 普通字段顺序只能通过手动调整 `columns` 数组顺序实现。
+
+## 3. 示例
+
+```js
+columns: [
+  { prop: "unit", show: false },
+  {
+    label: "多级表头",
+    beforeProp: "qty",
+    show: true,
+    children: [
+      {
+        label: "子表头1",
+        children: [
+          { prop: "creationTime" },
+          { prop: "orginalBillNo" }
+        ]
+      },
+      { prop: "tagNumber" },
+      { prop: "batch" }
+    ]
+  },
+  {
+    label: "2222",
+    beforeProp: "containerType",
+    children: [
+      { prop: "regionCode" },
+      { prop: "taskNo" }
+    ]
+  }
+]
+```
+
+## 4. 注意事项
+
+- 多级表头的 `beforeProp` 仅对多级表头生效，普通字段无效。
+- 普通字段顺序请直接在 `columns` 数组中调整。
+- 如果需要隐藏某个字段，可设置 `show: false`。
+- 组件会自动合并 swagger 字段，但顺序以 `columns` 为主。
+
+## 5. 常见问题
+
+- **Q:** 多级表头能否嵌套多层？
+  **A:** 支持多层嵌套，`children` 可递归配置。
+- **Q:** beforeProp 可以用于普通字段吗？
+  **A:** 暂不支持，只能用于多级表头对象。
+- **Q:** 字段顺序错乱怎么办？
+  **A:** 检查 `columns` 配置和多级表头的 `beforeProp` 设置，普通字段请手动调整顺序。
+
+如有更多问题，请查阅源码或联系维护者。
+
+
 ## 贡献
 
 欢迎任何形式的贡献！如果您有建议或发现问题，请提交 issue 或 pull request。
