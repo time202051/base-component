@@ -401,7 +401,7 @@ export default {
             url: PublicAggregate.dictionaries,
             fn: this.getTable,
         },
-      ,
+      }
     };
   },
 };
