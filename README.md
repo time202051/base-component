@@ -35,7 +35,7 @@ import OlBaseComponents from "ol-base-components"; // 导入组件库
 Vue.use(OlBaseComponents);
 
 new Vue({
-  render: (h) => h(App),
+  render: h => h(App),
 }).$mount("#app");
 ```
 
@@ -52,11 +52,9 @@ Vue.use(OlBaseComponents);
 
 //安装，可以在登录
 import { swaggerInstall } from "ol-base-components";
-swaggerInstall("http://192.168.xxx.xxx:20019/swagger/v1/swagger.json").then(
-  () => {
-    // 成功获取swagger数据后加载页面， 这里可以写登录接口成功后执行的逻辑
-  }
-);
+swaggerInstall("http://192.168.xxx.xxx:20019/swagger/v1/swagger.json").then(() => {
+  // 成功获取swagger数据后加载页面， 这里可以写登录接口成功后执行的逻辑
+});
 
 // 卸载
 import { swaggerUnload } from "ol-base-components";
@@ -164,58 +162,58 @@ npx add aaa -p src/view -u /api/app/business-report/stock-bIPaged-result -e /api
 </template>
 
 <script>
-export default {
-  data() {
-    return {
-      formSearchData: {
-        reset: true,
-        expendShow: false,
-        value: {
-          WarehouseCode: null,
-          WarehouseName: null,
+  export default {
+    data() {
+      return {
+        formSearchData: {
+          reset: true,
+          expendShow: false,
+          value: {
+            WarehouseCode: null,
+            WarehouseName: null,
+          },
+          tableSearch: [
+            {
+              label: "仓库编码",
+              value: "WarehouseCode",
+              inputType: "text",
+            },
+            {
+              label: "仓库名称",
+              value: "WarehouseName",
+              inputType: "text",
+            },
+          ],
         },
-        tableSearch: [
-          {
-            label: "仓库编码",
-            value: "WarehouseCode",
-            inputType: "text",
-          },
-          {
-            label: "仓库名称",
-            value: "WarehouseName",
-            inputType: "text",
-          },
-        ],
+      };
+    },
+    mounted() {
+      this.getTable();
+    },
+    method: {
+      getTable() {
+        //   this.get({
+        //     url: Basic.getWarehoseList,
+        //     isLoading: true,
+        //     data: Object.assign(this.formSearchData.value, {
+        //       Page: this.paginations.page,
+        //       MaxResultCount: this.paginations.limit,
+        //     }),
+        //   }).then((res) => {
+        //     this.tableData.rows = res.result.items;
+        //     this.paginations.total = res.result.totalCount;
+        //     this.tableData.emptyImg = true;
+        //   });
       },
-    };
-  },
-  mounted() {
-    this.getTable();
-  },
-  method: {
-    getTable() {
-      //   this.get({
-      //     url: Basic.getWarehoseList,
-      //     isLoading: true,
-      //     data: Object.assign(this.formSearchData.value, {
-      //       Page: this.paginations.page,
-      //       MaxResultCount: this.paginations.limit,
-      //     }),
-      //   }).then((res) => {
-      //     this.tableData.rows = res.result.items;
-      //     this.paginations.total = res.result.totalCount;
-      //     this.tableData.emptyImg = true;
-      //   });
+      handleSearch(from) {
+        var self = this;
+        self.formSearchData.value = { ...from };
+        self.paginations.page = 1;
+        this.getTable(); // 获取表格数据
+      },
+      handleReset() {},
     },
-    handleSearch(from) {
-      var self = this;
-      self.formSearchData.value = { ...from };
-      self.paginations.page = 1;
-      this.getTable(); // 获取表格数据
-    },
-    handleReset() {},
-  },
-};
+  };
 </script>
 ```
 
@@ -241,111 +239,109 @@ export default {
       @handleindexChange="handleindexChange"
     >
       <template slot="classes" slot-scope="scope">
-        <div style="color: #1682e6; cursor: pointer" @click="config(scope)">
-          设置
-        </div>
+        <div style="color: #1682e6; cursor: pointer" @click="config(scope)">设置</div>
       </template>
     </ol-table>
   </div>
 </template>
 
 <script>
-export default {
-  data() {
-    return {
-      multipleSelection: [],
-      tableData: {
-        loading: false,
-        emptyImg: true,
-        options: {
-          selection: true, //多选框
-          index: null, //序号
-          headTool: true, //开启头部工具栏
-          refreshBtn: true, //开启表格头部刷新按钮
-          downloadBtn: true, //开启表格头部下载按钮
-        }, //序号和复选框
-        rows: [], //表数据
-        columns: [
-          {
-            label: "",
-            minWidth: "",
-            type: "selection",
-            show: true,
-          },
-          {
-            prop: "warehouseCode",
-            label: "仓库编码",
-            minWidth: "",
-            sortable: false,
-            show: true,
-          },
-          {
-            prop: "warehouseName",
-            label: "仓库名称",
-            minWidth: "",
-            sortable: false,
-            show: true,
-          },
-          {
-            prop: "enabledDesc",
-            label: "状态",
-            minWidth: "",
-            sortable: false,
-            show: true,
-          },
-          {
-            prop: "createdUser",
-            label: "创建人",
-            minWidth: "",
-            sortable: false,
-            show: true,
-          },
-          {
-            prop: "createTime",
-            label: "创建时间",
-            minWidth: "",
-            show: true,
-          },
-          {
-            prop: "classes",
-            label: "班次",
-            minWidth: "",
-            show: true,
-            renderSlot: true,
-          },
-          {
-            prop: "remark",
-            label: "备注",
-            minWidth: "",
-            show: true,
-          },
-        ], //表头
-        operates: [], //表格里面的操作按钮
-        tableHeightDiff: 300,
+  export default {
+    data() {
+      return {
+        multipleSelection: [],
+        tableData: {
+          loading: false,
+          emptyImg: true,
+          options: {
+            selection: true, //多选框
+            index: null, //序号
+            headTool: true, //开启头部工具栏
+            refreshBtn: true, //开启表格头部刷新按钮
+            downloadBtn: true, //开启表格头部下载按钮
+          }, //序号和复选框
+          rows: [], //表数据
+          columns: [
+            {
+              label: "",
+              minWidth: "",
+              type: "selection",
+              show: true,
+            },
+            {
+              prop: "warehouseCode",
+              label: "仓库编码",
+              minWidth: "",
+              sortable: false,
+              show: true,
+            },
+            {
+              prop: "warehouseName",
+              label: "仓库名称",
+              minWidth: "",
+              sortable: false,
+              show: true,
+            },
+            {
+              prop: "enabledDesc",
+              label: "状态",
+              minWidth: "",
+              sortable: false,
+              show: true,
+            },
+            {
+              prop: "createdUser",
+              label: "创建人",
+              minWidth: "",
+              sortable: false,
+              show: true,
+            },
+            {
+              prop: "createTime",
+              label: "创建时间",
+              minWidth: "",
+              show: true,
+            },
+            {
+              prop: "classes",
+              label: "班次",
+              minWidth: "",
+              show: true,
+              renderSlot: true,
+            },
+            {
+              prop: "remark",
+              label: "备注",
+              minWidth: "",
+              show: true,
+            },
+          ], //表头
+          operates: [], //表格里面的操作按钮
+          tableHeightDiff: 300,
+        },
+        paginations: {
+          page: 1, //当前位于那页面
+          total: 10, //总数
+          limit: 30, //一页显示多少条
+          pagetionShow: true,
+        },
+      };
+    },
+    methods: {
+      SelectionChange(row) {
+        this.multipleSelection = row;
       },
-      paginations: {
-        page: 1, //当前位于那页面
-        total: 10, //总数
-        limit: 30, //一页显示多少条
-        pagetionShow: true,
+      handleSizeChange(val) {
+        this.paginations.page = 1;
+        this.paginations.limit = val;
+        this.getTable();
       },
-    };
-  },
-  methods: {
-    SelectionChange(row) {
-      this.multipleSelection = row;
+      handleindexChange(val) {
+        this.paginations.page = val;
+        this.getTable();
+      },
     },
-    handleSizeChange(val) {
-      this.paginations.page = 1;
-      this.paginations.limit = val;
-      this.getTable();
-    },
-    handleindexChange(val) {
-      this.paginations.page = val;
-      this.getTable();
-    },
-  },
-};
+  };
 </script>
 ```
 
@@ -423,6 +419,10 @@ export default {
 - 表头字段顺序优先以 `columns` 配置为准，后补充 swagger 字段
 - 目前 `beforeProp` 仅支持多级表头，普通字段暂不支持
 
+#### 效果图
+
+![Local demo](./src/assets/duojibiaotou.png "Local demo")
+
 ## 1. 多级表头配置方法
 
 ### 基本结构
@@ -434,12 +434,12 @@ tableData: {
     { prop: "unit", show: false },
     // 多级表头
     {
-      label: "多级表头",
+      label: "一级表头",
       beforeProp: "qty", // 该多级表头会插入到 qty 字段之后
       show: true,
       children: [
         {
-          label: "子表头1",
+          label: "二级表头",
           children: [
             { prop: "creationTime" },
             { prop: "orginalBillNo" }
@@ -451,7 +451,7 @@ tableData: {
     },
     // 另一个多级表头
     {
-      label: "2222",
+      label: "一级表头-1",
       beforeProp: "containerType", // 插入到 containerType 字段之后
       children: [
         { prop: "regionCode" },
@@ -484,57 +484,6 @@ tableData: {
 - 如果有 swagger 字段未在 `columns` 中出现，会自动补充到表头最后。
 - 多级表头的位置可通过 `beforeProp` 字段灵活调整。
 - 普通字段顺序只能通过手动调整 `columns` 数组顺序实现。
-
-## 3. 示例
-
-```js
-columns: [
-  { prop: "unit", show: false },
-  {
-    label: "多级表头",
-    beforeProp: "qty",
-    show: true,
-    children: [
-      {
-        label: "子表头1",
-        children: [
-          { prop: "creationTime" },
-          { prop: "orginalBillNo" }
-        ]
-      },
-      { prop: "tagNumber" },
-      { prop: "batch" }
-    ]
-  },
-  {
-    label: "2222",
-    beforeProp: "containerType",
-    children: [
-      { prop: "regionCode" },
-      { prop: "taskNo" }
-    ]
-  }
-]
-```
-
-## 4. 注意事项
-
-- 多级表头的 `beforeProp` 仅对多级表头生效，普通字段无效。
-- 普通字段顺序请直接在 `columns` 数组中调整。
-- 如果需要隐藏某个字段，可设置 `show: false`。
-- 组件会自动合并 swagger 字段，但顺序以 `columns` 为主。
-
-## 5. 常见问题
-
-- **Q:** 多级表头能否嵌套多层？
-  **A:** 支持多层嵌套，`children` 可递归配置。
-- **Q:** beforeProp 可以用于普通字段吗？
-  **A:** 暂不支持，只能用于多级表头对象。
-- **Q:** 字段顺序错乱怎么办？
-  **A:** 检查 `columns` 配置和多级表头的 `beforeProp` 设置，普通字段请手动调整顺序。
-
-如有更多问题，请查阅源码或联系维护者。
-
 
 ## 贡献
 
