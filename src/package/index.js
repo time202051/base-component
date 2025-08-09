@@ -1,6 +1,7 @@
 import OlTable from "./table";
 import OlSearch from "./formSearch";
 import Dialog from "./dialog";
+import Form from "./form";
 import SwaggerClient from "swagger-client";
 
 const consoleTooltip = () => {
@@ -212,5 +213,5 @@ const install = async function (Vue) {
 };
 
 export default install;
-export { OlTable, OlSearch, Dialog };
+export { OlTable, OlSearch, Dialog, Form };
 export { swaggerInstall, swaggerUnload };
