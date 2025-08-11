@@ -1,7 +1,7 @@
 import OlTable from "./table";
 import OlSearch from "./formSearch";
 import Dialog from "./dialog";
-import Form from "./form";
+import OlForm from "./form";
 import SwaggerClient from "swagger-client";
 
 const consoleTooltip = () => {
@@ -144,7 +144,6 @@ const swaggerUnload = async function () {
   await clearData(); // 清空 IndexedDB 中的缓存数据
 };
 
-const components = [OlTable, OlSearch, Dialog];
 
 // 自定义加载指示器
 function showLoading() {
@@ -204,6 +203,8 @@ function hideLoading() {
   }
 }
 
+
+const components = [OlTable, OlSearch, Dialog, OlForm];
 const install = async function (Vue) {
   // 设置全局数据
   components.map((item) => {
@@ -213,5 +214,5 @@ const install = async function (Vue) {
 };
 
 export default install;
-export { OlTable, OlSearch, Dialog, Form };
+export { OlTable, OlSearch, Dialog, OlForm };
 export { swaggerInstall, swaggerUnload };

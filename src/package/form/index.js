@@ -1,7 +1,7 @@
-import Form from "./src/index.vue";
+import OlForm from "./src/index.vue";
 
-Form.install = function (Vue) {
-  Vue.component("ol-form ", Form);
+OlForm.install = function (Vue) {
+  Vue.component("ol-form ", OlForm);
 };
 
-export default Form;
+export default OlForm;

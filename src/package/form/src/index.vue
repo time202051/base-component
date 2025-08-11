@@ -153,6 +153,8 @@
           <template v-else-if="item.type == 'slot'">
             <slot :name="item.name" :item="item" />
           </template>
+          <!-- 兜底 -->
+          <div v-else style="color: red">"{{ item.type }}"类型暂不支持，请手动添加</div>
         </el-form-item>
       </template>
     </el-form>
@@ -209,6 +211,9 @@
   | selectChange| 选择器值变化事件 | {obj: 当前项配置, val: 变化后的值} |
   -->
   <script>
+import { getData } from "../../index.js";
+import { initForm } from "../../../utils/initData.js";
+
 // interface FormItem {
 //   type: Number;
 //   title?: String;
@@ -219,6 +224,11 @@
 export default {
   name: "form",
   props: {
+    url: {
+      type: String,
+      // default: "/api/app/warehouse/warehouse",
+      default: "",
+    },
     form: Object,
     // 默认值
     defaultValue: {
@@ -302,11 +312,13 @@ export default {
         form.value[key] = this.defaultValue[key];
       });
     }
-    this.init();
+    initForm({
+      url: this.url,
+      form: this.form,
+    });
   },
   // beforeDestroy() {},
   methods: {
-    init() {},
     // 保留之前的change调用方式，并添扩展新的
     selectChangeHandle(val, item) {
       (item &&

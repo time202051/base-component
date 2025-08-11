@@ -5,9 +5,7 @@ const SwaggerClient = require("swagger-client");
 
 // eg：node api http://220.179.249.140:20019 ./modules
 
-const swaggerUrl = process.argv[2]
-  ? `${process.argv[2]}/swagger/v1/swagger.json`
-  : "";
+const swaggerUrl = process.argv[2] ? `${process.argv[2]}/swagger/v1/swagger.json` : "";
 const modulesDir = process.argv[3] ? process.argv[3] : "src/api/modules";
 
 let defaultRemark = `/**
@@ -39,7 +37,7 @@ function setFileReadOnly(filePath) {
 }
 
 SwaggerClient(swaggerUrl)
-  .then((client) => {
+  .then(client => {
     const swaggerData = client.spec; // 获取 Swagger 数据
 
     const apiModules = generateApiModules(swaggerData);
@@ -49,7 +47,7 @@ SwaggerClient(swaggerUrl)
       console.log(`创建了文件夹: ${modulesDir}`);
     }
 
-    Object.keys(apiModules).forEach((fileName) => {
+    Object.keys(apiModules).forEach(fileName => {
       const outputPath = path.join(modulesDir, `${fileName}.js`);
       fs.writeFileSync(outputPath, apiModules[fileName], "utf-8");
       setFileReadOnly(outputPath);
@@ -59,7 +57,7 @@ SwaggerClient(swaggerUrl)
     // 生成index.js入口文件
     createIndexFile(apiModules);
   })
-  .catch((err) => {
+  .catch(err => {
     console.error("获取 Swagger 数据时出错:", err);
   })
   .finally(() => {
@@ -69,7 +67,7 @@ SwaggerClient(swaggerUrl)
 
 function createIndexFile(apiModules) {
   let str = defaultRemark;
-  Object.keys(apiModules).forEach((fileName) => {
+  Object.keys(apiModules).forEach(fileName => {
     str += `export * from "./${fileName}";\n`;
   });
   const outputPath = path.join(modulesDir, `index.js`);
@@ -87,12 +85,9 @@ function generateKeyName(url, method) {
 
   // 处理 {xxx} 转换为 ByXxx
   const processedArr = arr.map(
-    (item) =>
+    item =>
       item
-        .replace(
-          /{(.*?)}/,
-          (_, param) => `By${param.charAt(0).toUpperCase() + param.slice(1)}`
-        ) // 处理 {xxx}
+        .replace(/{(.*?)}/, (_, param) => `By${param.charAt(0).toUpperCase() + param.slice(1)}`) // 处理 {xxx}
         .replace(/[-_]/g, "") // 去除 - 和 _
   );
 
@@ -106,8 +101,7 @@ function generateKeyName(url, method) {
   for (let i = 0; i < processedArr.length; i++) {
     if (i === 0 || processedArr[i] !== processedArr[i - 1]) {
       // 将每项首字母大写
-      const capitalizedItem =
-        processedArr[i].charAt(0).toUpperCase() + processedArr[i].slice(1);
+      const capitalizedItem = processedArr[i].charAt(0).toUpperCase() + processedArr[i].slice(1);
       resultArr.push(capitalizedItem);
     }
   }
@@ -116,7 +110,7 @@ function generateKeyName(url, method) {
 }
 
 // java数据类型转成js数据类型
-const javaTypeToJsType = (javaType) => {
+const javaTypeToJsType = javaType => {
   switch (javaType) {
     case "integer":
       return "number";
@@ -130,11 +124,11 @@ const javaTypeToJsType = (javaType) => {
 };
 
 // 根据parameters参数返回path对应的接口参数，path参数都是必填的
-const getPathParameters = (parameters) => {
+const getPathParameters = parameters => {
   if (!parameters && !Array.isArray(parameters)) return [];
   return parameters
-    .filter((param) => param.in === "path") // 过滤出路径参数
-    .map((param) => param.name); // 提取name属性
+    .filter(param => param.in === "path") // 过滤出路径参数
+    .map(param => param.name); // 提取name属性
 };
 
 const MethodEnum = {
@@ -143,14 +137,12 @@ const MethodEnum = {
   put: "put",
   delete: "del",
 };
-const generateApiModules = (swagger) => {
+const generateApiModules = swagger => {
   const { tags, paths } = swagger;
   const apiModules = {};
   // 初始化模块对象
-  tags.forEach((tag) => {
-    apiModules[
-      tag.name
-    ] = `${defaultRemark}import { api } from "@/api/request/sendRuest"\n`;
+  tags.forEach(tag => {
+    apiModules[tag.name] = `${defaultRemark}import { api } from "@/api/request/sendRuest"\n`;
   });
 
   for (const [url, methods] of Object.entries(paths)) {
@@ -158,7 +150,7 @@ const generateApiModules = (swagger) => {
       const tags = details.tags || [];
       const parameters = details.parameters || [];
       const requestBody = details.requestBody || {};
-      tags.forEach((tag) => {
+      tags.forEach(tag => {
         if (Object.keys(apiModules).includes(tag)) {
           // 生成 JSDoc 注释
           let functionDoc = ``;
@@ -171,21 +163,15 @@ const generateApiModules = (swagger) => {
           //parameters此参数
           if (Object.keys(details).includes("parameters")) {
             functionDoc += ` * @param {Object} params - 请求参数\n`;
-            parameters.forEach((param) => {
-              const paramType = param.schema
-                ? javaTypeToJsType(param.schema.type)
-                : "any";
+            parameters.forEach(param => {
+              const paramType = param.schema ? javaTypeToJsType(param.schema.type) : "any";
               const paramName = param.name;
-              const temp = param.required
-                ? `params.${paramName}`
-                : `[params.${paramName}]`;
-              functionDoc += ` * @param {${paramType}} ${temp} - ${
-                param.description || ""
-              }\n`;
+              const temp = param.required ? `params.${paramName}` : `[params.${paramName}]`;
+              functionDoc += ` * @param {${paramType}} ${temp} - ${param.description || ""}\n`;
             });
             pathParameters = getPathParameters(parameters);
             // 是否有query参数
-            hasQuery = parameters.some((e) => e.in === "query");
+            hasQuery = parameters.some(e => e.in === "query");
           }
 
           //   如果有requestBody
@@ -201,7 +187,7 @@ const generateApiModules = (swagger) => {
             if (type === "object") {
               functionDoc += ` * @param {Object} body - 请求参数\n`;
 
-              Object.keys(properties).forEach((key) => {
+              Object.keys(properties).forEach(key => {
                 // 是否必填
                 const isRequired =
                   schema.required &&
@@ -209,9 +195,9 @@ const generateApiModules = (swagger) => {
                   schema.required.includes(key);
 
                 const temp = isRequired ? `body.${key}` : `[body.${key}]`;
-                functionDoc += ` * @param {${javaTypeToJsType(
-                  properties[key].type
-                )}} ${temp} - ${properties[key].description || ""}\n`;
+                functionDoc += ` * @param {${javaTypeToJsType(properties[key].type)}} ${temp} - ${
+                  properties[key].description || ""
+                }\n`;
               });
               if (Object.keys(properties).length > 1) hasBody = true;
             } else if (type === "array") {
@@ -226,13 +212,13 @@ const generateApiModules = (swagger) => {
           let functionParams = [];
           if (hasQuery) functionParams.push("params");
           if (hasBody) functionParams.push("body");
-          Object.assign(functionParams, pathParameters);
+          // Object.assign(functionParams, pathParameters);
+          functionParams = [...pathParameters, ...functionParams];
           functionParams.push("options = {}");
           // 函数
-          functionDoc += `export const ${generateKeyName(
-            url,
-            method
-          )} = (${functionParams.join(", ")}) => {\n`;
+          functionDoc += `export const ${generateKeyName(url, method)} = (${functionParams.join(
+            ", "
+          )}) => {\n`;
 
           functionDoc += ` return api({\n`;
           functionDoc += `  url: \`${url.replace(/{/g, "${")}\`,\n`;

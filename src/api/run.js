@@ -5,9 +5,7 @@ const path = require("path");
 
 // eg：node api http://220.179.249.140:20019 swagger.js
 
-const swaggerUrl = process.argv[2]
-  ? `${process.argv[2]}/swagger/v1/swagger.json`
-  : "";
+const swaggerUrl = process.argv[2] ? `${process.argv[2]}/swagger/v1/swagger.json` : "";
 const outputPath = process.argv[3] || "src/api/swagger.js";
 
 let defaultRemark = `/**
@@ -38,11 +36,11 @@ function setFileReadOnly(filePath) {
 }
 
 http
-  .get(swaggerUrl, (response) => {
+  .get(swaggerUrl, response => {
     let data = "";
 
     // 监听数据事件
-    response.on("data", (chunk) => {
+    response.on("data", chunk => {
       data += chunk;
     });
 
@@ -61,7 +59,7 @@ http
       setFileReadOnly(outputPath);
     });
   })
-  .on("error", (err) => {
+  .on("error", err => {
     clearInterval(spinner);
     process.stdout.write("\r");
     console.error("获取swagger.json时出错:", err);
@@ -75,12 +73,9 @@ function generateKeyName(url, method) {
 
   // 处理 {xxx} 转换为 ByXxx
   const processedArr = arr.map(
-    (item) =>
+    item =>
       item
-        .replace(
-          /{(.*?)}/,
-          (_, param) => `By${param.charAt(0).toUpperCase() + param.slice(1)}`
-        ) // 处理 {xxx}
+        .replace(/{(.*?)}/, (_, param) => `By${param.charAt(0).toUpperCase() + param.slice(1)}`) // 处理 {xxx}
         .replace(/[-_]/g, "") // 去除 - 和 _
   );
 
@@ -94,8 +89,7 @@ function generateKeyName(url, method) {
   for (let i = 0; i < processedArr.length; i++) {
     if (i === 0 || processedArr[i] !== processedArr[i - 1]) {
       // 将每项首字母大写
-      const capitalizedItem =
-        processedArr[i].charAt(0).toUpperCase() + processedArr[i].slice(1);
+      const capitalizedItem = processedArr[i].charAt(0).toUpperCase() + processedArr[i].slice(1);
       resultArr.push(capitalizedItem);
     }
   }
@@ -110,11 +104,11 @@ function removeCurlyBraces(url) {
 }
 
 // 生成API模块
-const generateApiModules = (swagger) => {
+const generateApiModules = swagger => {
   const { tags, paths } = swagger;
   const apiModules = {};
   // 初始化模块对象
-  tags.forEach((tag) => {
+  tags.forEach(tag => {
     apiModules[tag.name] = {};
   });
 
@@ -123,13 +117,11 @@ const generateApiModules = (swagger) => {
     for (const [method, details] of Object.entries(methods)) {
       // 获取接口的tags
       const tags = details.tags || [];
-      tags.forEach((tag) => {
+      tags.forEach(tag => {
         const key = generateKeyName(url, method);
         if (apiModules[tag]) {
           const summary = details.summary || "";
-          apiModules[tag][key] = `${key}: "${removeCurlyBraces(
-            url
-          )}", //${method} ${summary}\n`;
+          apiModules[tag][key] = `${key}: "${removeCurlyBraces(url)}", //${method} ${summary}\n`;
         }
       });
     }
@@ -138,7 +130,7 @@ const generateApiModules = (swagger) => {
   // 生成最终的输出字符串
   let output = defaultRemark;
   for (const [moduleName, methods] of Object.entries(apiModules)) {
-    const description = tags.find((e) => e.name === moduleName).description;
+    const description = tags.find(e => e.name === moduleName).description;
     output += `// ${description}\n`;
     output += `export const ${moduleName} = {\n`;
     for (const method of Object.values(methods)) {
