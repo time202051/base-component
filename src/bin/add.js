@@ -51,7 +51,7 @@ try {
             type: "input",
             name: "pageUrl",
             message: "请输入分页接口地址（必填）:",
-            default: "/api/app/admission-info/admission-info",
+            default: "/api/app/admission-info/paged-result",
             validate: input => {
               if (!input.trim()) {
                 return "分页接口地址不能为空";
@@ -106,6 +106,7 @@ try {
           },
         ]);
 
+        let baseUrl = "";
         let idField = "id";
         let addUrl = "";
         let editUrl = "";
@@ -114,12 +115,22 @@ try {
 
         // 如果有新增/编辑/删除/详情功能，直接使用分页接口地址
         if (operationsAnswer.operations.length > 0) {
-          // 从分页接口地址中提取基础路径
-          // 假设分页接口格式为 /api/app/xxx/xxx-paged-result
-          // 我们需要提取 /api/app/xxx 部分
-          const pageUrl = pageUrlAnswer.pageUrl;
-          // const baseUrl = pageUrl.replace(/-paged-result.*$/, "").replace(/\/[^\/]*$/, "");
-          const baseUrl = pageUrl;
+          // baseUrl
+          const baseUrlAnswer = await inquirer.prompt([
+            {
+              type: "input",
+              name: "baseUrl",
+              message: "请输入操作接口的基础路径:",
+              default: "/api/app/admission-info/admission-info",
+              validate: input => {
+                if (!input.trim()) {
+                  return "操作接口的基础路径不能为空";
+                }
+                return true;
+              },
+            },
+          ]);
+          baseUrl = baseUrlAnswer.baseUrl;
 
           // 询问ID字段名
           const idFieldAnswer = await inquirer.prompt([
@@ -191,6 +202,7 @@ try {
           pageUrl: pageUrlAnswer.pageUrl,
           hasExport: exportAnswer.hasExport,
           exportUrl: exportUrl,
+          baseUrl,
           hasAdd: operationsAnswer.operations.includes("add"),
           addUrl: addUrl,
           hasEdit: operationsAnswer.operations.includes("edit"),

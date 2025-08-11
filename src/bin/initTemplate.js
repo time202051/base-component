@@ -38,6 +38,7 @@ const vue2Template = (moduleName, config = {}) => {
   let editUrlKey = "";
   let deleteUrlKey = "";
   let detailUrlKey = "";
+  let baseUrlKey = "";
 
   if (config.pageUrl) pageUrlKey = generateKeyName(config.pageUrl, "get");
   if (config.exportUrl) exportUrlKey = generateKeyName(config.exportUrl, "post");
@@ -45,12 +46,12 @@ const vue2Template = (moduleName, config = {}) => {
   if (config.editUrl) editUrlKey = generateKeyName(config.editUrl, "put");
   if (config.deleteUrl) deleteUrlKey = generateKeyName(config.deleteUrl, "delete");
   if (config.detailUrl) detailUrlKey = generateKeyName(config.detailUrl, "get");
-
+  if (config.baseUrl) baseUrlKey = generateKeyName(config.baseUrl, "post"); //这里先直接用新增接口的,后期可改为各自接口
   // 生成导入语句
   const generateImports = () => {
     const imports = [];
     if (config.pageUrl) imports.push(`${pageUrlKey}`);
-    if (config.addUrl) imports.push(`${addUrlKey}`);
+    if (config.addUrl || config.baseUrl) imports.push(`${addUrlKey}`);
     if (config.editUrl) imports.push(`${editUrlKey}`);
     if (config.deleteUrl) imports.push(`${deleteUrlKey}`);
     if (config.detailUrl) imports.push(`${detailUrlKey}`);
@@ -178,7 +179,7 @@ const vue2Template = (moduleName, config = {}) => {
         ? `<el-dialog :title="this.form.title" :visible.sync="dialogVisible" width="80%">
       <ol-form
         v-if="dialogVisible"
-        :url="swaggerUrl.${pageUrlKey}"
+        :url="swaggerUrl.${baseUrlKey}"
         :form="form"
         @onCancel="onCancel"
         @onSubmit="onSubmit"
