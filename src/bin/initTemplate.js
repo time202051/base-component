@@ -244,6 +244,9 @@ export default {
      }
    }
   },
+  created() {
+    this.init()
+  },
   methods: {
     async init() {
       const params = {
@@ -304,6 +307,7 @@ export default {
     }${generateMethods()}
   }
 }
+</script>
 `;
 };
 
