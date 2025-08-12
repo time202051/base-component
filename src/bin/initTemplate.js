@@ -32,21 +32,21 @@ const vue2Template = (moduleName, config = {}) => {
   console.log(888, config);
 
   // 生成各种接口的key名称
-  let pageUrlKey = "";
-  let exportUrlKey = "";
-  let addUrlKey = "";
-  let editUrlKey = "";
-  let deleteUrlKey = "";
-  let detailUrlKey = "";
-  let baseUrlKey = "";
+  let pageUrlKey = "",
+    exportUrlKey = "",
+    addUrlKey = "",
+    editUrlKey = "",
+    deleteUrlKey = "",
+    detailUrlKey = "",
+    baseUrlKey = ""; //接口选择优先级：新增 > 编辑 > 详,
 
   if (config.pageUrl) pageUrlKey = generateKeyName(config.pageUrl, "get");
   if (config.exportUrl) exportUrlKey = generateKeyName(config.exportUrl, "post");
-  if (config.addUrl) addUrlKey = generateKeyName(config.addUrl, "post");
-  if (config.editUrl) editUrlKey = generateKeyName(config.editUrl, "put");
+  if (config.detailUrl) baseUrlKey = detailUrlKey = generateKeyName(config.detailUrl, "get");
+  if (config.editUrl) baseUrlKey = editUrlKey = generateKeyName(config.editUrl, "put");
+  if (config.addUrl) baseUrlKey = addUrlKey = generateKeyName(config.addUrl, "post");
   if (config.deleteUrl) deleteUrlKey = generateKeyName(config.deleteUrl, "delete");
-  if (config.detailUrl) detailUrlKey = generateKeyName(config.detailUrl, "get");
-  if (config.baseUrl) baseUrlKey = generateKeyName(config.baseUrl, "post"); //这里先直接用新增接口的,后期可改为各自接口
+
   // 生成导入语句
   const generateImports = () => {
     const imports = [];
@@ -104,8 +104,6 @@ const vue2Template = (moduleName, config = {}) => {
 
     // onSubmit
     if (config.hasAdd || config.hasEdit) {
-      // editUrlKey
-      // addUrlKey
       methods.push(`
     async onSubmit({ form, data }) {
       if(form.type === 1){

@@ -122,6 +122,12 @@ const generateApiModules = swagger => {
         if (apiModules[tag]) {
           const summary = details.summary || "";
           apiModules[tag][key] = `${key}: "${removeCurlyBraces(url)}", //${method} ${summary}\n`;
+          // 不去出带花括号的，键名加上特殊字段
+          if (url.includes("{")) {
+            apiModules[tag][
+              `${key}CompleteUrl`
+            ] = `${key}CompleteUrl: "${url}", //${method} ${summary}\n`;
+          }
         }
       });
     }

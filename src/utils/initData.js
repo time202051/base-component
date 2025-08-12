@@ -29,11 +29,15 @@ const javaTypeToformType = javaType => {
 export const initForm = options => {
   const { url, form } = options;
   getData().then(swaggerData => {
-    const entity = swaggerData.paths[url].post;
+    // swagger数据可以来源于，新增接口/编辑接口/详情接口（优先级：新增接口>编辑接口>详情接口）
+    let entity = {},
+      schema = {},
+      properties = {};
+    entity = swaggerData.paths[url].post;
     // 添加title
     // if (!form.title) form.title = entity.summary;
-    const schema = entity.requestBody.content["application/json"].schema;
-    const properties = schema.properties;
+    schema = entity.requestBody.content["application/json"].schema;
+    properties = schema.properties;
     // 生成model
     // 1.循环model，将properties中prop相同的匹配，属性合并，model权限大，properties权限小，且保持响应式
     form.model.forEach(item => {
