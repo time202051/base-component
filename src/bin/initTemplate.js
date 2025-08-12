@@ -51,10 +51,11 @@ const vue2Template = (moduleName, config = {}) => {
   const generateImports = () => {
     const imports = [];
     if (config.pageUrl) imports.push(`${pageUrlKey}`);
-    if (config.addUrl || config.baseUrl) imports.push(`${addUrlKey}`);
+    if (config.baseUrl) imports.push(`${baseUrlKey}`);
+    if (config.addUrl) imports.push(`${addUrlKey}`);
     if (config.editUrl) imports.push(`${editUrlKey}`);
-    if (config.deleteUrl) imports.push(`${deleteUrlKey}`);
     if (config.detailUrl) imports.push(`${detailUrlKey}`);
+    if (config.deleteUrl) imports.push(`${deleteUrlKey}`);
     return imports.join(", ");
   };
 
