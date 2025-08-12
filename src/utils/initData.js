@@ -26,18 +26,38 @@ const javaTypeToformType = javaType => {
   }
 };
 
+// 弹框接口数据来源判断 优先级：新增接口>编辑接口>详情接口
+const getDialogSwaggerData = (url, swaggerData) => {
+  try {
+    // 新增 post
+    const entity = swaggerData.paths[url].post;
+    const schema = entity.requestBody.content["application/json"].schema;
+    const properties = schema.properties;
+
+    return [schema, properties];
+  } catch (err) {
+    try {
+      //编辑 put
+      const entity = swaggerData.paths[url].put;
+      const schema = entity.requestBody.content["application/json"].schema;
+      const properties = schema.properties;
+      return [schema, properties];
+    } catch (err) {
+      // 详情 get
+      const entity = swaggerData.paths[url].get;
+      const schema = entity.responses[200].content["application/json"].schema;
+      const properties = schema.properties;
+      return [schema, properties];
+    }
+  }
+};
+
 export const initForm = options => {
   const { url, form } = options;
   getData().then(swaggerData => {
     // swagger数据可以来源于，新增接口/编辑接口/详情接口（优先级：新增接口>编辑接口>详情接口）
-    let entity = {},
-      schema = {},
-      properties = {};
-    entity = swaggerData.paths[url].post;
-    // 添加title
-    // if (!form.title) form.title = entity.summary;
-    schema = entity.requestBody.content["application/json"].schema;
-    properties = schema.properties;
+    const [schema, properties] = getDialogSwaggerData(url, swaggerData);
+    if (!schema || !properties) return console.log(`\x1b[36m\x1b[4mol插件-弹框数据异常`);
     // 生成model
     // 1.循环model，将properties中prop相同的匹配，属性合并，model权限大，properties权限小，且保持响应式
     form.model.forEach(item => {
