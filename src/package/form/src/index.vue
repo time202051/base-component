@@ -65,7 +65,7 @@
             v-bind="item.props || {}"
           />
           <el-radio-group v-else-if="item.type == 'radio'" v-model="form.value[item.prop]">
-            <el-radio v-for="ctem in item.child" :key="ctem.key" :label="ctem.key">{{
+            <el-radio v-for="ctem in item.children" :key="ctem.key" :label="ctem.key">{{
               ctem.value
             }}</el-radio>
           </el-radio-group>
@@ -86,14 +86,14 @@
             v-else-if="item.type == 'treeSelect'"
             v-model="form.value[item.prop]"
             v-bind="item.props || {}"
-            :options="item.child"
+            :options="item.children"
             @getValue="item.change && item.change(form.value[item.prop])"
           />
           <!-- <el-select v-else-if="item.type == 'select'" v-model="form.value[item.prop]"
                   :placeholder="`请选择${item.placeholder || item.label}`"
                   :clearable="'clearable' in item ? item.clearable : true" :disabled="item.disabled || false"
                   v-bind="item.props || {}" v-on="{ ...item.listeners, change: selectChangeHandle(item) }">
-                  <el-option v-for="(jtem, jindex) in item.child" :key="jindex" :label="jtem.value"
+                  <el-option v-for="(jtem, jindex) in item.children" :key="jindex" :label="jtem.value"
                       :value="jtem.key"></el-option>
               </el-select> -->
           <!-- v-on="{ ...item.listeners, change: (event) => selectChangeHandle(event,
@@ -118,7 +118,7 @@
             "
           >
             <el-option
-              v-for="(jtem, jindex) in item.child"
+              v-for="(jtem, jindex) in item.children"
               :key="jindex"
               :label="jtem.value"
               :value="jtem.key"
