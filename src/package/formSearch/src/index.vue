@@ -1,9 +1,7 @@
 <template>
   <div class="formSearch formSearchArrowUp">
     <div
-      v-if="
-        formSearchData.tableSearch && formSearchData.tableSearch.length >= 0
-      "
+      v-if="formSearchData.tableSearch && formSearchData.tableSearch.length >= 0"
       class="table-header"
     >
       <el-form
@@ -20,11 +18,7 @@
         <!-- 'label-width': '100px', -->
         <div
           class="transitionGroup"
-          :class="[
-            formSearchData.expendShow
-              ? 'formSearchBtnArrowDowns'
-              : 'formSearchBtnArrowUps',
-          ]"
+          :class="[formSearchData.expendShow ? 'formSearchBtnArrowDowns' : 'formSearchBtnArrowUps']"
         >
           <el-form-item
             v-for="item in findTableSearch"
@@ -113,11 +107,7 @@
               style="width: 100%"
               :placeholder="item.props.placeholder || '选择日期'"
               v-bind="item.props || { type: 'date' }"
-              :default-time="
-                item.props.type == 'datetimerange'
-                  ? ['00:00:00', '23:59:59']
-                  : ''
-              "
+              :default-time="item.props.type == 'datetimerange' ? ['00:00:00', '23:59:59'] : ''"
             />
             <el-input
               v-else
@@ -138,11 +128,7 @@
         <el-form-item
           style="word-break: keep-all; white-space: nowrap; margin-left: 10px"
           class="fromBtn"
-          :class="[
-            formSearchData.expendShow
-              ? 'formSearchBtnArrowDown'
-              : 'formSearchBtnArrowUp',
-          ]"
+          :class="[formSearchData.expendShow ? 'formSearchBtnArrowDown' : 'formSearchBtnArrowUp']"
         >
           <el-button
             v-if="formSearchData.reset"
@@ -197,9 +183,7 @@ export default {
     "el-select-loadmore": {
       bind(el, binding) {
         // 获取element-ui定义好的scroll盒子
-        const SELECTWRAP_DOM = el.querySelector(
-          ".el-select-dropdown .el-select-dropdown__wrap"
-        );
+        const SELECTWRAP_DOM = el.querySelector(".el-select-dropdown .el-select-dropdown__wrap");
         SELECTWRAP_DOM.addEventListener("scroll", function () {
           /**
            * scrollHeight 获取元素内容高度(只读)
@@ -208,8 +192,7 @@ export default {
            * 如果元素滚动到底, 下面等式返回true, 没有则返回false:
            * ele.scrollHeight - ele.scrollTop === ele.clientHeight;
            */
-          const condition =
-            this.scrollHeight - this.scrollTop <= this.clientHeight;
+          const condition = this.scrollHeight - this.scrollTop <= this.clientHeight;
           if (condition > 0 && condition < 2) {
             binding.value();
           }
@@ -220,9 +203,7 @@ export default {
       bind(el, binding, vnode) {
         // console.log(binding.value)
         const _that = vnode.context; // 当前vue对象
-        const SELECTWRAP_DOM = el.querySelector(
-          ".el-select-dropdown .el-select-dropdown__wrap"
-        );
+        const SELECTWRAP_DOM = el.querySelector(".el-select-dropdown .el-select-dropdown__wrap");
         SELECTWRAP_DOM.addEventListener("scroll", function () {
           // console.log(SELECTWRAP_DOM.scrollHeight) // 文档内容的实际高度
           // console.log(SELECTWRAP_DOM.scrollTop) // 滚动条滚动高度
@@ -240,9 +221,7 @@ export default {
       unbind(el, binding, vnode) {
         // 解除事件监听
         const _that = vnode.context; // 当前vue对象
-        const SELECTWRAP_DOM = el.querySelector(
-          ".el-select-dropdown .el-select-dropdown__wrap"
-        );
+        const SELECTWRAP_DOM = el.querySelector(".el-select-dropdown .el-select-dropdown__wrap");
         if (SELECTWRAP_DOM) {
           SELECTWRAP_DOM.removeEventListener("scroll", function () {
             binding.value.SELECTWRAP_DOM_index = 0;
@@ -320,11 +299,10 @@ export default {
   methods: {
     async init() {
       const swaggerData = await getData();
-      const swaggersearchColumns =
-        swaggerData.paths[this.url].get.parameters || [];
-      swaggersearchColumns.forEach((item) => {
+      const swaggersearchColumns = swaggerData.paths[this.url].get.parameters || [];
+      swaggersearchColumns.forEach(item => {
         let tempItem = this.formSearchData.tableSearch.find(
-          (e) => e.value.toLowerCase() === item.name.toLowerCase()
+          e => e.value.toLowerCase() === item.name.toLowerCase()
         );
         if (tempItem) {
           // 匹配到
@@ -340,7 +318,7 @@ export default {
           if (item.schema.enum && Array.isArray(item.schema.enum)) {
             //枚举值
             pushItem.inputType = "select";
-            pushItem.children = item.schema.enum.map((e) => ({
+            pushItem.children = item.schema.enum.map(e => ({
               key: e,
               value: e,
             }));
@@ -357,13 +335,13 @@ export default {
       });
 
       const tableHasCreatedTime = this.formSearchData.tableSearch.some(
-        (e) => e.value === "createdTime"
+        e => e.value === "createdTime"
       );
       if (!tableHasCreatedTime) {
         //  单独处理创建时间 就是BeginTime，EndTime
         const requiredNames = ["BeginTime", "EndTime"];
-        const hseCreatedTime = requiredNames.every((name) =>
-          swaggersearchColumns.some((item) => item.name === name)
+        const hseCreatedTime = requiredNames.every(name =>
+          swaggersearchColumns.some(item => item.name === name)
         );
         if (hseCreatedTime) {
           this.formSearchData.tableSearch.push({
@@ -385,10 +363,7 @@ export default {
         this.formSearchData.tableSearch.length > this.tableSearchSlice
           ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
           : this.formSearchData.tableSearch;
-      console.log(
-        `\x1b[36m\x1b[4mol插件-搜索框渲染`,
-        this.formSearchData.tableSearch
-      );
+      console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch);
     },
     // 树形下拉
     getValue(val) {
@@ -405,7 +380,7 @@ export default {
       }
       const tempFormSearch = Object.assign({}, this.formSearch);
       if (this.formSearchData.rules) {
-        return this.$refs[formName].validate((valid) => {
+        return this.$refs[formName].validate(valid => {
           if (!valid) return false;
           this.$emit("handleSearch", tempFormSearch, item);
         });
@@ -421,25 +396,13 @@ export default {
       this.$refs[formName].resetFields();
       if (this.formSearchData.reset) {
         for (const key in this.formSearch) {
-          if (
-            Object.prototype.toString.call(this.formSearch[key]) ===
-            "[object String]"
-          ) {
+          if (Object.prototype.toString.call(this.formSearch[key]) === "[object String]") {
             this.formSearch[key] = null;
-          } else if (
-            Object.prototype.toString.call(this.formSearch[key]) ===
-            "[object Array]"
-          ) {
+          } else if (Object.prototype.toString.call(this.formSearch[key]) === "[object Array]") {
             this.formSearch[key] = [];
-          } else if (
-            Object.prototype.toString.call(this.formSearch[key]) ===
-            "[object Object]"
-          ) {
+          } else if (Object.prototype.toString.call(this.formSearch[key]) === "[object Object]") {
             this.formSearch[key] = {};
-          } else if (
-            Object.prototype.toString.call(this.formSearch[key]) ===
-            "[object Boolean]"
-          ) {
+          } else if (Object.prototype.toString.call(this.formSearch[key]) === "[object Boolean]") {
             this.formSearch[key] = false;
           } else {
             this.formSearch[key] = null;
@@ -458,10 +421,7 @@ export default {
     handleExpend() {
       this.expend = !this.expend; // 展开和收起
       this.findTableSearch = this.expend
-        ? this.formSearchData.tableSearch.slice(
-            0,
-            this.formSearchData.tableSearch.length
-          )
+        ? this.formSearchData.tableSearch.slice(0, this.formSearchData.tableSearch.length)
         : this.formSearchData.tableSearch.slice(0, this.tableSearchSlice);
 
       this.$emit("btnHandleExpend", this.expend);
@@ -475,13 +435,7 @@ export default {
     keyInput(item, e) {
       if (item.inputType === "number") {
         let key = e.key;
-        if (
-          key === "e" ||
-          key === "E" ||
-          key === "-" ||
-          key === "+" ||
-          key === "."
-        ) {
+        if (key === "e" || key === "E" || key === "-" || key === "+" || key === ".") {
           e.returnValue = false;
           return false;
         }

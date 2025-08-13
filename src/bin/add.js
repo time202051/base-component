@@ -112,6 +112,7 @@ try {
         let editUrl = "";
         let deleteUrl = "";
         let detailUrl = "";
+        let rowId = "";
 
         // 如果有新增/编辑/删除/详情功能，直接使用分页接口地址
         if (operationsAnswer.operations.length > 0) {
@@ -137,11 +138,11 @@ try {
             {
               type: "input",
               name: "idField",
-              message: "请输入ID字段名:",
+              message: "请输入url后缀ID字段名:",
               default: "admissionInfoId",
               validate: input => {
                 if (!input.trim()) {
-                  return "ID字段名不能为空";
+                  return "url后缀ID字段名不能为空";
                 }
                 return true;
               },
@@ -162,6 +163,29 @@ try {
           if (operationsAnswer.operations.includes("detail")) {
             detailUrl = `${baseUrl}/{${idField}}`;
           }
+        }
+
+        //如果有编辑/详情/删除，询问row中的id字段名
+        if (
+          operationsAnswer.operations.includes("edit") ||
+          operationsAnswer.operations.includes("delete") ||
+          operationsAnswer.operations.includes("detail")
+        ) {
+          const rowIdAnswer = await inquirer.prompt([
+            {
+              type: "input",
+              name: "rowId",
+              message: "请输入行数据中ID字段的键名（用于编辑/详情/删除操作）",
+              default: "id",
+              validate: input => {
+                if (!input.trim()) {
+                  return "ID字段的键名不能为空";
+                }
+                return true;
+              },
+            },
+          ]);
+          rowId = rowIdAnswer.rowId;
         }
 
         // 4. 询问所有接口的模块名
@@ -213,6 +237,7 @@ try {
           detailUrl: detailUrl,
           swaggerModule: moduleAnswer.swaggerModule,
           idField: idField,
+          rowId,
         };
 
         // 生成模板内容

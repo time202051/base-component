@@ -29,8 +29,6 @@ function generateKeyName(url, method) {
   return `${method.toLowerCase()}${key}`;
 }
 const vue2Template = (moduleName, config = {}) => {
-  console.log(888, config);
-
   // 生成各种接口的key名称
   let pageUrlKey = "",
     exportUrlKey = "",
@@ -69,14 +67,6 @@ const vue2Template = (moduleName, config = {}) => {
     }`);
     }
 
-    // if (config.hasEdit) {
-    //   methods.push(`
-    // editBtnHandler() {
-    //   this.form.type = 2;
-    //   this.dialogVisible = true;
-    // }`);
-    // }
-
     if (config.hasEdit) {
       methods.push(`
     ${config.hasDetail ? `async ` : ``}editBtnHandler() {
@@ -86,7 +76,7 @@ const vue2Template = (moduleName, config = {}) => {
       this.form.type = 2;
       ${
         config.hasDetail
-          ? `const { result = {} } = await ${detailUrlKey}(row.${config.idField});
+          ? `const { result = {} } = await ${detailUrlKey}(row.${config.rowId});
       this.form.value = result || {};`
           : `this.form.value = { ...row };`
       }
@@ -113,7 +103,7 @@ const vue2Template = (moduleName, config = {}) => {
         this.$message("新建成功");
       }else if(form.type === 2){
         //编辑
-        const res = await ${editUrlKey}(data['${config.idField}'], data);
+        const res = await ${editUrlKey}(data['${config.rowId}'], data);
         if(res.code !== 200) return;
         this.$message("编辑成功");
         this.init();
@@ -134,7 +124,7 @@ const vue2Template = (moduleName, config = {}) => {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        ${deleteUrlKey}(row.${config.idField}).then(() => {
+        ${deleteUrlKey}(row.${config.rowId}).then(() => {
           this.$message.success('删除成功');
           this.init();
         }).catch(() => {

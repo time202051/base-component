@@ -8,7 +8,7 @@ const SwaggerClient = require("swagger-client");
 const swaggerUrl = process.argv[2] ? `${process.argv[2]}/swagger/v1/swagger.json` : "";
 const modulesDir = process.argv[3] ? process.argv[3] : "src/api/modules";
 
-let defaultRemark = `/**
+const defaultRemark = `/**
  * ⚠️  警告：此文件由脚本自动生成，请勿手动编辑！
  * ��  如需修改，请重新运行生成脚本
  * 📅  生成时间: ${new Date().toLocaleString()}
@@ -17,13 +17,38 @@ const spinnerChars = ["|", "/", "-", "\\"];
 let spinnerIndex = 0;
 let dotCount = 0;
 const maxDots = 3;
+
+const lyrics = [
+  "下个礼拜你有空吗",
+  "下个礼拜你有空吗",
+  "下个礼拜我们还在这里等着你",
+  "别说你太忙",
+  "别说你没空",
+  "有我们陪你一起放轻松",
+];
+
+let currentLyricIndex = 0;
+let lyricChangeTime = Date.now();
+
 const spinner = setInterval(() => {
   const dots = ".".repeat(dotCount);
-  process.stdout.write(`\r${spinnerChars[spinnerIndex]} 正在玩命加载中${dots}`);
+  const spinnerChar = spinnerChars[spinnerIndex];
+
+  if (Date.now() - lyricChangeTime > 2000) {
+    currentLyricIndex = (currentLyricIndex + 1) % lyrics.length;
+    lyricChangeTime = Date.now();
+  }
+
+  const currentLyric = lyrics[currentLyricIndex];
+  const rhythm = ["♪", "♫", "♬"][Math.floor(Date.now() / 500) % 3];
+
+  // 一行显示，用空格清除之前的内容
+  const displayText = `${rhythm} ${currentLyric} ${spinnerChar} 正在玩命加载中${dots}`;
+  process.stdout.write(`\r${displayText}${" ".repeat(50)}`);
+
   spinnerIndex = (spinnerIndex + 1) % spinnerChars.length;
   dotCount = (dotCount + 1) % (maxDots + 1);
 }, 300);
-
 // 设置文件为只读权限
 function setFileReadOnly(filePath) {
   try {

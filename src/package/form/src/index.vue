@@ -168,7 +168,7 @@
     </div>
   </div>
 </template>
-  <!--
+<!--
   # BaseForm 基础表单组件
   
   ## Props 属性
@@ -210,8 +210,7 @@
   | onCancel    | 取消按钮点击事件 | - |
   | selectChange| 选择器值变化事件 | {obj: 当前项配置, val: 变化后的值} |
   -->
-  <script>
-import { getData } from "../../index.js";
+<script>
 import { initForm } from "../../../utils/initData.js";
 
 // interface FormItem {
@@ -340,7 +339,7 @@ export default {
       }
     },
     selectChange(obj, val) {
-      let temp = {
+      const temp = {
         obj: obj,
         val: val,
       };
@@ -386,11 +385,10 @@ export default {
   },
 };
 </script>
-  
-  <style lang="scss" scoped>
+
+<style lang="scss" scoped>
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
 }
 </style>
-  
