@@ -252,37 +252,6 @@ try {
 
         // 输出成功信息
         console.log(`✅ 模板已生成并保存到 ${outputPath}`);
-        console.log(` 文件路径: ${outputPath}`);
-
-        // 输出功能总结
-        const features = [];
-        if (exportAnswer.hasExport) features.push("导出功能");
-        if (operationsAnswer.operations.includes("add")) features.push("新增功能");
-        if (operationsAnswer.operations.includes("edit")) features.push("编辑功能");
-        if (operationsAnswer.operations.includes("delete")) features.push("删除功能");
-        if (operationsAnswer.operations.includes("detail")) features.push("详情功能");
-
-        if (features.length > 0) {
-          console.log(`🔧 已添加功能: ${features.join(", ")}`);
-        }
-
-        console.log(`📚 模块名: ${moduleAnswer.swaggerModule}`);
-        if (idField) {
-          console.log(`🆔 ID字段: ${idField}`);
-        }
-
-        // 显示接口地址预览
-        if (operationsAnswer.operations.length > 0) {
-          const pageUrl = pageUrlAnswer.pageUrl;
-          const baseUrl = pageUrl.replace(/-paged-result.*$/, "").replace(/\/[^\/]*$/, "");
-          console.log(`🔗 基础接口: ${baseUrl}`);
-          if (addUrl) console.log(`➕ 新增接口: ${addUrl}`);
-          if (editUrl) console.log(`✏️ 编辑接口: ${editUrl}`);
-          if (deleteUrl) console.log(`��️ 删除接口: ${deleteUrl}`);
-          if (detailUrl) console.log(`��️ 详情接口: ${detailUrl}`);
-        }
-
-        console.log("\n 模板生成完成！");
       } catch (error) {
         stopSpinner();
         console.error("❌ 发生错误：", error.message);

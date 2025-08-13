@@ -40,11 +40,17 @@ const vue2Template = (moduleName, config = {}) => {
 
   if (config.pageUrl) pageUrlKey = generateKeyName(config.pageUrl, "get");
   if (config.exportUrl) exportUrlKey = generateKeyName(config.exportUrl, "post");
-  if (config.detailUrl) baseUrlKey = detailUrlKey = generateKeyName(config.detailUrl, "get");
-  if (config.editUrl) baseUrlKey = editUrlKey = generateKeyName(config.editUrl, "put");
+  if (config.detailUrl) {
+    detailUrlKey = generateKeyName(config.detailUrl, "get");
+    baseUrlKey = `${detailUrlKey}CompleteUrl`; //补充后缀
+  }
+  if (config.editUrl) {
+    editUrlKey = generateKeyName(config.editUrl, "put");
+    baseUrlKey = `${editUrlKey}CompleteUrl`; //补充后缀
+  }
   if (config.addUrl) baseUrlKey = addUrlKey = generateKeyName(config.addUrl, "post");
   if (config.deleteUrl) deleteUrlKey = generateKeyName(config.deleteUrl, "delete");
-  if (baseUrlKey) baseUrlKey = `${baseUrlKey}CompleteUrl`; //补充后缀
+
   // 生成导入语句
   const generateImports = () => {
     const imports = [];
