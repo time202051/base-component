@@ -65,30 +65,6 @@ const vue2Template = (moduleName, config = {}) => {
   // 生成方法
   const generateMethods = () => {
     const methods = [];
-    if (config.hasAdd) {
-      methods.push(`
-    addBtnHandler() {
-      this.form.type = 1;
-      this.dialogVisible = true;
-    }`);
-    }
-
-    if (config.hasEdit) {
-      methods.push(`
-    ${config.hasDetail ? `async ` : ``}editBtnHandler() {
-      const data = this.multipleSelection;
-      if(data.length !== 1) return this.$message.info("请选择一条数据");
-      const row = data[0];
-      this.form.type = 2;
-      ${
-        config.hasDetail
-          ? `const { result = {} } = await ${detailUrlKey}(row.${config.rowId});
-      this.form.value = result || {};`
-          : `this.form.value = { ...row };`
-      }
-      this.dialogVisible = true;
-    }`);
-    }
 
     // onCancel
     if (config.hasAdd || config.hasEdit || config.hasDetail) {
@@ -107,7 +83,7 @@ const vue2Template = (moduleName, config = {}) => {
         const res = await ${addUrlKey}(data);
         if(res.code !== 200) return;
         this.$message("新建成功");
-      }else if(form.type === 2){
+      }else if (form.type === 2) {
         //编辑
         const res = await ${editUrlKey}(data['${config.rowId}'], data);
         if(res.code !== 200) return;
@@ -116,6 +92,45 @@ const vue2Template = (moduleName, config = {}) => {
       };
       this.init();
       this.onCancel()
+    }`);
+    }
+
+    if (config.hasAdd) {
+      methods.push(`
+    addBtnHandler() {
+      this.type = 1;
+      this.dialogVisible = true;
+    }`);
+    }
+
+    if (config.hasEdit) {
+      methods.push(`
+    ${config.hasDetail ? `async ` : ``}editBtnHandler() {
+      const data = this.multipleSelection;
+      if(data.length !== 1) return this.$message.info("请选择一条数据");
+      const row = data[0];
+      ${
+        config.hasDetail
+          ? `const { result = {} } = await ${detailUrlKey}(row.${config.rowId});
+      this.formData = result || {};`
+          : `this.formData = { ...row };`
+      }
+      this.type = 2;
+      this.dialogVisible = true;
+    }`);
+    }
+
+    // 有详情
+    if (config.hasDetail) {
+      methods.push(`
+    async detailBtnHandler() {
+      const data = this.multipleSelection;
+      if(data.length !== 1) return this.$message.info("请选择一条数据");
+      const row = data[0];
+      const { result = {} } = await ${detailUrlKey}(row.${config.rowId});
+      this.formData = result || {};
+      this.type = 0;
+      this.dialogVisible = true;
     }`);
     }
 
@@ -140,6 +155,25 @@ const vue2Template = (moduleName, config = {}) => {
     }`);
     }
 
+    if (config.hasExport) {
+      methods.push(`
+    export() {
+      const timer = this.formSearchData.value.createdTime;
+      this.formSearchData.value.BeginTime = timer ? timer[0] : "";
+      this.formSearchData.value.EndTime = timer ? timer[1] : "";
+      this.post({
+        url: ${config.swaggerModule}.${exportUrlKey},
+        isLoading: true,
+        responseType: "blob",
+        data: Object.assign(this.formSearchData.value, {
+          Page: this.paginations.page,
+          MaxResultCount: this.paginations.limit
+        })
+      }).then(res => {
+        this.fnexsl(res);
+      });
+    }`);
+    }
     return methods.join(",");
   };
 
@@ -169,12 +203,11 @@ const vue2Template = (moduleName, config = {}) => {
       @handleindexChange="handleindexChange"
     />
     ${
-      config.hasAdd || config.hasEdit || config.hasDetail
+      config.hasDialog
         ? `<el-dialog :title="this.form.title" :visible.sync="dialogVisible" width="80%">
-      <ol-form
+      <FormModule 
         v-if="dialogVisible"
-        :url="swaggerUrl.${baseUrlKey}"
-        :form="form"
+        :formData="formData"
         @onCancel="onCancel"
         @onSubmit="onSubmit"
       />
@@ -186,8 +219,16 @@ const vue2Template = (moduleName, config = {}) => {
 <script>
 import { ${generateImports()} } from "@/api/modules";
 import { ${config.swaggerModule} } from '@/api/swagger';
+${config.hasDialog ? `import FormModule  from "./components/formModule.vue"` : ""}
 export default {
   name: "${moduleName}",
+  ${
+    config.hasDialog
+      ? `components: {
+    FormModule
+  },`
+      : ""
+  }
   data() {
    return {
      swaggerUrl: ${config.swaggerModule},
@@ -223,17 +264,9 @@ export default {
        pagetionShow: true
      },
      ${
-       config.hasAdd || config.hasEdit || config.hasDetail
-         ? `form: {
-       type: 0, // 0详情，1新增, 2编辑
-       title: "",
-       // 默认值
-       defaultValue: {},
-       value: {},
-       model: [],
-       rules: {},
-       attrs: {},
-     },
+       config.hasDialog
+         ? `type: 1,
+     formData: {},
      dialogVisible: false`
          : ""
      }
@@ -279,31 +312,97 @@ export default {
       this.paginations.page = val;
       this.init();
     },
-    ${
-      config.hasExport
-        ? `export() {
-      const timer = this.formSearchData.value.createdTime
-        ;
-      this.formSearchData.value.BeginTime = timer ? timer[0] : "";
-      this.formSearchData.value.EndTime = timer ? timer[1] : "";
-      this.post({
-        url: ${config.swaggerModule}.${exportUrlKey},
-        isLoading: true,
-        responseType: "blob",
-        data: Object.assign(this.formSearchData.value, {
-          Page: this.paginations.page,
-          MaxResultCount: this.paginations.limit
-        })
-      }).then(res => {
-        this.fnexsl(res);
-      });
-    },`
-        : ""
-    }${generateMethods()}
+    ${generateMethods()}
   }
 }
 </script>
 `;
 };
 
-module.exports = vue2Template;
+const vue2Form = (moduleName, config = {}) => {
+  let editUrlKey = "",
+    detailUrlKey = "",
+    baseUrlKey = "";
+
+  if (config.detailUrl) {
+    detailUrlKey = generateKeyName(config.detailUrl, "get");
+    baseUrlKey = `${detailUrlKey}CompleteUrl`; //补充后缀
+  }
+
+  if (config.editUrl) {
+    editUrlKey = generateKeyName(config.editUrl, "put");
+    baseUrlKey = `${editUrlKey}CompleteUrl`; //补充后缀
+  }
+
+  if (config.addUrl) baseUrlKey = generateKeyName(config.addUrl, "post");
+
+  return `<!--
+  Filename: ${moduleName}.vue
+  name: ${moduleName}
+  Created Date: ${new Date().toLocaleString()}
+  Author: 
+-->
+<template>
+  <ol-form
+    :url="swaggerUrl.${baseUrlKey}"
+    :form="form"
+    @onCancel="onCancel"
+    @onSubmit="onSubmit"
+  />
+</template>
+<script>
+import { ${config.swaggerModule} } from '@/api/swagger';
+export default {
+  name: "${moduleName}Form",
+  props: {
+    formData: {
+      type: Object,
+      default: () => ({})
+    },
+    type: {
+      type: Number,
+      default: 1
+    }
+  },
+  data() {
+    return {
+      swaggerUrl: ${config.swaggerModule},
+      form: {
+        type: this.type, // 0详情，1新增, 2编辑
+        title: "",
+        defaultValue: {}, // 默认值
+        value: {},
+        model: [],
+        rules: {},
+        attrs: {},
+      }
+    }
+  },
+  watch: {
+    type: {
+      handler(val){
+        this.form.type = val;
+      },
+      immediate: true
+    }
+  },
+  created(){
+      this.form.value = { ...this.formData };
+  },
+  methods: {
+    onCancel() {
+      this.$emit("onCancel");
+    },
+    onSubmit({form, data}) {
+      this.$emit("onSubmit", { form, data });
+    }
+  }
+}
+</script>
+`;
+};
+
+module.exports = {
+  vue2Template,
+  vue2Form,
+};

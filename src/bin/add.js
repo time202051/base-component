@@ -3,7 +3,7 @@ const { Command } = require("commander");
 const fs = require("fs");
 const path = require("path");
 const inquirer = require("inquirer");
-const vue2Template = require("./initTemplate");
+const { vue2Template, vue2Form } = require("./initTemplate");
 const program = new Command();
 
 const spinnerChars = ["|", "/", "-", "\\"];
@@ -238,6 +238,10 @@ try {
           swaggerModule: moduleAnswer.swaggerModule,
           idField: idField,
           rowId,
+          hasDialog:
+            operationsAnswer.operations.includes("add") ||
+            operationsAnswer.operations.includes("edit") ||
+            operationsAnswer.operations.includes("detail"),
         };
 
         // 生成模板内容
@@ -246,6 +250,14 @@ try {
         // 保存文件
         const outputPath = path.join(dir, `index.vue`);
         fs.writeFileSync(outputPath, templateContent);
+
+        if (config.hasDialog) {
+          const srcDir = path.join(dir, "components");
+          fs.mkdirSync(srcDir, { recursive: true });
+          const formContent = vue2Form(moduleName, config);
+          const dialogPath = path.join(srcDir, `formModule.vue`);
+          fs.writeFileSync(dialogPath, formContent);
+        }
 
         // 停止加载动画
         stopSpinner();
