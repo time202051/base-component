@@ -70,7 +70,7 @@ const vue2Template = (moduleName, config = {}) => {
     if (config.hasAdd || config.hasEdit || config.hasDetail) {
       methods.push(`
     onCancel() {
-      this.dialogVisible = false;
+      this.formConfig.dialogVisible = false;
     }`);
     }
 
@@ -98,8 +98,10 @@ const vue2Template = (moduleName, config = {}) => {
     if (config.hasAdd) {
       methods.push(`
     addBtnHandler() {
-      this.type = 1;
-      this.dialogVisible = true;
+      this.formConfig.title = "新增";
+      this.formConfig.type = 1;
+      this.formConfig.formData = {};
+      this.formConfig.dialogVisible = true;
     }`);
     }
 
@@ -112,11 +114,12 @@ const vue2Template = (moduleName, config = {}) => {
       ${
         config.hasDetail
           ? `const { result = {} } = await ${detailUrlKey}(row.${config.rowId});
-      this.formData = result || {};`
-          : `this.formData = { ...row };`
+      this.formConfig.formData = result || {};`
+          : `this.formConfig.formData = { ...row };`
       }
-      this.type = 2;
-      this.dialogVisible = true;
+      this.formConfig.title = "编辑";
+      this.formConfig.type = 2;
+      this.formConfig.dialogVisible = true;
     }`);
     }
 
@@ -128,9 +131,10 @@ const vue2Template = (moduleName, config = {}) => {
       if(data.length !== 1) return this.$message.info("请选择一条数据");
       const row = data[0];
       const { result = {} } = await ${detailUrlKey}(row.${config.rowId});
-      this.formData = result || {};
-      this.type = 0;
-      this.dialogVisible = true;
+      this.formConfig.formData = result || {};
+      this.formConfig.title = "详情";
+      this.formConfig.type = 0;
+      this.formConfig.dialogVisible = true;
     }`);
     }
 
@@ -204,10 +208,11 @@ const vue2Template = (moduleName, config = {}) => {
     />
     ${
       config.hasDialog
-        ? `<el-dialog :title="this.form.title" :visible.sync="dialogVisible" width="80%">
+        ? `<el-dialog :title="formConfig.title" :visible.sync="formConfig.dialogVisible" width="80%">
       <FormModule 
-        v-if="dialogVisible"
-        :formData="formData"
+        v-if="formConfig.dialogVisible"
+        :formData="formConfig.formData"
+        :type="formConfig.type"
         @onCancel="onCancel"
         @onSubmit="onSubmit"
       />
@@ -265,9 +270,12 @@ export default {
      },
      ${
        config.hasDialog
-         ? `type: 1,
-     formData: {},
-     dialogVisible: false`
+         ? `formConfig: {
+      type: 1,
+      formData: {},
+      title:"",
+      dialogVisible: false   
+    }`
          : ""
      }
    }
@@ -387,7 +395,7 @@ export default {
     }
   },
   created(){
-      this.form.value = { ...this.formData };
+    if(this.type !== 1) this.form.value = { ...this.formData };
   },
   methods: {
     onCancel() {
