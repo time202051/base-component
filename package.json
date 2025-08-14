@@ -1,19 +1,22 @@
 {
   "name": "ol-base-components",
-  "version": "2.7.10",
+  "version": "2.8.0",
   "private": false,
   "main": "src/package/index.js",
   "bin": {
     "init": "src/api/init.js",
     "run": "src/api/run.js",
     "api": "src/api/api.js",
-    "add": "src/bin/add.js"
+    "add": "src/bin/add.js",
+    "install-vscode": "scripts/install-vscode.js"
   },
   "scripts": {
     "serve": "vue-cli-service serve --no-verify",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "add": "node src/bin/add.js"
+    "add": "node src/bin/add.js",
+    "vscode:build": "node scripts/build-vscode.js",
+    "vscode:install": "node scripts/install-vscode.js"
   },
   "dependencies": {
     "commander": "^14.0.0",
@@ -36,7 +39,41 @@
     "prettier": "^2.8.8",
     "sass": "^1.89.2",
     "sass-loader": "^16.0.5",
-    "vue-template-compiler": "^2.6.14"
+    "vue-template-compiler": "^2.6.14",
+    "@types/vscode": "^1.60.0"
+  },
+  "vscode": {
+    "extension": {
+      "name": "vue-page-generator",
+      "displayName": "Vue Page Generator",
+      "description": "Generate Vue CRUD pages from Swagger API",
+      "version": "0.0.1",
+      "engines": {
+        "vscode": "^1.60.0"
+      },
+      "activationEvents": [
+        "onCommand:vue-generator.createPage"
+      ],
+      "main": "./src/vscode/extension.js",
+      "contributes": {
+        "commands": [
+          {
+            "command": "vue-generator.createPage",
+            "title": "Generate Vue Page",
+            "category": "Vue Generator"
+          }
+        ],
+        "menus": {
+          "explorer/context": [
+            {
+              "command": "vue-generator.createPage",
+              "group": "navigation",
+              "when": "resourceExtname == .vue || resourceExtname == .js"
+            }
+          ]
+        }
+      }
+    }
   },
   "eslintConfig": {
     "root": true,
