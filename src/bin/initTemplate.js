@@ -319,8 +319,7 @@ export default {
     handleindexChange(val) {
       this.paginations.page = val;
       this.init();
-    },
-    ${generateMethods()}
+    },${generateMethods()}
   }
 }
 </script>
