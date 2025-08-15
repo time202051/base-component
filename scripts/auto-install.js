@@ -46,8 +46,8 @@ function getVSCodeExtensionsPath() {
   }
 }
 
-// 安装 VSCode/Cursor 扩展
-function installVSCodeExtension() {
+// 自动安装 VSCode/Cursor 扩展
+function autoInstallVSCodeExtension() {
   try {
     const extensionsPaths = getVSCodeExtensionsPath();
     const extensionName = "vue-page-generator";
@@ -153,12 +153,12 @@ function installVSCodeExtension() {
         fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
         console.log("✅ 创建文件: package.json");
 
-        console.log(`\n�� VSCode/Cursor 扩展安装成功！`);
+        console.log(`\n�� VSCode/Cursor 扩展自动安装成功！`);
         console.log("请重启 Cursor 以激活扩展。");
         console.log("安装位置:", extensionDir);
 
         // 显示扩展目录内容
-        console.log("\n📁 扩展目录内容:");
+        console.log("\n�� 扩展目录内容:");
         const extensionFiles = fs.readdirSync(extensionDir);
         extensionFiles.forEach(file => {
           const filePath = path.join(extensionDir, file);
@@ -174,19 +174,20 @@ function installVSCodeExtension() {
     if (!installed) {
       console.log("\n❌ 未找到 VSCode 或 Cursor 扩展目录");
       console.log("请确保已安装 VSCode 或 Cursor 编辑器。");
+      console.log("您可以稍后手动运行: npx install-vscode");
     }
   } catch (error) {
-    console.error("❌ 安装失败:", error.message);
+    console.error("❌ 自动安装失败:", error.message);
     console.error("错误详情:", error.stack);
-    process.exit(1);
+    console.log("您可以稍后手动运行: npx install-vscode");
   }
 }
 
 // 如果直接运行此脚本
 if (require.main === module) {
-  installVSCodeExtension();
+  autoInstallVSCodeExtension();
 }
 
 module.exports = {
-  installVSCodeExtension,
+  autoInstallVSCodeExtension,
 };
