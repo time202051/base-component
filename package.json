@@ -16,8 +16,7 @@
     "lint": "vue-cli-service lint",
     "add": "node src/bin/add.js",
     "vscode:build": "node scripts/build-vscode.js",
-    "vscode:install": "node scripts/install-vscode.js",
-    "postinstall": "node scripts/auto-install.js"
+    "vscode:install": "node scripts/install-vscode.js"
   },
   "dependencies": {
     "commander": "^14.0.0",
