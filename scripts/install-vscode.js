@@ -116,8 +116,8 @@ function installVSCodeExtension() {
         // 创建 package.json
         const packageJson = {
           name: extensionName,
-          displayName: "Vue Page Generator",
-          description: "Generate Vue CRUD pages from Swagger API",
+          displayName: "Vue 页面生成器",
+          description: "从 Swagger API 生成 Vue CRUD 页面",
           version: "0.0.1",
           engines: {
             vscode: "^1.60.0",
@@ -128,13 +128,13 @@ function installVSCodeExtension() {
             commands: [
               {
                 command: "vue-generator.createPage",
-                title: "Generate Vue Page",
-                category: "Vue Generator",
+                title: "生成 Vue 页面",
+                category: "Vue 生成器",
               },
               {
                 command: "vue-generator.test",
-                title: "Test Vue Generator",
-                category: "Vue Generator",
+                title: "测试 Vue 生成器",
+                category: "Vue 生成器",
               },
             ],
             menus: {
@@ -142,7 +142,7 @@ function installVSCodeExtension() {
                 {
                   command: "vue-generator.createPage",
                   group: "navigation",
-                  when: "resourceExtname == .vue || resourceExtname == .js || resourceExtname == .ts || resourceExtname == .jsx || resourceExtname == .tsx",
+                  when: "resourceFolder",
                 },
               ],
             },

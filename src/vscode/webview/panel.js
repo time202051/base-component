@@ -4,22 +4,28 @@ const fs = require("fs");
 
 // 复用现有的模板生成逻辑
 function generateKeyName(url, method) {
+  // 移除前缀 "/api/app"
   const cleanedUrl = url.replace(/\/api\/app/, "");
   const arr = cleanedUrl.split("/");
 
-  const processedArr = arr.map(item =>
-    item
-      .replace(/{(.*?)}/, (_, param) => `By${param.charAt(0).toUpperCase() + param.slice(1)}`)
-      .replace(/[-_]/g, "")
+  // 处理 {xxx} 转换为 ByXxx
+  const processedArr = arr.map(
+    item =>
+      item
+        .replace(/{(.*?)}/, (_, param) => `By${param.charAt(0).toUpperCase() + param.slice(1)}`) // 处理 {xxx}
+        .replace(/[-_]/g, "") // 去除 - 和 _
   );
 
+  // 删除第一个空项
   if (processedArr[0] === "") {
     processedArr.shift();
   }
 
+  // 去重和拼接相邻相同的项
   const resultArr = [];
   for (let i = 0; i < processedArr.length; i++) {
     if (i === 0 || processedArr[i] !== processedArr[i - 1]) {
+      // 将每项首字母大写
       const capitalizedItem = processedArr[i].charAt(0).toUpperCase() + processedArr[i].slice(1);
       resultArr.push(capitalizedItem);
     }
@@ -28,29 +34,30 @@ function generateKeyName(url, method) {
   return `${method.toLowerCase()}${key}`;
 }
 
-// 复用现有的 vue2Template 函数
-function vue2Template(moduleName, config) {
+const vue2Template = (moduleName, config = {}) => {
+  // 生成各种接口的key名称
   let pageUrlKey = "",
     exportUrlKey = "",
     addUrlKey = "",
     editUrlKey = "",
     deleteUrlKey = "",
     detailUrlKey = "",
-    baseUrlKey = "";
+    baseUrlKey = ""; //接口选择优先级：新增 > 编辑 > 详情
 
   if (config.pageUrl) pageUrlKey = generateKeyName(config.pageUrl, "get");
   if (config.exportUrl) exportUrlKey = generateKeyName(config.exportUrl, "post");
   if (config.detailUrl) {
     detailUrlKey = generateKeyName(config.detailUrl, "get");
-    baseUrlKey = `${detailUrlKey}CompleteUrl`;
+    baseUrlKey = `${detailUrlKey}CompleteUrl`; //补充后缀
   }
   if (config.editUrl) {
     editUrlKey = generateKeyName(config.editUrl, "put");
-    baseUrlKey = `${editUrlKey}CompleteUrl`;
+    baseUrlKey = `${editUrlKey}CompleteUrl`; //补充后缀
   }
   if (config.addUrl) baseUrlKey = addUrlKey = generateKeyName(config.addUrl, "post");
   if (config.deleteUrl) deleteUrlKey = generateKeyName(config.deleteUrl, "delete");
 
+  // 生成导入语句
   const generateImports = () => {
     const imports = [];
     if (config.pageUrl) imports.push(`${pageUrlKey}`);
@@ -61,13 +68,46 @@ function vue2Template(moduleName, config) {
     return imports.join(", ");
   };
 
+  // 生成方法
   const generateMethods = () => {
     const methods = [];
+
+    // onCancel
+    if (config.hasAdd || config.hasEdit || config.hasDetail) {
+      methods.push(`
+    onCancel() {
+      this.formConfig.dialogVisible = false;
+    }`);
+    }
+
+    // onSubmit
+    if (config.hasAdd || config.hasEdit) {
+      methods.push(`
+    async onSubmit({ form, data }) {
+      if(form.type === 1){
+        //新建
+        const res = await ${addUrlKey}(data);
+        if(res.code !== 200) return;
+        this.$message("新建成功");
+      }else if (form.type === 2) {
+        //编辑
+        const res = await ${editUrlKey}(data['${config.rowId}'], data);
+        if(res.code !== 200) return;
+        this.$message("编辑成功");
+        this.init();
+      };
+      this.init();
+      this.onCancel()
+    }`);
+    }
+
     if (config.hasAdd) {
       methods.push(`
     addBtnHandler() {
-      this.type = 1;
-      this.dialogVisible = true;
+      this.formConfig.title = "新增";
+      this.formConfig.type = 1;
+      this.formConfig.formData = {};
+      this.formConfig.dialogVisible = true;
     }`);
     }
 
@@ -80,23 +120,27 @@ function vue2Template(moduleName, config) {
       ${
         config.hasDetail
           ? `const { result = {} } = await ${detailUrlKey}(row.${config.rowId});
-        this.formData = result || {};`
-          : `this.formData = { ...row };`
+      this.formConfig.formData = result || {};`
+          : `this.formConfig.formData = { ...row };`
       }
-      this.type = 2;
-      this.dialogVisible = true;
+      this.formConfig.title = "编辑";
+      this.formConfig.type = 2;
+      this.formConfig.dialogVisible = true;
     }`);
     }
 
+    // 有详情
     if (config.hasDetail) {
-      methods.push(`async detailBtnHandler() {
+      methods.push(`
+    async detailBtnHandler() {
       const data = this.multipleSelection;
       if(data.length !== 1) return this.$message.info("请选择一条数据");
       const row = data[0];
       const { result = {} } = await ${detailUrlKey}(row.${config.rowId});
-      this.formData = result || {};
-      this.type = 0;
-      this.dialogVisible = true;
+      this.formConfig.formData = result || {};
+      this.formConfig.title = "详情";
+      this.formConfig.type = 0;
+      this.formConfig.dialogVisible = true;
     }`);
     }
 
@@ -121,31 +165,25 @@ function vue2Template(moduleName, config) {
     }`);
     }
 
-    if (config.hasAdd || config.hasEdit || config.hasDetail) {
+    if (config.hasExport) {
       methods.push(`
-        onCancel() {
-          this.dialogVisible = false;
-        }`);
+    export() {
+      const timer = this.formSearchData.value.createdTime;
+      this.formSearchData.value.BeginTime = timer ? timer[0] : "";
+      this.formSearchData.value.EndTime = timer ? timer[1] : "";
+      this.post({
+        url: ${config.swaggerModule}.${exportUrlKey},
+        isLoading: true,
+        responseType: "blob",
+        data: Object.assign(this.formSearchData.value, {
+          Page: this.paginations.page,
+          MaxResultCount: this.paginations.limit
+        })
+      }).then(res => {
+        this.fnexsl(res);
+      });
+    }`);
     }
-
-    if (config.hasAdd || config.hasEdit) {
-      methods.push(`
-        async onSubmit({ form, data }) {
-          if(form.type === 1){
-            const res = await ${addUrlKey}(data);
-            if(res.code !== 200) return;
-            this.$message("新建成功");
-          }else if (form.type === 2) {
-            const res = await ${editUrlKey}(data['${config.rowId}'], data);
-            if(res.code !== 200) return;
-            this.$message("编辑成功");
-            this.init();
-          };
-          this.init();
-          this.onCancel()
-        }`);
-    }
-
     return methods.join(",");
   };
 
@@ -176,10 +214,11 @@ function vue2Template(moduleName, config) {
     />
     ${
       config.hasDialog
-        ? `<el-dialog :title="this.form.title" :visible.sync="dialogVisible" width="80%">
+        ? `<el-dialog :title="formConfig.title" :visible.sync="formConfig.dialogVisible" width="80%">
       <FormModule 
-        v-if="dialogVisible"
-        :formData="formData"
+        v-if="formConfig.dialogVisible"
+        :formData="formConfig.formData"
+        :type="formConfig.type"
         @onCancel="onCancel"
         @onSubmit="onSubmit"
       />
@@ -205,39 +244,44 @@ export default {
    return {
      swaggerUrl: ${config.swaggerModule},
      multipleSelection: [],
+     // 查询表单
      formSearchData: {
-       reset: true,
-       expendShow: true,
+       reset: true, // 重置
+       expendShow: true, // 展开
        value: {},
        tableSearch: []
      },
+     // 表格数据
      tableData: {
        loading: false,
        emptyImg: true,
        options: {
-         selection: true,
-         index: null,
-         headTool: true,
-         refreshBtn: true,
-         downloadBtn: true
-       },
-       rows: [],
+         selection: true, // 多选框
+         index: null, // 序号
+         headTool: true, // 开启头部工具栏
+         refreshBtn: true, // 开启表格头部刷新按钮
+         downloadBtn: true // 开启表格头部下载按钮
+       }, // 序号和复选框
+       rows: [], // 表数据
        columns: [],
        operatesAttrs: {},
-       operates: [],
+       operates: [], // 表格里面的操作按钮
        tableHeightDiff: 330
      },
      paginations: {
-       page: 1,
-       total: 10,
-       limit: 30,
+       page: 1, // 当前位于那页面
+       total: 10, // 总数
+       limit: 30, // 一页显示多少条
        pagetionShow: true
      },
      ${
        config.hasDialog
-         ? `type: 1,
-         formData: {},
-         dialogVisible: false`
+         ? `formConfig: {
+      type: 1,
+      formData: {},
+      title:"",
+      dialogVisible: false   
+    }`
          : ""
      }
    }
@@ -281,47 +325,26 @@ export default {
     handleindexChange(val) {
       this.paginations.page = val;
       this.init();
-    },
-    ${
-      config.hasExport
-        ? `export() {
-      const timer = this.formSearchData.value.createdTime;
-      this.formSearchData.value.BeginTime = timer ? timer[0] : "";
-      this.formSearchData.value.EndTime = timer ? timer[1] : "";
-      this.post({
-        url: ${config.swaggerModule}.${exportUrlKey},
-        isLoading: true,
-        responseType: "blob",
-        data: Object.assign(this.formSearchData.value, {
-          Page: this.paginations.page,
-          MaxResultCount: this.paginations.limit
-        })
-      }).then(res => {
-        this.fnexsl(res);
-      });
-    },`
-        : ""
-    }${generateMethods()}
+    },${generateMethods()}
   }
 }
 </script>
 `;
-}
+};
 
-// 复用现有的 vue2Form 函数
-function vue2Form(moduleName, config) {
+const vue2Form = (moduleName, config = {}) => {
   let editUrlKey = "",
     detailUrlKey = "",
     baseUrlKey = "";
 
   if (config.detailUrl) {
     detailUrlKey = generateKeyName(config.detailUrl, "get");
-    baseUrlKey = `${detailUrlKey}CompleteUrl`;
+    baseUrlKey = `${detailUrlKey}CompleteUrl`; //补充后缀
   }
 
   if (config.editUrl) {
     editUrlKey = generateKeyName(config.editUrl, "put");
-    baseUrlKey = `${editUrlKey}CompleteUrl`;
+    baseUrlKey = `${editUrlKey}CompleteUrl`; //补充后缀
   }
 
   if (config.addUrl) baseUrlKey = generateKeyName(config.addUrl, "post");
@@ -334,7 +357,6 @@ function vue2Form(moduleName, config) {
 -->
 <template>
   <ol-form
-    v-if="dialogVisible"
     :url="swaggerUrl.${baseUrlKey}"
     :form="form"
     @onCancel="onCancel"
@@ -359,9 +381,9 @@ export default {
     return {
       swaggerUrl: ${config.swaggerModule},
       form: {
-        type: this.type,
+        type: this.type, // 0详情，1新增, 2编辑
         title: "",
-        defaultValue: {},
+        defaultValue: {}, // 默认值
         value: {},
         model: [],
         rules: {},
@@ -378,7 +400,7 @@ export default {
     }
   },
   created(){
-      this.form.value = { ...this.formData };
+    if(this.type !== 1) this.form.value = { ...this.formData };
   },
   methods: {
     onCancel() {
@@ -391,7 +413,7 @@ export default {
 }
 </script>
 `;
-}
+};
 
 class GeneratorPanel {
   static currentPanel = undefined;
@@ -473,13 +495,13 @@ class GeneratorPanel {
         fs.writeFileSync(formPath, formContent);
       }
 
-      vscode.window.showInformationMessage(`✅ 模板已生成并保存到 ${outputDir}`);
+      vscode.window.showInformationMessage(`✅ 页面模板已成功生成并保存到 ${outputDir}`);
 
       // 打开生成的文件
       const document = await vscode.workspace.openTextDocument(mainPath);
       vscode.window.showTextDocument(document);
     } catch (error) {
-      vscode.window.showErrorMessage(`❌ 发生错误：${error.message}`);
+      vscode.window.showErrorMessage(`❌ 生成过程中发生错误：${error.message}`);
     }
   }
 
