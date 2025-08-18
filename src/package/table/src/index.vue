@@ -422,12 +422,12 @@ export default {
       type: Boolean,
       default: true,
     },
-    //获取swagger后的钩子，返回swagger结构数据
+    //获取swagger后的钩子，返回swagger结构数据。用于处理swagger数据
     swaggerColumnsProcessor: {
       type: Function,
       default: null,
     },
-    // swagger与本地columns合并完成后的钩子，允许父组件二次处理columns
+    // swagger与本地columns合并完成后的钩子，允许父组件二次处理columns，一般用于不影响顺序的属性修改。区别于直接column中添加
     mergedColumnsProcessor: {
       type: Function,
       default: null,
@@ -594,10 +594,9 @@ export default {
           // 合并完成后，暴露处理钩子
           if (typeof this.mergedColumnsProcessor === "function") {
             try {
-              const processed = await this.mergedColumnsProcessor({
+              await this.mergedColumnsProcessor({
                 columns: this.tableData.columns,
               });
-              if (Array.isArray(processed)) this.tableData.columns = processed;
             } catch (e) {}
           }
 
