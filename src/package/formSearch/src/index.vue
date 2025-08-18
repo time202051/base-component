@@ -176,6 +176,7 @@
 
 <script>
 import { getData } from "../../index.js";
+import { getEnum } from "../../../utils/getEnum.js";
 
 export default {
   name: "search",
@@ -318,10 +319,15 @@ export default {
           if (item.schema.enum && Array.isArray(item.schema.enum)) {
             //枚举值
             pushItem.inputType = "select";
-            pushItem.children = item.schema.enum.map(e => ({
-              key: e,
-              value: e,
-            }));
+            const ref = item.schema["$$ref"].split("/");
+            const enumName = ref[ref.length - 1];
+            const tempEnum = getEnum(enumName);
+            pushItem.children = tempEnum.length
+              ? tempEnum
+              : item.schema.enum.map(e => ({
+                  key: e,
+                  value: e,
+                }));
           } else if (item.schema.format === "date-time") {
             //日期
             pushItem.inputType = "picker";
@@ -634,14 +640,17 @@ export default {
 
   padding: 10px;
 }
+
 //解决type=number的上下箭头
 ::v-deep .numrule input::-webkit-outer-spin-button,
 ::v-deep .numrule input::-webkit-inner-spin-button {
   -webkit-appearance: none !important;
 }
+
 ::v-deep .numrule input[type="number"] {
   -moz-appearance: textfield !important;
 }
+
 // 解决type=number输入中文后光标上移的问题
 ::v-deep .numrule .el-input__inner {
   line-height: 1px !important;

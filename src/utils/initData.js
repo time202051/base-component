@@ -1,4 +1,5 @@
 import { getData } from "../package/index.js";
+import { getEnum } from "./getEnum.js";
 // java数据类型转成js数据类型
 const javaTypeToJsType = javaType => {
   switch (javaType) {
@@ -24,6 +25,40 @@ const javaTypeToformType = javaType => {
     default:
       return javaType;
   }
+};
+
+const setModelItemByProperty = (prop, property) => {
+  const temp = {
+    prop: prop,
+    label: property.description,
+    type: "input",
+    hidden: false,
+    listeners: () => {},
+    props: {},
+  };
+  if (property.enum || Array.isArray(property.enum)) {
+    temp.type = "select";
+    const ref = property["$$ref"].split("/");
+    const enumName = ref[ref.length - 1];
+    const tempEnum = getEnum(enumName);
+    temp.children = tempEnum.length
+      ? tempEnum
+      : property.enum.map(e => ({
+          key: e,
+          value: e,
+        }));
+  } else if (property.format === "date-time") {
+    temp.type = "date";
+    temp.props.valueFormat = "yyyy-MM-dd";
+    temp.props.format = "yyyy/MM/dd";
+  } else if (property.type == "boolean") {
+    temp.type = "switch";
+  } else if (property.type == "integer") {
+    temp.type = "number";
+  } else {
+    temp.type = "input";
+  }
+  return temp;
 };
 
 // 弹框接口数据来源判断 优先级：新增接口>编辑接口>详情接口
@@ -63,31 +98,26 @@ export const initForm = options => {
     form.model.forEach(item => {
       const property = properties[item.prop];
       if (property) {
-        Object.assign(item, {
-          prop: item.prop,
-          label: property.description,
-          type: javaTypeToformType(property.type),
-          hidden: false,
-          listeners: () => {},
-          props: {},
-          ...item,
-        });
+        const modelItem = setModelItemByProperty(item.prop, property);
+        item = { ...modelItem, ...item };
+        // Object.assign(item, {
+        //   prop: item.prop,
+        //   label: property.description,
+        //   type: javaTypeToformType(property.type),
+        //   hidden: false,
+        //   listeners: () => {},
+        //   props: {},
+        //   ...item,
+        // });
       }
     });
     //  2.将properties都push到model中（只提取swagger中有的type和description）
     Object.keys(properties).forEach(key => {
       const property = properties[key];
-      if (!form.model.find(item => item.prop == key) && property.description) {
+      if (!form.model.find(item => item.prop === key) && property.description) {
         // 删除对象的某些属性
-        const temp = {
-          prop: key,
-          label: property.description,
-          type: javaTypeToformType(property.type),
-          hidden: false,
-          listeners: () => {},
-          props: {},
-        };
-        form.model.push(temp);
+        const modelItem = setModelItemByProperty(key, property);
+        form.model.push(modelItem);
       }
     });
 
