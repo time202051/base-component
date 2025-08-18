@@ -559,7 +559,7 @@ export default {
               // 如果是枚举值直接转成Desc结尾的,swagger中没有Desc但是后端接口会返回带Desc的字段，用于前端展示枚举值的中文
               if (item.enum && Array.isArray(item.enum)) {
                 obj.prop = `${key}Desc`;
-                obj.label = item.description.replace(/枚举/g, "");
+                obj.label = item.description.replace(/(枚举|枚举值)/g, "");
               }
               this.tableData.columns.push(obj);
             }
