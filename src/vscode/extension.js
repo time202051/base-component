@@ -7,13 +7,14 @@ function activate(context) {
   // 显示通知确认扩展已激活
   vscode.window.showInformationMessage("Vue 页面生成器扩展已激活！");
 
-  // 注册右键菜单命令
+  // 注册右键菜单命令 （registerCommand就是注册命令，第一个参数是名称，第二个就是具体逻辑）
   const disposable = vscode.commands.registerCommand("vue-generator.createPage", uri => {
     console.log("命令被调用，URI:", uri);
-    vscode.window.showInformationMessage("生成 Vue 页面命令被调用！");
+    vscode.window.showInformationMessage("生成 Vue 页面命令被调用！"); //右下角会弹出的信息
     GeneratorPanel.createOrShow(context.extensionUri, uri);
   });
 
+  //subscriptions是vscode的所有命令的一个注册列表
   context.subscriptions.push(disposable);
 
   // 注册一个测试命令

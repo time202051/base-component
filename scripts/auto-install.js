@@ -150,7 +150,7 @@ function autoInstallVSCodeExtension() {
         };
 
         const packageJsonPath = path.join(extensionDir, "package.json");
-        fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+        fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), "utf8");
         console.log("✅ 创建文件: package.json");
 
         console.log(`\n�� VSCode/Cursor 扩展自动安装成功！`);
