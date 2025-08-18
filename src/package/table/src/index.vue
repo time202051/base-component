@@ -519,7 +519,7 @@ export default {
       // 从 IndexedDB 中获取 Swagger 数据
       getData()
         .then(async swaggerData => {
-          const swaggerColumns =
+          let swaggerColumns =
             swaggerData.paths[this.url].get.responses["200"].content["application/json"].schema
               .properties.items.items.properties;
 
