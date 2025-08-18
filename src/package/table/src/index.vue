@@ -168,7 +168,7 @@
         <template v-for="(item, index) in this.tableData.columns">
           <TableColumn
             :column="item"
-            :key="`${item.prop || item.label}-${item.show}-${key}`"
+            :key="`${item.prop || item.label}-${item.show}-${index}`"
             :id="`${item.prop}-${item.show}-${index}`"
           >
             <template v-for="(slotFn, name) in $scopedSlots" v-slot:[name]="slotProps">
@@ -422,6 +422,11 @@ export default {
       type: Boolean,
       default: true,
     },
+    //获取swagger后的钩子，返回swagger结构数据
+    swaggerColumnsProcessor: {
+      type: Function,
+      default: null,
+    },
   },
 
   data() {
@@ -513,10 +518,15 @@ export default {
     init() {
       // 从 IndexedDB 中获取 Swagger 数据
       getData()
-        .then(swaggerData => {
+        .then(async swaggerData => {
           const swaggerColumns =
             swaggerData.paths[this.url].get.responses["200"].content["application/json"].schema
               .properties.items.items.properties;
+
+          try {
+            const res = await this.swaggerColumnsProcessor(swaggerColumns);
+            swaggerColumns = res;
+          } catch (err) {}
 
           // 递归映射函数
           const mapSwaggerToColumns = columns => {
