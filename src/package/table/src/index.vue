@@ -427,6 +427,11 @@ export default {
       type: Function,
       default: null,
     },
+    // swagger与本地columns合并完成后的钩子，允许父组件二次处理columns
+    mergedColumnsProcessor: {
+      type: Function,
+      default: null,
+    },
   },
 
   data() {
@@ -522,12 +527,12 @@ export default {
           let swaggerColumns =
             swaggerData.paths[this.url].get.responses["200"].content["application/json"].schema
               .properties.items.items.properties;
-
-          try {
-            const res = await this.swaggerColumnsProcessor(swaggerColumns);
-            swaggerColumns = res;
-          } catch (err) {}
-
+          if (typeof this.swaggerColumnsProcessor === "function") {
+            try {
+              const res = await this.swaggerColumnsProcessor({ swaggerColumns });
+              swaggerColumns = res;
+            } catch (err) {}
+          }
           // 递归映射函数
           const mapSwaggerToColumns = columns => {
             columns.forEach(column => {
@@ -585,6 +590,16 @@ export default {
           // 添加show，这里的show只显示隐藏，通过checkbox能实现显示隐藏。如果不想checkbox中出现可添加hidden（这是区别于老框架的逻辑）
           addShow(this.tableData.columns);
           console.log(`\x1b[36m\x1b[4mol插件-表格`, this.tableData.columns);
+
+          // 合并完成后，暴露处理钩子
+          if (typeof this.mergedColumnsProcessor === "function") {
+            try {
+              const processed = await this.mergedColumnsProcessor({
+                columns: this.tableData.columns,
+              });
+              if (Array.isArray(processed)) this.tableData.columns = processed;
+            } catch (e) {}
+          }
 
           // init 执行完成后，添加深度监听
           this.startColumnsWatching();
