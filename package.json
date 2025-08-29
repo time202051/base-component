@@ -7,17 +7,13 @@
     "init": "src/api/init.js",
     "run": "src/api/run.js",
     "api": "src/api/api.js",
-    "add": "src/bin/add.js",
-    "install-vscode": "scripts/install-vscode.js"
+    "add": "src/bin/add.js"
   },
   "scripts": {
     "serve": "vue-cli-service serve --no-verify",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "add": "node src/bin/add.js",
-    "vscode:build": "node scripts/build-vscode.js",
-    "vscode:install": "node scripts/install-vscode.js",
-    "postinstall": "node scripts/auto-install.js"
+    "add": "node src/bin/add.js"
   },
   "dependencies": {
     "commander": "^14.0.0",
@@ -42,39 +38,6 @@
     "sass-loader": "^16.0.5",
     "vue-template-compiler": "^2.6.14",
     "@types/vscode": "^1.60.0"
-  },
-  "vscode": {
-    "extension": {
-      "name": "vue-page-generator",
-      "displayName": "Vue 页面生成器",
-      "description": "配合ol-base-components组件使用, 无需联调的CRUD页面",
-      "version": "0.0.4", 
-      "engines": {
-        "vscode": "^1.60.0"
-      },
-      "activationEvents": [
-        "onCommand:vue-generator.createPage"
-      ],
-      "main": "./src/vscode/extension.js",
-      "contributes": {
-        "commands": [
-          {
-            "command": "vue-generator.createPage",
-            "title": "生成 Vue 页面",
-            "category": "Vue 生成器"
-          }
-        ],
-        "menus": {
-          "explorer/context": [
-            {
-              "command": "vue-generator.createPage",
-              "group": "navigation",
-              "when": "resourceFolder"
-            }
-          ]
-        }
-      }
-    }
   },
   "eslintConfig": {
     "root": true,

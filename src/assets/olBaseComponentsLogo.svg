@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="250" height="250" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+<title id="title">Base Component - 极速CRUD生成</title>
+<desc id="desc">日间/夜间径向背景；无四周渐变边环；闪电在下；CRUD图标去黑色分离层与外部阴影，保留轻微发光。</desc>
+<defs>
+	<!-- 日/夜 背景 -->
+	<radialGradient id="bgDayRadial" cx="50%" cy="42%" r="80%">
+		<stop offset="0%"  stop-color="#FFE3FF" stop-opacity="0.35"/>
+		<stop offset="50%" stop-color="#8EC5FF" stop-opacity="0.22"/>
+		<stop offset="100%" stop-color="#41D1FF" stop-opacity="0.12"/>
+	</radialGradient>
+	<radialGradient id="bgNightRadial" cx="50%" cy="42%" r="85%">
+		<stop offset="0%"  stop-color="#1e1b4b" stop-opacity="0.70"/>
+		<stop offset="55%" stop-color="#0b1020" stop-opacity="0.60"/>
+		<stop offset="100%" stop-color="#020617" stop-opacity="0.55"/>
+	</radialGradient>
+
+	<!-- 其他渐变/效果 -->
+	<linearGradient id="bolt" x1="0" y1="0" x2="1" y2="1">
+		<stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#fb7185"/>
+	</linearGradient>
+	<linearGradient id="crud" x1="0" y1="0" x2="1" y2="1">
+		<stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#8b5cf6"/>
+	</linearGradient>
+	<filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+		<feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>
+		<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+	</filter>
+	<filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+		<feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.35"/>
+	</filter>
+
+	<style><![CDATA[
+		/* 默认日间；加 class="theme-dark" 切夜间 */
+		.bg-night { display: none; }
+		svg.theme-dark .bg-day { display: none; }
+		svg.theme-dark .bg-night { display: inline; }
+	]]></style>
+</defs>
+
+<!-- 背景：仅径向填充（无四周渐变边环） -->
+<g class="bg-day">
+	<rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bgDayRadial)"/>
+</g>
+<g class="bg-night">
+	<rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bgNightRadial)"/>
+</g>
+
+<!-- 左侧列表线 -->
+<g stroke="#34d399" stroke-width="6" stroke-linecap="round" opacity="0.9">
+	<line x1="20" y1="104" x2="84" y2="104"/>
+	<line x1="20" y1="132" x2="68" y2="132"/>
+	<line x1="20" y1="160" x2="56" y2="160"/>
+</g>
+
+<!-- 闪电（置底，不遮挡图标） -->
+<path d="M168 44 L128 116 L184 116 L96 228 L128 148 L72 148 Z" fill="url(#bolt)" filter="url(#glow)"/>
+
+<!-- 文档卡片（保留卡片阴影） -->
+<g transform="translate(102,44) rotate(-8 64 84)" filter="url(#shadow)">
+	<rect x="0" y="0" width="128" height="168" rx="16" fill="rgba(229,231,235,0.08)" stroke="url(#crud)" stroke-width="5"/>
+</g>
+
+<!-- CRUD 图标（无黑色分离层，无外部阴影，保留轻微发光） -->
+<g transform="translate(102,44) rotate(-8 64 84)">
+	<g stroke="url(#crud)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.98" filter="url(#glow)">
+		<!-- Create: 加号 -->
+		<g transform="translate(18,44)">
+			<g fill="url(#crud)" stroke="none">
+				<rect x="18" y="7" width="6" height="28" rx="3"/>
+				<rect x="7" y="18" width="28" height="6" rx="3"/>
+			</g>
+		</g>
+		<!-- Read: 眼睛（无白点，渐变瞳孔） -->
+		<g transform="translate(74,40)">
+			<path d="M6 21c8-10 32-10 40 0c-8 10-32 10-40 0z"/>
+			<circle cx="26" cy="21" r="3.6" fill="url(#crud)" stroke="none" opacity="0.95"/>
+		</g>
+		<!-- Update: 修改 -->
+		<g transform="translate(18,98)">
+			<path d="M8 36l10-3l20-20c1.5-1.5 1.5-4 0-5.5v0c-1.5-1.5-4-1.5-5.5 0l-20 20l-3 10z"/>
+			<line x1="28" y1="12" x2="34" y2="18"/>
+		</g>
+		<!-- Delete: 垃圾桶 -->
+		<g transform="translate(74,96)">
+			<rect x="12" y="14" width="24" height="4" rx="2"/>
+			<rect x="20" y="10" width="8" height="4" rx="2"/>
+			<path d="M14 20h20l-2 22h-16l-2-22z"/>
+			<line x1="20" y1="24" x2="20" y2="36"/>
+			<line x1="28" y1="24" x2="28" y2="36"/>
+		</g>
+	</g>
+</g>
+
+<!-- 星点 -->
+<g fill="#f59e0b" opacity="0.9">
+	<circle cx="92" cy="86" r="2.4"/>
+	<circle cx="98" cy="70" r="1.8"/>
+	<circle cx="78" cy="124" r="1.6"/>
+</g>
+</svg>

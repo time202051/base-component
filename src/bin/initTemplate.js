@@ -327,6 +327,7 @@ export default {
 };
 
 const vue2Form = (moduleName, config = {}) => {
+
   let editUrlKey = "",
     detailUrlKey = "",
     baseUrlKey = "";
