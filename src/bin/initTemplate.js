@@ -162,9 +162,6 @@ const vue2Template = (moduleName, config = {}) => {
     if (config.hasExport) {
       methods.push(`
     export() {
-      const timer = this.formSearchData.value.createdTime;
-      this.formSearchData.value.BeginTime = timer ? timer[0] : "";
-      this.formSearchData.value.EndTime = timer ? timer[1] : "";
       this.post({
         url: ${config.swaggerModule}.${exportUrlKey},
         isLoading: true,

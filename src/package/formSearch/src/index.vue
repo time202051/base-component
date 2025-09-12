@@ -177,6 +177,7 @@
 <script>
 import { getData } from "../../index.js";
 import { getEnum } from "../../../utils/getEnum.js";
+import { camelCaseToChinese } from "./index.js";
 
 export default {
   name: "search",
@@ -340,17 +341,55 @@ export default {
         }
       });
 
+      // 自动识别范围时间字段,以Begin和End结尾的字段,和"BeginTime", "EndTime"，这样的时间范围字段
+      const rangeTimeCloumns = await this.autoDetectRangeTimeFields(swaggersearchColumns);
+      this.formSearchData.tableSearch = [...this.formSearchData.tableSearch, ...rangeTimeCloumns];
+
+      // const tableHasCreatedTime = this.formSearchData.tableSearch.some(
+      //   e => e.value === "createdTime"
+      // );
+      // if (!tableHasCreatedTime) {
+      //   //  单独处理创建时间 就是BeginTime，EndTime
+      //   const requiredNames = ["BeginTime", "EndTime"];
+      //   const hseCreatedTime = requiredNames.every(name =>
+      //     swaggersearchColumns.some(item => item.name === name)
+      //   );
+      //   if (hseCreatedTime) {
+      //     this.formSearchData.tableSearch.push({
+      //       label: "创建时间",
+      //       value: "createdTime",
+      //       inputType: "picker",
+      //       props: {
+      //         type: "datetimerange",
+      //         startPlaceholder: "开始时间",
+      //         endPlaceholder: "结束时间",
+      //         placeholder: "选择时间范围",
+      //         valueFormat: "yyyy-MM-dd HH:mm:ss",
+      //         format: "yyyy/MM/dd HH:mm:ss",
+      //       },
+      //     });
+      //   }
+      // }
+      this.findTableSearch =
+        this.formSearchData.tableSearch.length > this.tableSearchSlice
+          ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
+          : this.formSearchData.tableSearch;
+      console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch);
+    },
+    // 统一的自动识别范围时间字段方法
+    async autoDetectRangeTimeFields(swaggersearchColumns) {
+      const tableSearch = [];
+      // 1. 处理 BeginTime, EndTime 特殊情况
       const tableHasCreatedTime = this.formSearchData.tableSearch.some(
         e => e.value === "createdTime"
       );
       if (!tableHasCreatedTime) {
-        //  单独处理创建时间 就是BeginTime，EndTime
         const requiredNames = ["BeginTime", "EndTime"];
         const hseCreatedTime = requiredNames.every(name =>
           swaggersearchColumns.some(item => item.name === name)
         );
         if (hseCreatedTime) {
-          this.formSearchData.tableSearch.push({
+          tableSearch.push({
             label: "创建时间",
             value: "createdTime",
             inputType: "picker",
@@ -362,14 +401,83 @@ export default {
               valueFormat: "yyyy-MM-dd HH:mm:ss",
               format: "yyyy/MM/dd HH:mm:ss",
             },
+            originalFields: {
+              begin: "BeginTime",
+              end: "EndTime",
+            },
           });
         }
       }
-      this.findTableSearch =
-        this.formSearchData.tableSearch.length > this.tableSearchSlice
-          ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
-          : this.formSearchData.tableSearch;
-      console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch);
+
+      // 2. 自动识别 xxxxBegin 和 xxxxEnd 格式的范围时间字段
+      const beginFields = swaggersearchColumns
+        .filter(item => item.name.endsWith("Begin"))
+        .map(item => item.name);
+
+      const endFields = swaggersearchColumns
+        .filter(item => item.name.endsWith("End"))
+        .map(item => item.name);
+
+      // 找出匹配的 Begin 和 End 字段对
+      const rangeTimePairs = [];
+      beginFields.forEach(beginField => {
+        const prefix = beginField.replace("Begin", "");
+        const correspondingEndField = prefix + "End";
+
+        if (endFields.includes(correspondingEndField)) {
+          rangeTimePairs.push({
+            beginField,
+            endField: correspondingEndField,
+            timeField: prefix + "Time",
+            label: prefix,
+          });
+        }
+      });
+
+      // 使用 for...of 循环等待所有异步操作完成
+      for (const pair of rangeTimePairs) {
+        const { beginField, endField, timeField, label } = pair;
+
+        // 检查是否已经存在该时间字段
+        const timeFieldExists = this.formSearchData.tableSearch.some(
+          item => item.value === timeField
+        );
+
+        if (!timeFieldExists) {
+          const labelCHN = await camelCaseToChinese(label);
+
+          // 从 formSearchData.value 中移除原始字段
+          this.removeOriginalFieldsFromValue([beginField, endField]);
+
+          tableSearch.push({
+            label: labelCHN,
+            value: timeField,
+            inputType: "picker",
+            props: {
+              type: "datetimerange",
+              startPlaceholder: "开始时间",
+              endPlaceholder: "结束时间",
+              placeholder: `选择${labelCHN}范围`,
+              valueFormat: "yyyy-MM-dd HH:mm:ss",
+              format: "yyyy/MM/dd HH:mm:ss",
+            },
+            originalFields: {
+              begin: beginField,
+              end: endField,
+            },
+          });
+        }
+      }
+      return tableSearch;
+    },
+    // 新增方法：从 formSearchData.value 中移除原始字段
+    removeOriginalFieldsFromValue(removeKeys) {
+      removeKeys.forEach(key => {
+        const index = this.formSearchData.tableSearch.findIndex(item => item.value === key);
+        if (index !== -1) {
+          this.formSearchData.tableSearch.splice(index, 1);
+        }
+      });
     },
     // 树形下拉
     getValue(val) {

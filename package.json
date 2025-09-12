@@ -1,6 +1,6 @@
 {
   "name": "ol-base-components",
-  "version": "2.8.12",
+  "version": "2.8.13",
   "private": false,
   "main": "src/package/index.js",
   "bin": {
@@ -13,7 +13,11 @@
     "serve": "vue-cli-service serve --no-verify",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "add": "node src/bin/add.js"
+    "add": "node src/bin/add.js",
+    "openCloseloop": "node src/bin/openCloseloop.js",
+    "openLoop": "node src/bin/openLoop.js",
+    "news": "node src/bin/news.js"
+    
   },
   "dependencies": {
     "commander": "^14.0.0",
