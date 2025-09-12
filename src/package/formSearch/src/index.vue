@@ -410,23 +410,21 @@ export default {
       }
 
       // 2. 自动识别 xxxxBegin 和 xxxxEnd 格式的范围时间字段
-      const beginFields = swaggersearchColumns
-        .filter(item => item.name.endsWith("Begin"))
-        .map(item => item.name);
+      const beginFields = swaggersearchColumns.filter(item => item.name.endsWith("Begin"));
 
-      const endFields = swaggersearchColumns
-        .filter(item => item.name.endsWith("End"))
-        .map(item => item.name);
+      const endFields = swaggersearchColumns.filter(item => item.name.endsWith("End"));
 
       // 找出匹配的 Begin 和 End 字段对
       const rangeTimePairs = [];
-      beginFields.forEach(beginField => {
-        const prefix = beginField.replace("Begin", "");
+      beginFields.forEach(item => {
+        const prefix = item.name.replace("Begin", "");
         const correspondingEndField = prefix + "End";
-
-        if (endFields.includes(correspondingEndField)) {
+        const endTemp = endFields.find(e => e.name === correspondingEndField);
+        if (endTemp) {
           rangeTimePairs.push({
-            beginField,
+            ...item,
+            description: item.description || endTemp.description || "", //先用Begin的中文，没有就用End的
+            beginField: item.name,
             endField: correspondingEndField,
             timeField: prefix + "Time",
             label: prefix,
@@ -436,7 +434,7 @@ export default {
 
       // 使用 for...of 循环等待所有异步操作完成
       for (const pair of rangeTimePairs) {
-        const { beginField, endField, timeField, label } = pair;
+        const { beginField, endField, timeField, description } = pair;
 
         // 检查是否已经存在该时间字段
         const timeFieldExists = this.formSearchData.tableSearch.some(
@@ -444,7 +442,8 @@ export default {
         );
 
         if (!timeFieldExists) {
-          const labelCHN = await camelCaseToChinese(label);
+          // const labelCHN = await camelCaseToChinese(label); //内网项目无法使用
+          const labelCHN = description;
 
           // 从 formSearchData.value 中移除原始字段
           this.removeOriginalFieldsFromValue([beginField, endField]);
