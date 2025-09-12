@@ -345,31 +345,6 @@ export default {
       const rangeTimeCloumns = await this.autoDetectRangeTimeFields(swaggersearchColumns);
       this.formSearchData.tableSearch = [...this.formSearchData.tableSearch, ...rangeTimeCloumns];
 
-      // const tableHasCreatedTime = this.formSearchData.tableSearch.some(
-      //   e => e.value === "createdTime"
-      // );
-      // if (!tableHasCreatedTime) {
-      //   //  单独处理创建时间 就是BeginTime，EndTime
-      //   const requiredNames = ["BeginTime", "EndTime"];
-      //   const hseCreatedTime = requiredNames.every(name =>
-      //     swaggersearchColumns.some(item => item.name === name)
-      //   );
-      //   if (hseCreatedTime) {
-      //     this.formSearchData.tableSearch.push({
-      //       label: "创建时间",
-      //       value: "createdTime",
-      //       inputType: "picker",
-      //       props: {
-      //         type: "datetimerange",
-      //         startPlaceholder: "开始时间",
-      //         endPlaceholder: "结束时间",
-      //         placeholder: "选择时间范围",
-      //         valueFormat: "yyyy-MM-dd HH:mm:ss",
-      //         format: "yyyy/MM/dd HH:mm:ss",
-      //       },
-      //     });
-      //   }
-      // }
       this.findTableSearch =
         this.formSearchData.tableSearch.length > this.tableSearchSlice
           ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
@@ -491,6 +466,21 @@ export default {
         this.formSearch.BeginTime = null;
         this.formSearch.EndTime = null;
       }
+      // 以Time结尾，并在this.formSearch.tableSearch中通过prop获取后取type为datetimerange的
+      Object.keys(this.formSearch).forEach(key => {
+        const fieldConfig = this.formSearchData.tableSearch.find(item => item.value === key);
+        if (fieldConfig && fieldConfig.originalFields) {
+          const { begin, end } = fieldConfig.originalFields;
+          if (this.formSearch[key] && Array.isArray(this.formSearch[key])) {
+            this.formSearch[begin] = this.formSearch[key][0];
+            this.formSearch[end] = this.formSearch[key][1];
+          } else {
+            this.formSearch[begin] = null;
+            this.formSearch[end] = null;
+          }
+        }
+      });
+
       const tempFormSearch = Object.assign({}, this.formSearch);
       if (this.formSearchData.rules) {
         return this.$refs[formName].validate(valid => {
