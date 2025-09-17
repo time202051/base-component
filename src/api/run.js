@@ -130,8 +130,20 @@ function removeCurlyBraces(url) {
   return url.replace(/\/?{[^}]*}/g, "").replace(/\/+$/, ""); // 去掉 {xxx} 和结尾的斜杠
 }
 
+// 清理summary中的换行符，确保注释在一行显示
+function cleanSummary(summary) {
+  if (!summary) return "";
+  return summary
+    .replace(/\r\n/g, " ") // 替换Windows换行符
+    .replace(/\n/g, " ") // 替换Unix换行符
+    .replace(/\r/g, " ") // 替换Mac换行符
+    .replace(/\s+/g, " ") // 将多个连续空格替换为单个空格
+    .trim(); // 去除首尾空格
+}
 // 生成API模块
 const generateApiModules = swagger => {
+  console.log(2222, swagger);
+
   const { tags, paths } = swagger;
   const apiModules = {};
   // 初始化模块对象
@@ -147,7 +159,7 @@ const generateApiModules = swagger => {
       tags.forEach(tag => {
         const key = generateKeyName(url, method);
         if (apiModules[tag]) {
-          const summary = details.summary || "";
+          const summary = cleanSummary(details.summary || "");
           apiModules[tag][key] = `${key}: "${removeCurlyBraces(url)}", //${method} ${summary}\n`;
           // 不去出带花括号的，键名加上特殊字段
           if (url.includes("{")) {
@@ -171,6 +183,6 @@ const generateApiModules = swagger => {
     }
     output += `};\n\n`;
   }
-
+  // return output.replace(/\r\n/g, "\n").replace(/\r/g, "\n"); // 统一换行符为 \n
   return output;
 };
