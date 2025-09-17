@@ -11,6 +11,7 @@ const modulesDir = process.argv[3] ? process.argv[3] : "src/api/modules";
 const defaultRemark = `/**
  * ⚠️  警告：此文件由脚本自动生成，请勿手动编辑！
  * ��  swagger更新后请重新运行生成脚本
+ * 服务地址：${process.argv[2]}
 */\n\n`;
 // * 📅  生成时间: ${new Date().toLocaleString()}
 const spinnerChars = ["|", "/", "-", "\\"];
