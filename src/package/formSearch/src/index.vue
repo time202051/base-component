@@ -466,7 +466,7 @@ export default {
         this.formSearch.BeginTime = null;
         this.formSearch.EndTime = null;
       }
-      // 以Time结尾，并在this.formSearch.tableSearch中通过prop获取后取type为datetimerange的
+      // 有originalFields字段的就是范围时间，查询时候转回接口需要的字段
       Object.keys(this.formSearch).forEach(key => {
         const fieldConfig = this.formSearchData.tableSearch.find(item => item.value === key);
         if (fieldConfig && fieldConfig.originalFields) {

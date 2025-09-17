@@ -10,9 +10,9 @@ const modulesDir = process.argv[3] ? process.argv[3] : "src/api/modules";
 
 const defaultRemark = `/**
  * ⚠️  警告：此文件由脚本自动生成，请勿手动编辑！
- * ��  如需修改，请重新运行生成脚本
- * 📅  生成时间: ${new Date().toLocaleString()}
- */\n\n`;
+ * ��  swagger更新后请重新运行生成脚本
+*/\n\n`;
+// * 📅  生成时间: ${new Date().toLocaleString()}
 const spinnerChars = ["|", "/", "-", "\\"];
 let spinnerIndex = 0;
 let dotCount = 0;
@@ -200,35 +200,48 @@ const generateApiModules = swagger => {
           }
 
           //   如果有requestBody
-          if (
-            Object.keys(requestBody).length > 0 &&
-            requestBody.content &&
-            requestBody.content["text/json"] &&
-            requestBody.content["text/json"].schema
-          ) {
-            const schema = requestBody.content["text/json"].schema;
-            const { type, properties } = schema;
-            //目前只有这两种入参结构
-            if (type === "object") {
-              functionDoc += ` * @param {Object} body - 请求参数\n`;
+          if (Object.keys(requestBody).length > 0 && requestBody.content) {
+            // 兼容常见 json contentType
+            const content = requestBody.content;
+            const jsonCT =
+              content["application/json"] ||
+              content["application/*+json"] ||
+              content["text/json"] ||
+              content["*/*"];
+            const schema = jsonCT && jsonCT.schema;
 
-              Object.keys(properties).forEach(key => {
-                // 是否必填
-                const isRequired =
-                  schema.required &&
-                  Array.isArray(schema.required) &&
-                  schema.required.includes(key);
+            if (schema) {
+              const { type, properties } = schema;
+              // 目前只有这两种入参结构
+              if (type === "object") {
+                functionDoc += ` * @param {Object} body - 请求参数\n`;
 
-                const temp = isRequired ? `body.${key}` : `[body.${key}]`;
-                functionDoc += ` * @param {${javaTypeToJsType(properties[key].type)}} ${temp} - ${
-                  properties[key].description || ""
-                }\n`;
-              });
-              if (Object.keys(properties).length > 1) hasBody = true;
-            } else if (type === "array") {
-              // 公司入参是数组的swagger一定是接收id数组的
-              functionDoc += ` * @param {Array<string>} body - 数组类型的入参\n`;
-              hasBody = true;
+                if (properties && typeof properties === "object") {
+                  Object.keys(properties).forEach(key => {
+                    // 是否必填
+                    const isRequired =
+                      schema.required &&
+                      Array.isArray(schema.required) &&
+                      schema.required.includes(key);
+
+                    const temp = isRequired ? `body.${key}` : `[body.${key}]`;
+                    functionDoc += ` * @param {${javaTypeToJsType(
+                      properties[key].type
+                    )}} ${temp} - ${properties[key].description || ""}\n`;
+                  });
+                  if (Object.keys(properties).length > 0) hasBody = true;
+                } else {
+                  // 无 properties（可能是 $ref 或标量），仍然认为有 body
+                  hasBody = true;
+                }
+              } else if (type === "array") {
+                // 公司入参是数组的swagger一定是接收id数组的
+                functionDoc += ` * @param {Array<string>} body - 数组类型的入参\n`;
+                hasBody = true;
+              } else {
+                // 其他类型（string/number/boolean 或 $ref 未解析）
+                hasBody = true;
+              }
             }
           }
 

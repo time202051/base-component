@@ -203,9 +203,7 @@ const vue2Template = (moduleName, config = {}) => {
       @handleSizeChange="handleSizeChange"
       @handleindexChange="handleindexChange"
     />
-    ${
-      config.hasDialog
-        ? `<el-dialog :title="formConfig.title" :visible.sync="formConfig.dialogVisible" width="80%">
+    ${config.hasDialog ? `    <el-dialog :title="formConfig.title" :visible.sync="formConfig.dialogVisible" width="80%">
       <FormModule 
         v-if="formConfig.dialogVisible"
         :formData="formConfig.formData"
@@ -213,10 +211,8 @@ const vue2Template = (moduleName, config = {}) => {
         @onCancel="onCancel"
         @onSubmit="onSubmit"
       />
-    </el-dialog>`
-        : ""
-    }
-  </div>
+    </el-dialog>
+  </div>` : "</div>"}
 </template>
 <script>
 import { ${generateImports()} } from "@/api/modules";
