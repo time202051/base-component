@@ -141,8 +141,6 @@ function cleanSummary(summary) {
 }
 // 生成API模块
 const generateApiModules = swagger => {
-  console.log(2222, swagger);
-
   const { tags, paths } = swagger;
   const apiModules = {};
   // 初始化模块对象
