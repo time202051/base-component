@@ -185,7 +185,7 @@ const vue2Template = (moduleName, config = {}) => {
   Author: 
 -->
 <template>
-  <div>
+  <div class="ol-container">
     <ol-search
       :url="swaggerUrl.${pageUrlKey}"
       :form-search-data="formSearchData"
