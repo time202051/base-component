@@ -124,6 +124,13 @@
               :value="jtem.key"
             />
           </el-select>
+          <ol-number-range
+            v-else-if="item.type === 'numberRange'"
+            v-model="form.value[item.prop]"
+            v-bind="item.props || {}"
+            v-on="{ ...item.listeners, change: val => item.listeners?.change({ item, val }) }"
+          ></ol-number-range>
+
           <div v-else-if="item.type == 'inputSpecial'">
             <el-col :span="6">
               <el-form-item :prop="item.layerprop">
@@ -212,6 +219,7 @@
   -->
 <script>
 import { initForm } from "../../../utils/initData.js";
+import OlNumberRange from "../../numberRange/index.js";
 
 // interface FormItem {
 //   type: Number;
@@ -222,6 +230,9 @@ import { initForm } from "../../../utils/initData.js";
 // }
 export default {
   name: "form",
+  components: {
+    OlNumberRange,
+  },
   props: {
     url: {
       type: String,

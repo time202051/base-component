@@ -53,11 +53,11 @@ export default {
     },
     startPlaceholder: {
       type: String,
-      default: "开始数字",
+      default: "起始值",
     },
     endPlaceholder: {
       type: String,
-      default: "结束数字",
+      default: "终止值",
     },
     clearable: {
       type: Boolean,

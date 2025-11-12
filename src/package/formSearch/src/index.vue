@@ -109,6 +109,12 @@
               v-bind="item.props || { type: 'date' }"
               :default-time="item.props.type == 'datetimerange' ? ['00:00:00', '23:59:59'] : ''"
             />
+            <ol-number-range
+              v-else-if="item.inputType === 'numberRange'"
+              v-model="formSearch[item.value]"
+              v-bind="item.props || {}"
+              v-on="{ ...item.listeners, change: val => item.listeners?.change({ item, val }) }"
+            ></ol-number-range>
             <el-input
               v-else
               v-model="formSearch[item.value]"
@@ -177,10 +183,14 @@
 <script>
 import { getData } from "../../index.js";
 import { getEnum } from "../../../utils/getEnum.js";
+import OlNumberRange from "../../numberRange/index.js";
 import { camelCaseToChinese } from "./index.js";
 
 export default {
   name: "search",
+  components: {
+    OlNumberRange,
+  },
   directives: {
     "el-select-loadmore": {
       bind(el, binding) {

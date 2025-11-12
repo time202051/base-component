@@ -146,8 +146,28 @@ export default {
           QualityCheckStateType: null,
           QualityCheckState: null,
           timer: [],
+          range: [10, 200],
         },
         tableSearch: [
+          {
+            label: "数字区间",
+            value: "range",
+            inputType: "numberRange",
+            originalFields: {
+              begin: "begin123",
+              end: "end123",
+            },
+            listeners: {
+              change: e => {
+                const {
+                  val: [start, end],
+                } = e;
+                this.formSearchData.value.rang1 = start;
+                this.formSearchData.value.rang2 = end;
+                console.log(this.formSearchData, e);
+              },
+            },
+          },
           // {
           //   label: "标签号",
           //   value: "carBodyTagNumber",
@@ -278,6 +298,11 @@ export default {
           // {
           //   prop: "warehouseCode",
           // },
+          {
+            label: "数量范围",
+            type: "numberRange",
+            prop: "range",
+          },
           {
             label: "项目名称",
             type: "input",
@@ -433,7 +458,9 @@ export default {
       // })
     },
     // ================
-    getTable() {},
+    getTable() {
+      console.log("getTable参数", this.formSearchData.value);
+    },
     handleSearch(from) {
       this.formSearchData.value = { ...from };
       this.paginations.page = 1;
