@@ -59,19 +59,12 @@
     <div class="square-container">
       <div class="square"></div>
     </div> -->
-    <div>
-      <CountCom v-model="quantity" />
-    </div>
   </div>
 </template>
 
 <script>
-import CountCom from "@/component/countCom.vue";
 export default {
   name: "App",
-  components: {
-    CountCom,
-  },
   data() {
     return {
       quantity: 0,

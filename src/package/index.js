@@ -2,6 +2,8 @@ import OlTable from "./table";
 import OlSearch from "./formSearch";
 import Dialog from "./dialog";
 import OlForm from "./form";
+import OlNumberRange from "./numberRange";
+
 import SwaggerClient from "swagger-client";
 
 const consoleTooltip = () => {
@@ -53,16 +55,16 @@ function openDatabase() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = (event) => {
+    request.onupgradeneeded = event => {
       const db = event.target.result;
       db.createObjectStore(STORE_NAME);
     };
 
-    request.onsuccess = (event) => {
+    request.onsuccess = event => {
       resolve(event.target.result);
     };
 
-    request.onerror = (event) => {
+    request.onerror = event => {
       reject(event.target.error);
     };
   });
@@ -70,30 +72,30 @@ function openDatabase() {
 
 // 存储数据
 function storeData(data) {
-  return openDatabase().then((db) => {
+  return openDatabase().then(db => {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
       store.put(data, "swaggerData"); // 使用 'swaggerData' 作为键
       transaction.oncomplete = () => resolve();
-      transaction.onerror = (event) => reject(event.target.error);
+      transaction.onerror = event => reject(event.target.error);
     });
   });
 }
 
 // 获取数据
 export function getData() {
-  return openDatabase().then((db) => {
+  return openDatabase().then(db => {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
       const request = store.get("swaggerData");
 
-      request.onsuccess = (event) => {
+      request.onsuccess = event => {
         resolve(event.target.result);
       };
 
-      request.onerror = (event) => {
+      request.onerror = event => {
         reject(event.target.error);
       };
     });
@@ -102,19 +104,19 @@ export function getData() {
 
 // 清除数据
 function clearData() {
-  return openDatabase().then((db) => {
+  return openDatabase().then(db => {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
       store.delete("swaggerData"); // 删除存储的数据
       transaction.oncomplete = () => resolve();
-      transaction.onerror = (event) => reject(event.target.error);
+      transaction.onerror = event => reject(event.target.error);
     });
   });
 }
 
 // 注册
-const swaggerInstall = async (swaggerUrl) => {
+const swaggerInstall = async swaggerUrl => {
   if (!swaggerUrl) return Promise.reject(new Error("Swagger URL is required.")); // 检查 Swagger URL
 
   // IndexedDB 获取 Swagger 数据
@@ -143,7 +145,6 @@ const swaggerInstall = async (swaggerUrl) => {
 const swaggerUnload = async function () {
   await clearData(); // 清空 IndexedDB 中的缓存数据
 };
-
 
 // 自定义加载指示器
 function showLoading() {
@@ -203,16 +204,15 @@ function hideLoading() {
   }
 }
 
-
-const components = [OlTable, OlSearch, Dialog, OlForm];
+const components = [OlTable, OlSearch, Dialog, OlForm, OlNumberRange];
 const install = async function (Vue) {
   // 设置全局数据
-  components.map((item) => {
+  components.map(item => {
     Vue.component(`ol-${item.name}`, item);
   });
   consoleTooltip();
 };
 
 export default install;
-export { OlTable, OlSearch, Dialog, OlForm };
+export { OlTable, OlSearch, Dialog, OlForm, OlNumberRange };
 export { swaggerInstall, swaggerUnload };
