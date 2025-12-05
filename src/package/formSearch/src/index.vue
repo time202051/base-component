@@ -113,7 +113,7 @@
               v-else-if="item.inputType === 'numberRange'"
               v-model="formSearch[item.value]"
               v-bind="item.props || {}"
-              v-on="{ ...item.listeners, change: val => item.listeners?.change({ item, val }) }"
+              v-on="{ ...item.listeners, change: val => item.listeners && item.listeners.change && item.listeners.change({ item, val }) }"
             ></ol-number-range>
             <el-input
               v-else

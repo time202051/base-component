@@ -60,14 +60,14 @@ function toDate(d) {
 
 function normalizeRssItem(it, sourceName) {
   // 不同RSS字段命名差异处理
-  const link = it.link?.href || it.link || it.guid || "";
+  const link = (it.link && it.link.href) || it.link || it.guid || "";
   const pubDate = it.pubDate || it.published || it.updated || it["dc:date"] || it["atom:updated"] || "";
   const desc = it.description || it.summary || it.content || "";
   return {
     source: sourceName,
     title: String(it.title || "").trim(),
     link: typeof link === "string" ? link : "",
-    publishedAt: toDate(pubDate)?.toISOString() || null,
+    publishedAt: (toDate(pubDate) && toDate(pubDate).toISOString()) || null,
     description: typeof desc === "string" ? desc.replace(/<[^>]+>/g, "").trim() : "",
   };
 }
@@ -77,7 +77,7 @@ function normalizeGdeltItem(it) {
     source: "GDELT",
     title: String(it.title || "").trim(),
     link: it.url || "",
-    publishedAt: toDate(it.seendate || it.publishtime || it.datetime)?.toISOString() || null,
+    publishedAt: (toDate(it.seendate || it.publishtime || it.datetime) && toDate(it.seendate || it.publishtime || it.datetime).toISOString()) || null,
     description: String(it.excerpt || it.subtitle || "").trim(),
   };
 }
@@ -109,9 +109,9 @@ async function tryFetchRss(XMLParser) {
       let items = [];
 
       // 兼容 RSS 2.0 / Atom
-      if (data?.rss?.channel?.item) {
+      if (data && data.rss && data.rss.channel && data.rss.channel.item) {
         items = Array.isArray(data.rss.channel.item) ? data.rss.channel.item : [data.rss.channel.item];
-      } else if (data?.feed?.entry) {
+      } else if (data && data.feed && data.feed.entry) {
         items = Array.isArray(data.feed.entry) ? data.feed.entry : [data.feed.entry];
       }
 
@@ -129,7 +129,7 @@ async function tryFetchRss(XMLParser) {
 async function fallbackGdelt() {
   try {
     const data = await fetchJSON(GDELT.url);
-    const list = data?.articles || data?.documents || data?.matches || [];
+    const list = (data && data.articles) || (data && data.documents) || (data && data.matches) || [];
     return list.map(normalizeGdeltItem);
   } catch {
     return [];

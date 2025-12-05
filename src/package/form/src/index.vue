@@ -128,7 +128,7 @@
             v-else-if="item.type === 'numberRange'"
             v-model="form.value[item.prop]"
             v-bind="item.props || {}"
-            v-on="{ ...item.listeners, change: val => item.listeners?.change({ item, val }) }"
+            v-on="{ ...item.listeners, change: val => item.listeners && item.listeners.change && item.listeners.change({ item, val }) }"
           ></ol-number-range>
 
           <div v-else-if="item.type == 'inputSpecial'">
@@ -317,7 +317,7 @@ export default {
   },
   created() {
     // 默认值复制
-    if (Object.keys(this.defaultValue)?.length) {
+    if (Object.keys(this.defaultValue) && Object.keys(this.defaultValue).length) {
       Object.keys(this.defaultValue).forEach(key => {
         form.value[key] = this.defaultValue[key];
       });
@@ -370,7 +370,7 @@ export default {
           if (valid) {
             resolve({
               valid,
-              formData: this.form?.value || {},
+              formData: (this.form && this.form.value) || {},
             });
           } else {
             reject("表单验证失败");
