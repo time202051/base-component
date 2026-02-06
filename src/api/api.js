@@ -75,6 +75,10 @@ SwaggerClient(swaggerUrl)
 
     Object.keys(apiModules).forEach(fileName => {
       const outputPath = path.join(modulesDir, `${fileName}.js`);
+      // 如果文件已存在，先删除（包括只读文件）
+      if (fs.existsSync(outputPath)) {
+        fs.unlinkSync(outputPath);
+      }
       fs.writeFileSync(outputPath, apiModules[fileName], "utf-8");
       setFileReadOnly(outputPath);
       console.log(`API接口已生成并保存到 ${outputPath}（只读）`);
@@ -97,6 +101,10 @@ function createIndexFile(apiModules) {
     str += `export * from "./${fileName}";\n`;
   });
   const outputPath = path.join(modulesDir, `index.js`);
+  // 如果文件已存在，先删除（包括只读文件）
+  if (fs.existsSync(outputPath)) {
+    fs.unlinkSync(outputPath);
+  }
   fs.writeFileSync(outputPath, str, "utf-8");
   // 设置 index.js 也为只读
   setFileReadOnly(outputPath);

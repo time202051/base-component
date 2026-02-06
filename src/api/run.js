@@ -77,6 +77,10 @@ http
 
       // 输出到文件
       // const outputPath = path.join(__dirname, "swagger.js");
+      // 如果文件已存在，先删除（包括只读文件）
+      if (fs.existsSync(outputPath)) {
+        fs.unlinkSync(outputPath);
+      }
       fs.writeFileSync(outputPath, apiEndpoints, "utf-8");
       clearInterval(spinner);
       process.stdout.write("\r");

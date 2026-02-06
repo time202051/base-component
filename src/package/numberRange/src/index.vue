@@ -37,7 +37,7 @@
 
 <script>
 export default {
-  name: "NumberRange",
+  name: "number-range",
   props: {
     value: {
       type: Array,
