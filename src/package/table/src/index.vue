@@ -566,6 +566,10 @@ export default {
                 obj.prop = `${key}Desc`;
                 obj.label = item.description.replace(/(枚举|枚举值)/g, "");
               }
+              // 如果是boolean类型，加上Text后缀
+              if (item.type === "boolean") {
+                obj.prop = `${key}Text`;
+              }
               this.tableData.columns.push(obj);
             }
           });
