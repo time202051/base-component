@@ -113,7 +113,11 @@
               v-else-if="item.inputType === 'numberRange'"
               v-model="formSearch[item.value]"
               v-bind="item.props || {}"
-              v-on="{ ...item.listeners, change: val => item.listeners && item.listeners.change && item.listeners.change({ item, val }) }"
+              v-on="{
+                ...item.listeners,
+                change: val =>
+                  item.listeners && item.listeners.change && item.listeners.change({ item, val }),
+              }"
             ></ol-number-range>
             <el-input
               v-else
@@ -274,6 +278,11 @@ export default {
     rulesLength: {
       type: Boolean,
     },
+    //获取swagger后的钩子，返回swagger结构数据。用于处理swagger数据
+    swaggerColumnsProcessor: {
+      type: Function,
+      default: null,
+    },
   },
   data() {
     return {
@@ -311,7 +320,13 @@ export default {
   methods: {
     async init() {
       const swaggerData = await getData();
-      const swaggersearchColumns = swaggerData.paths[this.url].get.parameters || [];
+      let swaggersearchColumns = swaggerData.paths[this.url].get.parameters || [];
+      if (typeof this.swaggerColumnsProcessor === "function") {
+        try {
+          const res = await this.swaggerColumnsProcessor({ swaggersearchColumns });
+          swaggersearchColumns = res;
+        } catch (err) {}
+      }
       swaggersearchColumns.forEach(item => {
         let tempItem = this.formSearchData.tableSearch.find(
           e => e.value.toLowerCase() === item.name.toLowerCase()
