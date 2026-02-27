@@ -188,7 +188,6 @@
 import { getData } from "../../index.js";
 import { getEnum } from "../../../utils/getEnum.js";
 import OlNumberRange from "../../numberRange/index.js";
-import { camelCaseToChinese } from "./index.js";
 
 export default {
   name: "search",
@@ -279,7 +278,7 @@ export default {
       type: Boolean,
     },
     //获取swagger后的钩子，返回swagger结构数据。用于处理swagger数据
-    swaggerColumnsProcessor: {
+    onSwagger: {
       type: Function,
       default: null,
     },
@@ -321,10 +320,10 @@ export default {
     async init() {
       const swaggerData = await getData();
       let swaggersearchColumns = swaggerData.paths[this.url].get.parameters || [];
-      if (typeof this.swaggerColumnsProcessor === "function") {
+      if (typeof this.onSwagger === "function") {
         try {
-          const res = await this.swaggerColumnsProcessor({ swaggersearchColumns });
-          swaggersearchColumns = res;
+          const res = await this.onSwagger({ columns: swaggersearchColumns });
+          if (res) swaggersearchColumns = res;
         } catch (err) {}
       }
       swaggersearchColumns.forEach(item => {

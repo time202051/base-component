@@ -423,12 +423,12 @@ export default {
       default: true,
     },
     //获取swagger后的钩子，返回swagger结构数据。用于处理swagger数据
-    swaggerColumnsProcessor: {
+    onSwagger: {
       type: Function,
       default: null,
     },
     // swagger与本地columns合并完成后的钩子，允许父组件二次处理columns，一般用于不影响顺序的属性修改。区别于直接column中添加
-    mergedColumnsProcessor: {
+    onMerged: {
       type: Function,
       default: null,
     },
@@ -484,42 +484,6 @@ export default {
     this.stopColumnsWatching();
   },
   methods: {
-    // init() {
-    //   // 从 IndexedDB 中获取 Swagger 数据
-    //   getData().then((swaggerData) => {
-    //     const swaggerColumns = swaggerData.paths[this.url].get.responses["200"].content['application/json'].schema.properties.items.items.properties;
-
-    //     Object.keys(swaggerColumns).forEach(key => {
-    //       const item = swaggerColumns[key];
-    //       let tempItem = this.tableData.columns.find((e) => e.prop == key);
-    //       if (tempItem) {
-    //         tempItem = { ...item, ...tempItem };
-    //       } else if (item.description) {
-    //         this.tableData.columns.push({
-    //           prop: key,
-    //           label: item.description,
-    //           show: true,
-    //           sortable: false,
-    //           attrs: {}
-    //         });
-    //       }
-    //     });
-    //     console.log(`\x1b[36m\x1b[4mol插件-表格`, this.tableData.columns)
-    //   }).catch((error) => {
-    //     console.error("获取 Swagger 数据失败:", error);
-    //   });
-    // },
-    // 支持多级表头 useSlotHeader: true，且支持排序，通过columns中的顺序实现
-    //  columns: [
-    //       {
-    //         label: '一级表头',
-    //         children: [{ prop: 'bindStateEnum', label: '112' }, { prop: 'tagNumber' }]
-    //       },
-    //       {
-    //         prop: "remark",
-    //         label: "备注123",
-    //       },
-    //     ],
     init() {
       // 从 IndexedDB 中获取 Swagger 数据
       getData()
@@ -527,10 +491,10 @@ export default {
           let swaggerColumns =
             swaggerData.paths[this.url].get.responses["200"].content["application/json"].schema
               .properties.items.items.properties;
-          if (typeof this.swaggerColumnsProcessor === "function") {
+          if (typeof this.onSwagger === "function") {
             try {
-              const res = await this.swaggerColumnsProcessor({ swaggerColumns });
-              swaggerColumns = res;
+              const res = await this.onSwagger({ columns: swaggerColumns });
+              if (res) swaggerColumns = res;
             } catch (err) {}
           }
           // 递归映射函数
@@ -596,11 +560,14 @@ export default {
           console.log(`\x1b[36m\x1b[4mol插件-表格`, this.tableData.columns);
 
           // 合并完成后，暴露处理钩子
-          if (typeof this.mergedColumnsProcessor === "function") {
+          if (typeof this.onMerged === "function") {
             try {
-              await this.mergedColumnsProcessor({
+              const res = await this.onMerged({
                 columns: this.tableData.columns,
               });
+              if (Array.isArray(res)) {
+                this.tableData.columns = res;
+              }
             } catch (e) {}
           }
 
