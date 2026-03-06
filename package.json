@@ -1,6 +1,6 @@
 {
   "name": "ol-base-components",
-  "version": "2.9.4",
+  "version": "3.0.0",
   "private": false,
   "main": "src/package/index.js",
   "bin": {
@@ -17,7 +17,6 @@
     "openCloseloop": "node src/bin/openCloseloop.js",
     "openLoop": "node src/bin/openLoop.js",
     "news": "node src/bin/news.js"
-    
   },
   "dependencies": {
     "commander": "^14.0.0",
@@ -27,11 +26,13 @@
     "eslint-plugin-vue": "^10.3.0",
     "inquirer": "^8.2.6",
     "swagger-client": "^3.0.1",
-    "vue": "^2.6.14"
+    "vue": "^2.6.14",
+    "vue-plugin-hiprint": "^0.0.60"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
     "@babel/eslint-parser": "^7.12.16",
+    "@types/vscode": "^1.60.0",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
@@ -40,8 +41,7 @@
     "prettier": "^2.8.8",
     "sass": "^1.89.2",
     "sass-loader": "^16.0.5",
-    "vue-template-compiler": "^2.6.14",
-    "@types/vscode": "^1.60.0"
+    "vue-template-compiler": "^2.6.14"
   },
   "eslintConfig": {
     "root": true,
