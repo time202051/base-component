@@ -14,21 +14,31 @@
         <i class="iconfont close-btn" @click="close">x</i>
       </div>
       <div class="print-dialog-body">
-        <div class="flex-row justify-center" style="margin-bottom: 10px">
-          <button class="secondary circle-10 button-item" @click.stop="print">
-            <i class="iconfont sv-printer" />
-            浏览器打印
-          </button>
-          <button class="api circle-10 ml-10" @click.stop="clearPaper">
-            <i class="iconfont sv-clear" />
-            清空纸张
-          </button>
-          <button class="api circle-10 ml-10 button-item" @click.stop="exportJson">
-            <i class="iconfont sv-export" />
-            导出模板 json
-          </button>
+        <div class="header-box" style="margin-bottom: 10px">
+          <paper-selector :hiprint-template="hiprintTemplate" ref="paperSelector" />
+          <div>
+            <slot
+              :hiprint-template="hiprintTemplate"
+              :print="print"
+              :clear-paper="clearPaper"
+              :export-json="exportJson"
+            >
+            </slot>
+            <el-button type="primary" size="small" @click="print">
+              <i class="iconfont sv-printer" />
+              浏览器预览
+            </el-button>
+            <el-button type="danger" size="small" @click="clearPaper" style="margin-left: 10px">
+              <i class="iconfont sv-clear" />
+              清空纸张
+            </el-button>
+            <el-button type="success" size="small" @click="exportJson" style="margin-left: 10px">
+              <i class="iconfont sv-export" />
+              保存
+            </el-button>
+          </div>
         </div>
-        <div class="flex-row" style="height: 87vh">
+        <div class="main flex-row" style="height: 87vh">
           <div class="flex-2 left flex-col">
             <!-- provider1 的容器; 加上 class "rect-printElement-types" 使用默认样式 -->
             <!-- 当然可以 重写 或者 自定义样式 -->
@@ -52,39 +62,56 @@
 // import { onMounted } from "vue";
 import { hiprint } from "vue-plugin-hiprint";
 import { provider1 } from "./provide/provider1.js";
+import PaperSelector from "./components/PaperSelector.vue";
+
 export default {
   name: "print",
+  components: {
+    PaperSelector,
+  },
   props: {
     // 打印数据
     printData: {
       type: Object,
-      default: () => ({
-        name: "CcSimple",
-        barcode: "33321323",
-        table: [
-          { id: "1", name: "王小可", gender: "男", count: "120", amount: "9089元" },
-          { id: "2", name: "梦之遥", gender: "女", count: "20", amount: "89元" },
-        ],
-        table1: [
-          { id: "1", name: "王小可11", gender: "男", count: "120", amount: "9089元" },
-          { id: "2", name: "梦之遥", gender: "女", count: "20", amount: "89元" },
-        ],
-      }),
+      default: () => {},
     },
-    // 模板加载前回调函数
+    // {
+    //     name: "CcSimple",
+    //     barcode: "33321323",
+    //     table: [
+    //       { id: "1", name: "王小可", gender: "男", count: "120", amount: "9089元" },
+    //       { id: "2", name: "梦之遥", gender: "女", count: "20", amount: "89元" },
+    //     ],
+    //     table1: [
+    //       { id: "1", name: "王小可11", gender: "男", count: "120", amount: "9089元" },
+    //       { id: "2", name: "梦之遥", gender: "女", count: "20", amount: "89元" },
+    //     ],
+    //   }
+    onPrintData: {
+      type: Function,
+      default: null,
+    },
+    // {panels:[]}
+    defaultTemplate: {
+      type: Object,
+      default: () => {},
+    },
+    // 模板数据前置钩子
     onTemplate: {
       type: Function,
-      default: () => {},
+      default: null,
+    },
+    grid: {
+      type: Boolean,
+      default: false,
     },
   },
   data() {
     return {
-      hiprintTemplate: null,
+      hiprintTemplate: {},
     };
   },
   created() {
-    console.log("初始化打印弹框");
-
     hiprint.init({
       //   providers: [defaultElementTypeProvider()],
       providers: [provider1()],
@@ -102,52 +129,63 @@ export default {
       // eslint-disable-next-line no-undef
       //   hiprint.PrintElementTypeManager.buildByHtml($(".ep-draggable-item"));
     },
-    buildDesigner() {
+    async buildDesigner() {
       // eslint-disable-next-line no-undef
       $("#hiprint-printTemplate").empty(); // 先清空, 避免重复构建
-      //   判断用户是否传了onTemplate
-      if (this.onTemplate) {
-        console.log(123123);
 
-        // this.onTemplate(this.hiprintTemplate);
+      let template = this.defaultTemplate;
+      if (this.onTemplate) {
+        try {
+          const result = await this.onTemplate(this.defaultTemplate);
+          if (result) {
+            template = result;
+          }
+        } catch (error) {
+          console.error("onTemplate 执行失败:", error);
+        }
       }
+
       this.hiprintTemplate = new hiprint.PrintTemplate({
+        template,
         settingContainer: "#PrintElementOptionSetting", // 元素参数容器
         // paginationContainer: ".hiprint-printPagination", //多页打印
         history: true,
         onDataChanged: (type, json) => {
-          // 模板发生改变回调
           console.log(type); // 新增、移动、删除、修改(参数调整)、大小、旋转
           console.log(json); // 返回 template
         },
-        // fontList: [
-        //   { title: "微软雅黑", value: "Microsoft YaHei" },
-        //   { title: "黑体", value: "STHeitiSC-Light" },
-        //   { title: "思源黑体", value: "SourceHanSansCN-Normal" },
-        //   { title: "王羲之书法体", value: "王羲之书法体" },
-        //   { title: "宋体", value: "SimSun" },
-        //   { title: "华为楷体", value: "STKaiti" },
-        //   { title: "cursive", value: "cursive" },
-        // ],
       });
+      this.$refs.paperSelector.curPaper = { width: 210, height: 296.6 };
       // 构建 并填充到 容器中
       // 可以先 console.log($("#hiprint-printTemplate")) 看看是否有该 dom
-      this.hiprintTemplate.design("#hiprint-printTemplate");
+      this.hiprintTemplate.design("#hiprint-printTemplate", {
+        grid: this.grid,
+      });
     },
-    print() {
+    async print() {
       // 使用外部传入的打印数据
       let data = this.printData;
+      if (this.onPrintData) {
+        try {
+          const result = await this.onPrintData(this.printData);
+          if (result) {
+            data = result;
+          }
+        } catch (error) {
+          console.error("onPrintData 执行失败:", error);
+        }
+      }
       // 参数: 打印时设置 左偏移量，上偏移量
       let options = { leftOffset: -1, topOffset: -1 };
       // 扩展
       let ext = {
-        callback: () => {
-          console.log("浏览器打印窗口已打开");
-        },
-        styleHandler: () => {
-          // 重写 文本 打印样式
-          return "<style>.hiprint-printElement-text{color:red !important;}</style>";
-        },
+        // callback: () => {
+        //   console.log("浏览器打印窗口已打开");
+        // },
+        // styleHandler: () => {
+        //   // 重写 文本 打印样式
+        //   return "<style>.hiprint-printElement-text{color:red !important;}</style>";
+        // },
       };
       // 调用浏览器打印
       this.hiprintTemplate.print(data, options, ext);
@@ -156,15 +194,18 @@ export default {
       const json = this.hiprintTemplate.getJson();
       const dataStr = JSON.stringify(json, null, 2);
       const blob = new Blob([dataStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `print-template-${Date.now()}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      alert("导出成功!");
+      console.log("保存", JSON.parse(dataStr));
+      this.$emit("submit", JSON.parse(dataStr));
+      this.close();
+      // const url = URL.createObjectURL(blob);
+      // const link = document.createElement("a");
+      // link.href = url;
+      // link.download = `print-template-${Date.now()}.json`;
+      // document.body.appendChild(link);
+      // link.click();
+      // document.body.removeChild(link);
+      // URL.revokeObjectURL(url);
+      // alert("导出成功!");
     },
     clearPaper() {
       this.hiprintTemplate.clear();
@@ -525,7 +566,7 @@ button i {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 2000;
 }
 
 .print-dialog {
@@ -563,11 +604,22 @@ button i {
   flex: 1;
   overflow: hidden;
   padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+.print-dialog-body .main {
+  flex: 1;
+  overflow: hidden;
 }
 </style>
 
 <style scoped>
 .button-item {
   height: 40px;
+}
+.header-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 </style>

@@ -11,7 +11,8 @@ let container = null;
 
 const Hiprint = {
   install(Vue) {
-    Vue.prototype.$hiprint = function (data, template) {
+    const hiprint = function (options) {
+      const { printData, onPrintData, defaultTemplate, onTemplate, onSubmit } = options;
       // 销毁旧实例
       if (printInstance) {
         printInstance.$destroy();
@@ -27,26 +28,47 @@ const Hiprint = {
       document.body.appendChild(container);
 
       const PrintComponent = Vue.extend(OlPrint);
+      const propsData = {};
+      if (printData) {
+        propsData.printData = printData;
+      }
+      if (onPrintData) {
+        propsData.onPrintData = onPrintData;
+      }
+
+      if (onTemplate) {
+        propsData.onTemplate = onTemplate;
+      }
+
+      if (defaultTemplate) {
+        propsData.defaultTemplate = defaultTemplate;
+      }
+
       printInstance = new PrintComponent({
-        propsData: {
-          printData: data || {},
-          onTemplate: template,
-        },
+        propsData,
       });
 
-      printInstance.$mount(container);
-    };
-
-    // 提供销毁方法（可选）
-    Vue.prototype.$hiprint.destroy = function () {
-      if (printInstance) {
-        printInstance.$destroy();
-        if (container && container.parentNode) {
-          container.parentNode.removeChild(container);
-        }
-        printInstance = null;
-        container = null;
+      // 监听 submit 事件
+      if (onSubmit && typeof onSubmit === "function") {
+        printInstance.$on("submit", json => {
+          onSubmit(json);
+        });
       }
+
+      printInstance.$mount(container);
+
+      // 返回实例，方便外部调用
+      return printInstance;
+    };
+    Vue.prototype.$hiprint = hiprint;
+
+    // 快捷方法：直接打印
+    Vue.prototype.$hiprint.print = function (options) {
+      const instance = hiprint(options);
+      instance.print();
+      instance.$nextTick(() => {
+        instance.close();
+      });
     };
   },
 };
