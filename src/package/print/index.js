@@ -12,7 +12,7 @@ let container = null;
 const Hiprint = {
   install(Vue) {
     const hiprint = function (options) {
-      const { printData, onPrintData, defaultTemplate, onTemplate, onSubmit } = options;
+      const { printData, onPrintData, defaultTemplate, onTemplate, onSubmit, grid } = options;
       // 销毁旧实例
       if (printInstance) {
         printInstance.$destroy();
@@ -28,7 +28,9 @@ const Hiprint = {
       document.body.appendChild(container);
 
       const PrintComponent = Vue.extend(OlPrint);
-      const propsData = {};
+      const propsData = {
+        grid,
+      };
       if (printData) {
         propsData.printData = printData;
       }

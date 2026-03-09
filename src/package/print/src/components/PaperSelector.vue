@@ -24,6 +24,7 @@
       :visible.sync="paperPopVisible"
       width="400px"
       :append-to-body="true"
+      :z-index="3001"
     >
       <el-form label-width="80px">
         <el-form-item label="纸张宽度">
