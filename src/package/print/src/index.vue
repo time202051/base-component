@@ -161,6 +161,7 @@ export default {
       this.hiprintTemplate.design("#hiprint-printTemplate", {
         grid: this.grid,
       });
+      console.log(6666, this.hiprintTemplate);
     },
     async print() {
       // 使用外部传入的打印数据
@@ -213,12 +214,13 @@ export default {
     close() {
       this.$destroy();
       this.$el.remove();
+      this.$emit("close");
     },
   },
 };
 </script>
 
-<style>
+<style scoped>
 /* flex */
 .flex-row {
   display: flex;
@@ -440,6 +442,16 @@ button i {
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.15);
+}
+/* 隐藏 hiprint 打印 iframe，避免影响页面布局 */
+#hiwprint_iframe {
+  position: fixed !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 </style>
 <style scoped>
