@@ -92,19 +92,19 @@
         @row-click="rowClick"
       >
         <el-table-column
+          v-if="tableData.options && tableData.options.selection"
+          width="60"
+          align="center"
+          type="selection"
+          label=""
+        />
+        <el-table-column
           v-if="tableData.options && tableData.options.index"
           width="60"
           align="center"
           type="index"
           :index="computeTableIndex"
           label="序号"
-        />
-        <el-table-column
-          v-if="tableData.options && tableData.options.selection"
-          width="60"
-          align="center"
-          type="selection"
-          label=""
         />
         <!-- 新增插槽，允许父组件自定义表头 -->
         <!-- <template v-if="tableData.options && tableData.options.useSlotHeader">
