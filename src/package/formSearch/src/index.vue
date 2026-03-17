@@ -163,24 +163,25 @@
           >
             {{ expend ? "收起" : "展开" }}</el-button
           >
+          <el-button
+            v-if="formSearchData.enableConfig"
+            plain
+            size="small"
+            icon="el-icon-setting"
+            @click="handleOpenConfig"
+          >
+            配置
+          </el-button>
         </el-form-item>
       </el-form>
     </div>
-
-    <!-- <div class="btnbox">
-        <el-form class="demo-form-inline">
-          <el-form-item>
-            <el-button
-              v-for="(btn, index) in btnlist"
-              :key="index"
-              size="small"
-              :type="btn.types ? btn.types : 'primary'"
-              @click="btn.method"
-              >{{ btn.title }}</el-button
-            >
-          </el-form-item>
-        </el-form>
-      </div> -->
+    <search-config-dialog
+      v-if="configDialogVisible"
+      :visible.sync="configDialogVisible"
+      :table-search="formSearchData.tableSearch"
+      :customs="formSearchData.customs"
+      @save="handleSaveConfig"
+    />
   </div>
 </template>
 
@@ -188,11 +189,13 @@
 import { getData } from "../../index.js";
 import { getEnum } from "../../../utils/getEnum.js";
 import OlNumberRange from "../../numberRange/index.js";
+import SearchConfigDialog from "./components/SearchConfigDialog.vue";
 
 export default {
   name: "search",
   components: {
     OlNumberRange,
+    SearchConfigDialog,
   },
   directives: {
     "el-select-loadmore": {
@@ -263,6 +266,7 @@ export default {
           // 表格框架各种样式
           options: {},
           reset: false, // 是否要重置
+          enableConfig: false, // 是否启用配置功能
         };
       },
     },
@@ -290,6 +294,7 @@ export default {
       formSearch: {
         ...this.formSearchData.value,
       },
+      configDialogVisible: false,
       // 自定义指令
       loadmores: {
         fn: this.loadmoreGX,
@@ -302,6 +307,7 @@ export default {
   },
   async created() {
     this.init();
+    this.loadOptionSources();
   },
   watch: {
     "formSearchData.value": {
@@ -365,9 +371,11 @@ export default {
         }
       });
 
-      // 自动识别范围时间字段,以Begin和End结尾的字段,和"BeginTime", "EndTime"，这样的时间范围字段
-      const rangeTimeCloumns = await this.autoDetectRangeTimeFields(swaggersearchColumns);
-      this.formSearchData.tableSearch = [...this.formSearchData.tableSearch, ...rangeTimeCloumns];
+      if (!this.formSearchData?.customs?.length) {
+        // 自动识别范围时间字段,以Begin和End结尾的字段,和"BeginTime", "EndTime"，这样的时间范围字段
+        const rangeTimeCloumns = await this.autoDetectRangeTimeFields(swaggersearchColumns);
+        this.formSearchData.tableSearch = [...this.formSearchData.tableSearch, ...rangeTimeCloumns];
+      }
 
       this.findTableSearch =
         this.formSearchData.tableSearch.length > this.tableSearchSlice
@@ -481,39 +489,61 @@ export default {
     getValue(val) {
       this.$emit("getTreeSelectValue", val);
     },
-    // 搜索查询按钮
-    handleSearch(formName, item) {
-      if (this.formSearch.createdTime) {
-        this.formSearch.BeginTime = this.formSearch.createdTime[0];
-        this.formSearch.EndTime = this.formSearch.createdTime[1];
-      } else {
-        this.formSearch.BeginTime = null;
-        this.formSearch.EndTime = null;
-      }
-      // 有originalFields字段的就是范围时间，查询时候转回接口需要的字段
-      Object.keys(this.formSearch).forEach(key => {
-        const fieldConfig = this.formSearchData.tableSearch.find(item => item.value === key);
-        if (fieldConfig && fieldConfig.originalFields) {
-          const { begin, end } = fieldConfig.originalFields;
-          if (this.formSearch[key] && Array.isArray(this.formSearch[key])) {
-            this.formSearch[begin] = this.formSearch[key][0];
-            this.formSearch[end] = this.formSearch[key][1];
-          } else {
-            this.formSearch[begin] = null;
-            this.formSearch[end] = null;
-          }
+    setFilterConditionsByFormSearch(formSearch) {
+      const filterConditions = [];
+      Object.keys(formSearch).forEach(key => {
+        const tempItem = this.formSearchData.tableSearch.find(item => item.value === key);
+        if (formSearch[key] !== undefined && formSearch[key] !== null) {
+          filterConditions.push({
+            key: key,
+            value: formSearch[key],
+            compare: tempItem?.compare || "",
+          });
         }
       });
-
-      const tempFormSearch = Object.assign({}, this.formSearch);
-      if (this.formSearchData.rules) {
-        return this.$refs[formName].validate(valid => {
-          if (!valid) return false;
-          this.$emit("handleSearch", tempFormSearch, item);
+      return filterConditions;
+    },
+    // 搜索查询按钮
+    handleSearch(formName, item) {
+      if (!this.formSearchData?.customs?.length) {
+        if (this.formSearch.createdTime) {
+          this.formSearch.BeginTime = this.formSearch.createdTime[0];
+          this.formSearch.EndTime = this.formSearch.createdTime[1];
+        } else {
+          this.formSearch.BeginTime = null;
+          this.formSearch.EndTime = null;
+        }
+        // 有originalFields字段的就是范围时间，查询时候转回接口需要的字段
+        Object.keys(this.formSearch).forEach(key => {
+          const fieldConfig = this.formSearchData.tableSearch.find(item => item.value === key);
+          if (fieldConfig && fieldConfig.originalFields) {
+            const { begin, end } = fieldConfig.originalFields;
+            if (this.formSearch[key] && Array.isArray(this.formSearch[key])) {
+              this.formSearch[begin] = this.formSearch[key][0];
+              this.formSearch[end] = this.formSearch[key][1];
+            } else {
+              this.formSearch[begin] = null;
+              this.formSearch[end] = null;
+            }
+          }
         });
+
+        const tempFormSearch = Object.assign({}, this.formSearch);
+        if (this.formSearchData.rules) {
+          return this.$refs[formName].validate(valid => {
+            if (!valid) return false;
+            this.$emit("handleSearch", tempFormSearch, item);
+          });
+        }
+        this.$emit("handleSearch", tempFormSearch, item);
+        console.log(`\x1b[36m\x1b[4mol插件-搜索框查询`, tempFormSearch);
+      } else {
+        // 转成接口需要的结构filterConditions
+        const filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
+        // 动态模式
+        this.$emit("handleSearch", this.formSearch, { filterConditions });
+        console.log(`\x1b[36m\x1b[4mol插件-动态搜索框查询`, this.formSearch, { filterConditions });
       }
-      this.$emit("handleSearch", tempFormSearch, item);
-      console.log(`\x1b[36m\x1b[4mol插件-搜索框查询`, tempFormSearch);
     },
     loadmore(obj) {
       this.$emit("loadmore", obj);
@@ -552,6 +582,95 @@ export default {
         : this.formSearchData.tableSearch.slice(0, this.tableSearchSlice);
 
       this.$emit("btnHandleExpend", this.expend);
+    },
+    handleOpenConfig() {
+      this.configDialogVisible = true;
+    },
+    handleSaveConfig(configList) {
+      this.formSearchData.tableSearch = configList;
+      this.findTableSearch =
+        this.formSearchData.tableSearch.length > this.tableSearchSlice
+          ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
+          : this.formSearchData.tableSearch;
+      this.$emit("onSave", configList);
+    },
+    async loadOptionSources() {
+      for (const item of this.formSearchData.tableSearch) {
+        if (item.inputType === "select" && item.optionSource) {
+          await this.loadItemOptions(item);
+        }
+      }
+    },
+    async loadItemOptions(item) {
+      if (!item.optionSource) return;
+
+      const { sourceType } = item.optionSource;
+
+      if (sourceType === "dict") {
+        await this.loadDictOptions(item);
+      } else if (sourceType === "api") {
+        await this.loadApiOptions(item);
+      }
+    },
+    async loadDictOptions(item) {
+      try {
+        const dictKey = item.optionSource.dictKey;
+        if (!dictKey) return;
+
+        const dictData = await this.getDictData(dictKey);
+        if (dictData && Array.isArray(dictData)) {
+          const children = dictData.map(d => ({
+            key: d.key,
+            value: d.value,
+          }));
+          this.$set(item, "children", children);
+        }
+      } catch (error) {
+        console.error("加载字典数据失败:", error);
+      }
+    },
+    async loadApiOptions(item) {
+      try {
+        const apiUrl = item.optionSource.apiUrl;
+        if (!apiUrl) return;
+
+        const response = await this.$http.get(apiUrl);
+        if (response.data && Array.isArray(response.data)) {
+          const { valueField, labelField } = item.optionSource;
+          const children = response.data.map(d => ({
+            key: d[valueField],
+            value: d[labelField],
+          }));
+          this.$set(item, "children", children);
+        }
+      } catch (error) {
+        console.error("加载接口数据失败:", error);
+      }
+    },
+    getDictData(dictKey) {
+      return new Promise(resolve => {
+        try {
+          const wmsStr = localStorage.getItem("wms") || "{}";
+          const wmsData = JSON.parse(wmsStr);
+          const dictData = wmsData.SET_enumsSelect || {};
+          const dictItem = dictData[dictKey];
+          const result = [];
+
+          if (dictItem && dictItem.enums && Array.isArray(dictItem.enums)) {
+            dictItem.enums.forEach(item => {
+              result.push({
+                key: item.key,
+                value: item.value,
+              });
+            });
+          }
+
+          resolve(result);
+        } catch (error) {
+          console.error("获取字典数据失败:", error);
+          resolve([]);
+        }
+      });
     },
     // input为number校验
     handleChangeInput(item) {
