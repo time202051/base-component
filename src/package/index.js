@@ -1,5 +1,6 @@
 import OlTable from "./table";
 import OlSearch from "./formSearch";
+import OlCustomSearch from "./customSearch";
 import Dialog from "./dialog";
 import OlForm from "./form";
 import OlNumberRange from "./numberRange";
@@ -205,15 +206,17 @@ function hideLoading() {
   }
 }
 
-const components = [OlTable, OlSearch, Dialog, OlForm, OlNumberRange, OlPrint];
+const components = [OlTable, OlSearch, OlCustomSearch, Dialog, OlForm, OlNumberRange, OlPrint];
 const install = async function (Vue) {
   // 设置全局数据
   components.map(item => {
+    console.log(777, item);
+
     Vue.component(`ol-${item.name}`, item);
   });
   consoleTooltip();
 };
 
 export default install;
-export { OlTable, OlSearch, Dialog, OlForm, OlNumberRange, OlPrint };
+export { OlTable, OlSearch, OlCustomSearch, Dialog, OlForm, OlNumberRange, OlPrint };
 export { swaggerInstall, swaggerUnload, Hiprint };

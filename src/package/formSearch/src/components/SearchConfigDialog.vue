@@ -180,12 +180,19 @@
           />
         </el-form-item>
 
-        <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="值字段">
-          <el-input v-model="currentOptionConfig.valueField" placeholder="如：id" />
+        <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="请求方式">
+          <el-select v-model="currentOptionConfig.method" placeholder="请选择请求方式">
+            <el-option label="GET" value="get" />
+            <el-option label="POST" value="post" />
+          </el-select>
         </el-form-item>
 
-        <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="文本字段">
+   <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="文本字段">
           <el-input v-model="currentOptionConfig.labelField" placeholder="如：name" />
+        </el-form-item>
+
+        <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="值字段">
+          <el-input v-model="currentOptionConfig.valueField" placeholder="如：id" />
         </el-form-item>
 
         <el-form-item v-if="currentOptionConfig.sourceType === 'manual'" label="选项列表">
@@ -358,6 +365,7 @@ export default {
         sourceType: "manual",
         dictKey: "",
         apiUrl: "",
+        method: "get",
         valueField: "id",
         labelField: "name",
         options: [],
@@ -447,9 +455,10 @@ export default {
 
       if (sourceType === "dict") {
         await this.loadDictOptionsForSave(item);
-      } else if (sourceType === "api") {
-        await this.loadApiOptionsForSave(item);
       }
+      //  else if (sourceType === "api") {
+      //   await this.loadApiOptionsForSave(item);
+      // }
     },
     async loadDictOptionsForSave(item) {
       try {
@@ -467,23 +476,30 @@ export default {
         console.error("加载字典数据失败:", error);
       }
     },
-    async loadApiOptionsForSave(item) {
-      try {
-        const apiUrl = item.optionSource.apiUrl;
-        if (!apiUrl) return;
+    // async loadApiOptionsForSave(item) {
+    //   try {
+    //     const apiUrl = item.optionSource.apiUrl;
+    //     const method = item.optionSource.method || "get";
+    //     if (!apiUrl) return;
 
-        const response = await this.$http.get(apiUrl);
-        if (response.data && Array.isArray(response.data)) {
-          const { valueField, labelField } = item.optionSource;
-          item.children = response.data.map(d => ({
-            key: d[valueField],
-            value: d[labelField],
-          }));
-        }
-      } catch (error) {
-        console.error("加载接口数据失败:", error);
-      }
-    },
+    //     let response;
+    //     if (method === "post") {
+    //       response = await this.$http.post(apiUrl);
+    //     } else {
+    //       response = await this.$http.get(apiUrl);
+    //     }
+
+    //     if (response.data && Array.isArray(response.data)) {
+    //       const { valueField, labelField } = item.optionSource;
+    //       item.children = response.data.map(d => ({
+    //         key: d[valueField],
+    //         value: d[labelField],
+    //       }));
+    //     }
+    //   } catch (error) {
+    //     console.error("加载接口数据失败:", error);
+    //   }
+    // },
 
     handleDelete(index) {
       this.$confirm("确定要删除该条件吗？", "提示", {
@@ -584,6 +600,7 @@ export default {
         sourceType: optionSource.sourceType || "manual",
         dictKey: optionSource.dictKey || "",
         apiUrl: optionSource.apiUrl || "",
+        method: optionSource.method || "get",
         valueField: optionSource.valueField || "id",
         labelField: optionSource.labelField || "name",
         options: [],
@@ -632,6 +649,7 @@ export default {
           ...configDefault,
           sourceType: "api",
           apiUrl: this.currentOptionConfig.apiUrl,
+          method: this.currentOptionConfig.method,
           valueField: this.currentOptionConfig.valueField,
           labelField: this.currentOptionConfig.labelField,
         };

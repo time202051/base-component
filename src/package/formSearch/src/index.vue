@@ -275,12 +275,6 @@ export default {
       type: Number,
       default: 4,
     },
-    tableSearch: {
-      type: Array,
-    },
-    rulesLength: {
-      type: Boolean,
-    },
     //获取swagger后的钩子，返回swagger结构数据。用于处理swagger数据
     onSwagger: {
       type: Function,
@@ -307,7 +301,11 @@ export default {
   },
   async created() {
     this.init();
-    this.loadOptionSources();
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.loadOptionSources();
+    });
   },
   watch: {
     "formSearchData.value": {
@@ -324,54 +322,58 @@ export default {
   },
   methods: {
     async init() {
-      const swaggerData = await getData();
-      let swaggersearchColumns = swaggerData.paths[this.url].get.parameters || [];
-      if (typeof this.onSwagger === "function") {
-        try {
-          const res = await this.onSwagger({ columns: swaggersearchColumns });
-          if (res) swaggersearchColumns = res;
-        } catch (err) {}
-      }
-      swaggersearchColumns.forEach(item => {
-        let tempItem = this.formSearchData.tableSearch.find(
-          e => e.value.toLowerCase() === item.name.toLowerCase()
-        );
-        if (tempItem) {
-          // 匹配到
-          tempItem = { ...item, ...tempItem };
-        } else if (item.description) {
-          // 未匹配到
-          const pushItem = {
-            value: item.name,
-            label: item.description,
-            inputType: "text",
-            props: {},
-          };
-          if (item.schema.enum && Array.isArray(item.schema.enum)) {
-            //枚举值
-            pushItem.inputType = "select";
-            const ref = item.schema["$$ref"].split("/");
-            const enumName = ref[ref.length - 1];
-            const tempEnum = getEnum(enumName);
-            pushItem.children = tempEnum.length
-              ? tempEnum
-              : item.schema.enum.map(e => ({
-                  key: e,
-                  value: e,
-                }));
-          } else if (item.schema.format === "date-time") {
-            //日期
-            pushItem.inputType = "picker";
-            pushItem.props.valueFormat = "yyyy-MM-dd";
-            pushItem.props.format = "yyyy/MM/dd";
-          } else if (item.schema && item.schema.type === "string") {
-            pushItem.inputType = "text";
-          }
-          this.formSearchData.tableSearch.push(pushItem);
+      if (
+        !this.formSearchData ||
+        !this.formSearchData.customs ||
+        !this.formSearchData.customs.length
+      ) {
+        const swaggerData = await getData();
+        let swaggersearchColumns = swaggerData.paths[this.url].get.parameters || [];
+        if (typeof this.onSwagger === "function") {
+          try {
+            const res = await this.onSwagger({ columns: swaggersearchColumns });
+            if (res) swaggersearchColumns = res;
+          } catch (err) {}
         }
-      });
+        swaggersearchColumns.forEach(item => {
+          let tempItem = this.formSearchData.tableSearch.find(
+            e => e.value.toLowerCase() === item.name.toLowerCase()
+          );
+          if (tempItem) {
+            // 匹配到
+            tempItem = { ...item, ...tempItem };
+          } else if (item.description) {
+            // 未匹配到
+            const pushItem = {
+              value: item.name,
+              label: item.description,
+              inputType: "text",
+              props: {},
+            };
+            if (item.schema.enum && Array.isArray(item.schema.enum)) {
+              //枚举值
+              pushItem.inputType = "select";
+              const ref = item.schema["$$ref"].split("/");
+              const enumName = ref[ref.length - 1];
+              const tempEnum = getEnum(enumName);
+              pushItem.children = tempEnum.length
+                ? tempEnum
+                : item.schema.enum.map(e => ({
+                    key: e,
+                    value: e,
+                  }));
+            } else if (item.schema.format === "date-time") {
+              //日期
+              pushItem.inputType = "picker";
+              pushItem.props.valueFormat = "yyyy-MM-dd";
+              pushItem.props.format = "yyyy/MM/dd";
+            } else if (item.schema && item.schema.type === "string") {
+              pushItem.inputType = "text";
+            }
+            this.formSearchData.tableSearch.push(pushItem);
+          }
+        });
 
-      if (!this.formSearchData?.customs?.length) {
         // 自动识别范围时间字段,以Begin和End结尾的字段,和"BeginTime", "EndTime"，这样的时间范围字段
         const rangeTimeCloumns = await this.autoDetectRangeTimeFields(swaggersearchColumns);
         this.formSearchData.tableSearch = [...this.formSearchData.tableSearch, ...rangeTimeCloumns];
@@ -497,7 +499,7 @@ export default {
           filterConditions.push({
             key: key,
             value: formSearch[key],
-            compare: tempItem?.compare || "",
+            compare: tempItem && tempItem.compare ? tempItem.compare : "",
           });
         }
       });
@@ -505,7 +507,11 @@ export default {
     },
     // 搜索查询按钮
     handleSearch(formName, item) {
-      if (!this.formSearchData?.customs?.length) {
+      if (
+        !this.formSearchData ||
+        !this.formSearchData.customs ||
+        !this.formSearchData.customs.length
+      ) {
         if (this.formSearch.createdTime) {
           this.formSearch.BeginTime = this.formSearch.createdTime[0];
           this.formSearch.EndTime = this.formSearch.createdTime[1];
@@ -632,12 +638,19 @@ export default {
     async loadApiOptions(item) {
       try {
         const apiUrl = item.optionSource.apiUrl;
+        const method = item.optionSource.method || "get";
         if (!apiUrl) return;
 
-        const response = await this.$http.get(apiUrl);
-        if (response.data && Array.isArray(response.data)) {
+        let response;
+        if (method === "post") {
+          response = await this.$http.post(apiUrl);
+        } else {
+          response = await this.$http.get(apiUrl);
+        }
+
+        if (response.result && Array.isArray(response.result)) {
           const { valueField, labelField } = item.optionSource;
-          const children = response.data.map(d => ({
+          const children = response.result.map(d => ({
             key: d[valueField],
             value: d[labelField],
           }));
