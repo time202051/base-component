@@ -1,7 +1,6 @@
 <template>
   <ol-search
     :form-search-data="formSearchData"
-    @handleSearch="handleSearch"
     @onSave="onSave"
     v-bind="$attrs"
     v-on="$listeners"

@@ -164,7 +164,7 @@
             {{ expend ? "收起" : "展开" }}</el-button
           >
           <el-button
-            v-if="formSearchData.enableConfig"
+            v-if="formSearchData.customs && formSearchData.customs.length"
             plain
             size="small"
             icon="el-icon-setting"
@@ -266,7 +266,7 @@ export default {
           // 表格框架各种样式
           options: {},
           reset: false, // 是否要重置
-          enableConfig: false, // 是否启用配置功能
+          customs: [], //根据customs确定是动态还是swagger配置
         };
       },
     },
@@ -643,11 +643,11 @@ export default {
 
         let response;
         if (method === "post") {
-          response = await this.$http.post(apiUrl);
+          response = await this.post({ url: apiUrl });
         } else {
-          response = await this.$http.get(apiUrl);
+          response = await this.get({ url: apiUrl });
         }
-
+        if (response.code !== 200) return;
         if (response.result && Array.isArray(response.result)) {
           const { valueField, labelField } = item.optionSource;
           const children = response.result.map(d => ({
