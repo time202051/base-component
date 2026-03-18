@@ -4,6 +4,7 @@
     @onSave="onSave"
     v-bind="$attrs"
     v-on="$listeners"
+    :key="key"
   />
 </template>
 
@@ -33,12 +34,13 @@ export default {
   data() {
     return {
       currentPageItem: {},
+      key: 0,
     };
   },
-  created() {
+
+  mounted() {
     this.init();
   },
-  mounted() {},
   methods: {
     init() {
       const handleMenu = (arr, _this) => {
@@ -68,6 +70,7 @@ export default {
         if (res.code !== 200) return;
         const configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
         this.formSearchData.tableSearch = configList;
+        this.key++;
       });
     },
     //保存
