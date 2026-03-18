@@ -29,7 +29,7 @@
         row-key="value"
         :tree-props="{ children: '' }"
       >
-        <el-table-column label="排序" width="80" align="center">
+        <el-table-column label="排序" width="80" align="center" v-if="dragable">
           <template slot-scope="scope">
             <i class="el-icon-rank sort-handle" style="cursor: move; font-size: 18px" />
           </template>
@@ -152,17 +152,18 @@
           </el-radio-group>
         </el-form-item>
 
-        <el-form-item v-if="currentOptionConfig.sourceType === 'dict'" label="字典Key">
+        <el-form-item v-if="currentOptionConfig.sourceType === 'dict'" label="字典">
           <el-select
             v-model="currentOptionConfig.dictKey"
             filterable
             remote
             reserve-keyword
-            placeholder="请输入字典Key，如：orderTypeEnum"
+            placeholder="请输入字典，如：orderTypeEnum"
             :remote-method="remoteDictQuery"
             :loading="dictLoading"
             style="width: 100%"
             @change="handleDictKeyChange"
+            clearable
           >
             <el-option
               v-for="dict in allDictList"
@@ -187,11 +188,11 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="文本字段">
+        <el-form-item v-if="currentOptionConfig.sourceType === 'api' && show" label="文本字段">
           <el-input v-model="currentOptionConfig.labelField" placeholder="如：name" />
         </el-form-item>
 
-        <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="值字段">
+        <el-form-item v-if="currentOptionConfig.sourceType === 'api' && show" label="值字段">
           <el-input v-model="currentOptionConfig.valueField" placeholder="如：id" />
         </el-form-item>
 
@@ -233,7 +234,7 @@
           </div>
         </el-form-item>
 
-        <el-form-item v-if="currentOptionConfig.sourceType === 'dict'" label="预览">
+        <el-form-item v-if="currentOptionConfig.sourceType === 'dict' && show" label="预览">
           <div class="preview-box">
             <el-tag v-for="(item, index) in previewOptions" :key="index" style="margin: 5px">
               {{ item.value }} ({{ item.key }})
@@ -246,10 +247,12 @@
           </div>
         </el-form-item>
       </el-form>
-      <slot name="footer">
-        <el-button @click="optionsDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveOptions">确定</el-button>
-      </slot>
+      <div class="dialog-footer">
+        <slot name="footer">
+          <el-button @click="optionsDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSaveOptions">确定</el-button>
+        </slot>
+      </div>
     </el-dialog>
 
     <el-dialog
@@ -353,9 +356,14 @@ export default {
       type: Array,
       default: () => [],
     },
+    dragable: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
+      show: false,
       dialogVisible: false,
       configList: [],
       optionsDialogVisible: false,

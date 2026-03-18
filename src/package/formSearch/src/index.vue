@@ -181,6 +181,7 @@
       :table-search="formSearchData.tableSearch"
       :customs="formSearchData.customs"
       @save="handleSaveConfig"
+      v-bind="$attrs"
     />
   </div>
 </template>
