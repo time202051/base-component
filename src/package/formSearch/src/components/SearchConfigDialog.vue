@@ -375,6 +375,7 @@ export default {
       dictLoading: false,
       dictQuery: "",
       sortable: null,
+      currentConfig: {}, // 配置选项
     };
   },
   computed: {
@@ -595,6 +596,7 @@ export default {
     handleConfigOptions(index) {
       this.currentEditIndex = index;
       const currentConfig = this.configList[index];
+      this.currentConfig = JSON.parse(JSON.stringify(currentConfig));
 
       const optionSource = currentConfig.optionSource || {};
       this.currentOptionConfig = {
@@ -624,7 +626,55 @@ export default {
     handleDeleteOption(index) {
       this.currentOptionConfig.options.splice(index, 1);
     },
-    handleSaveOptions() {
+    async loadApiOptions(item) {
+      try {
+        const apiUrl = item.optionSource.apiUrl;
+        const method = item.optionSource.method || "get";
+        if (!apiUrl) return;
+
+        let response;
+        if (method === "post") {
+          response = await this.post({ url: apiUrl });
+        } else {
+          response = await this.get({ url: apiUrl });
+        }
+        if (response.code !== 200) return;
+        if (response.result && Array.isArray(response.result)) {
+          const { valueField, labelField } = item.optionSource;
+          const children = response.result.map(d => ({
+            key: d[valueField],
+            value: d[labelField],
+          }));
+          return children;
+        }
+      } catch (error) {
+        console.error("加载接口数据失败:", error);
+        return [];
+      }
+    },
+    needSetChildren(oldConfig, newConfig) {
+      const { inputType, optionSource } = oldConfig;
+      if (!optionSource) return false;
+      const { sourceType, apiUrl, method, valueField, labelField } = optionSource;
+      if (inputType !== "select" || sourceType !== "api") return false;
+      const {
+        sourceType: newSourceType,
+        apiUrl: newApiUrl,
+        method: newMethod,
+        valueField: newValueField,
+        labelField: newLabelField,
+      } = newConfig;
+      if (
+        sourceType === newSourceType &&
+        apiUrl === newApiUrl &&
+        method === newMethod &&
+        valueField === newValueField &&
+        labelField === newLabelField
+      )
+        return false;
+      return true;
+    },
+    async handleSaveOptions() {
       const config = this.configList[this.currentEditIndex];
       const configDefault = {
         sourceType: "",
@@ -654,7 +704,12 @@ export default {
           valueField: this.currentOptionConfig.valueField,
           labelField: this.currentOptionConfig.labelField,
         };
-        config.children = [];
+        // 接口请求
+        // 判断是否需要走 api接口获取
+        let children = [];
+        const bool = this.needSetChildren(this.currentConfig, config.optionSource);
+        if (bool) children = await this.loadApiOptions(config);
+        else config.children = children || [];
       }
       this.optionsDialogVisible = false;
     },
