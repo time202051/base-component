@@ -210,8 +210,6 @@ const components = [OlTable, OlSearch, OlCustomSearch, Dialog, OlForm, OlNumberR
 const install = async function (Vue) {
   // 设置全局数据
   components.map(item => {
-    console.log(777, item);
-
     Vue.component(`ol-${item.name}`, item);
   });
   consoleTooltip();

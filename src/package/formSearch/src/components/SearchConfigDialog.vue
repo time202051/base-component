@@ -59,12 +59,12 @@
               size="small"
               placeholder="请选择类型"
               @change="handleTypeChange(scope.row)"
-              disabled
+              :disabled="['number', 'picker'].includes(scope.row.inputType)"
             >
               <el-option label="文本输入" value="text" />
-              <el-option label="数字输入" value="number" />
+              <el-option label="数字输入" value="number" disabled />
               <el-option label="下拉选择" value="select" />
-              <el-option label="日期选择" value="picker" />
+              <el-option label="日期选择" value="picker" disabled />
             </el-select>
           </template>
         </el-table-column>
@@ -187,7 +187,7 @@
           </el-select>
         </el-form-item>
 
-   <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="文本字段">
+        <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="文本字段">
           <el-input v-model="currentOptionConfig.labelField" placeholder="如：name" />
         </el-form-item>
 
@@ -447,6 +447,7 @@ export default {
       }
       this.$emit("save", this.configList);
       this.dialogVisible = false;
+      console.log(`\x1b[36m\x1b[4mol插件-动态搜索框配置数据`, this.configList);
     },
     async loadItemOptionsForSave(item) {
       if (!item.optionSource) return;

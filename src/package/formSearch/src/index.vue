@@ -495,10 +495,15 @@ export default {
       const filterConditions = [];
       Object.keys(formSearch).forEach(key => {
         const tempItem = this.formSearchData.tableSearch.find(item => item.value === key);
-        if (formSearch[key] !== undefined && formSearch[key] !== null) {
+        if (
+          formSearch[key] !== undefined &&
+          formSearch[key] !== null &&
+          formSearch[key] !== "" &&
+          formSearch[key] != []
+        ) {
           filterConditions.push({
             key: key,
-            value: formSearch[key],
+            values: Array.isArray(formSearch[key]) ? formSearch[key] : [formSearch[key]], //必须包数组，后端会统一处理
             compare: tempItem && tempItem.compare ? tempItem.compare : "",
           });
         }
@@ -546,6 +551,7 @@ export default {
       } else {
         // 转成接口需要的结构filterConditions
         const filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
+
         // 动态模式
         this.$emit("handleSearch", this.formSearch, { filterConditions });
         console.log(`\x1b[36m\x1b[4mol插件-动态搜索框查询`, this.formSearch, { filterConditions });
