@@ -188,11 +188,11 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item v-if="currentOptionConfig.sourceType === 'api' && show" label="文本字段">
+        <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="文本字段">
           <el-input v-model="currentOptionConfig.labelField" placeholder="如：name" />
         </el-form-item>
 
-        <el-form-item v-if="currentOptionConfig.sourceType === 'api' && show" label="值字段">
+        <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="值字段">
           <el-input v-model="currentOptionConfig.valueField" placeholder="如：id" />
         </el-form-item>
 
@@ -234,7 +234,7 @@
           </div>
         </el-form-item>
 
-        <el-form-item v-if="currentOptionConfig.sourceType === 'dict' && show" label="预览">
+        <el-form-item v-if="currentOptionConfig.sourceType === 'dict' && isPreview" label="预览">
           <div class="preview-box">
             <el-tag v-for="(item, index) in previewOptions" :key="index" style="margin: 5px">
               {{ item.value }} ({{ item.key }})
@@ -360,10 +360,13 @@ export default {
       type: Boolean,
       default: false,
     },
+    isPreview: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
-      show: false,
       dialogVisible: false,
       configList: [],
       optionsDialogVisible: false,
