@@ -39,7 +39,9 @@ export default {
   },
 
   mounted() {
-    this.init();
+    this.$nextTick(() => {
+      this.init();
+    });
   },
   methods: {
     init() {
@@ -69,8 +71,10 @@ export default {
       }).then(res => {
         if (res.code !== 200) return;
         const configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
-        this.formSearchData.tableSearch = configList;
-        this.key++;
+        this.$set(this.formSearchData, "tableSearch", configList);
+        this.$nextTick(() => {
+          this.key++;
+        });
       });
     },
     //保存

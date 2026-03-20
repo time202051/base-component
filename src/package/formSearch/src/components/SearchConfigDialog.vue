@@ -156,11 +156,8 @@
           <el-select
             v-model="currentOptionConfig.dictKey"
             filterable
-            remote
-            reserve-keyword
+            :filter-method="filterDict"
             placeholder="请输入字典，如：orderTypeEnum"
-            :remote-method="remoteDictQuery"
-            :loading="dictLoading"
             style="width: 100%"
             @change="handleDictKeyChange"
             clearable
@@ -170,7 +167,10 @@
               :key="dict.key"
               :label="dict.label"
               :value="dict.key"
-            />
+            >
+              <span style="float: left">{{ dict.label }}</span>
+              <span style="float: right; color: #8492a6; font-size: 13px">{{ dict.key }}</span>
+            </el-option>
           </el-select>
         </el-form-item>
 
@@ -383,8 +383,7 @@ export default {
       },
       previewOptions: [],
       allDictList: [],
-      dictLoading: false,
-      dictQuery: "",
+      allDictListBackup: [],
       sortable: null,
       currentConfig: {}, // 配置选项
     };
@@ -395,13 +394,15 @@ export default {
       return this.customs.filter(custom => !selectedKeys.includes(custom.key));
     },
   },
+  created() {
+    this.loadAllDictList();
+  },
   watch: {
     visible: {
       handler(newVal) {
         this.dialogVisible = newVal;
         if (newVal) {
           this.configList = JSON.parse(JSON.stringify(this.tableSearch));
-          this.loadAllDictList();
           this.$nextTick(() => {
             this.initSortable();
           });
@@ -794,45 +795,28 @@ export default {
         });
 
         this.allDictList = dictList;
+        this.allDictListBackup = dictList;
       } catch (error) {
         console.error("加载字典列表失败:", error);
         this.allDictList = [];
+        this.allDictListBackup = [];
       }
     },
-    async remoteDictQuery(query) {
+    filterDict(query) {
       if (!query) {
-        this.allDictList = [];
+        this.allDictList = this.allDictListBackup || [];
         return;
       }
-
-      try {
-        this.dictLoading = true;
-        const wmsStr = localStorage.getItem("wms") || "{}";
-        const wmsData = JSON.parse(wmsStr);
-        const dictData = wmsData.SET_enumsSelect || {};
-
-        const dictList = [];
-        Object.keys(dictData).forEach(key => {
-          if (key && key.toLowerCase().includes(query.toLowerCase())) {
-            const dictItem = dictData[key];
-            if (dictItem) {
-              dictList.push({
-                key: String(key),
-                label: dictItem.desc || key,
-              });
-            }
-          }
-        });
-
-        this.allDictList = dictList;
-      } catch (error) {
-        console.error("搜索字典失败:", error);
-        this.$message.error("搜索字典失败");
-      } finally {
-        this.dictLoading = false;
-      }
+      const filteredList = this.allDictListBackup.filter(item => {
+        return (
+          item.key.toLowerCase().includes(query.toLowerCase()) ||
+          item.label.toLowerCase().includes(query.toLowerCase())
+        );
+      });
+      this.allDictList = filteredList;
     },
     handleDictKeyChange(dictKey) {
+      this.allDictList = this.allDictListBackup || [];
       if (dictKey) {
         this.loadPreviewOptions();
       }
