@@ -797,6 +797,7 @@ export default {
 .table-header {
   padding-top: 10px;
   border-bottom: 1px #ccc solid;
+  min-height: 49px;
 
   ::v-deep .table-header-item {
   }
