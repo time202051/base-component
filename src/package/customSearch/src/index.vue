@@ -12,6 +12,10 @@
 export default {
   name: "customSearch",
   props: {
+    menuId: {
+      type: String,
+      default: "",
+    },
     formSearchData: {
       type: Object,
       default: () => {
@@ -63,10 +67,12 @@ export default {
       const menus = SET_MENUS;
       this.currentPageItem = handleMenu(menus, this);
 
+      const targetMenuId = this.menuId || (this.currentPageItem && this.currentPageItem.id);
+
       this.get({
         url: `/api/app/menu-search-setting/by-menu`,
         data: {
-          sysMenuId: this.currentPageItem && this.currentPageItem.id,
+          sysMenuId: targetMenuId,
         },
       }).then(res => {
         if (res.code !== 200) return;
@@ -79,10 +85,12 @@ export default {
     },
     //保存
     onSave(configList) {
+      const targetMenuId = this.menuId || (this.currentPageItem && this.currentPageItem.id);
+
       this.post({
         url: `/api/app/menu-search-setting`,
         data: {
-          sysMenuId: this.currentPageItem && this.currentPageItem.id,
+          sysMenuId: targetMenuId,
           settingJson: JSON.stringify(configList),
         },
       }).then(res => {

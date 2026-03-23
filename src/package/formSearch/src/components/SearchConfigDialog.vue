@@ -541,6 +541,13 @@ export default {
         row.props = {};
       }
       this.updateDatePickerProps(row);
+
+      const rangeTypes = ["daterange", "datetimerange", "monthrange"];
+      if (rangeTypes.includes(row.dateType)) {
+        row.compare = "range";
+      } else {
+        row.compare = "eq";
+      }
     },
     updateDatePickerProps(row) {
       const dateType = row.dateType || "date";
