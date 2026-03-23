@@ -853,6 +853,11 @@ export default {
           valueFormat: "yyyy-MM-dd",
           format: "yyyy/MM/dd",
         };
+      } else if (custom.keyType === 3) {
+        newItem.optionSource = {
+          sourceType: "dict",
+          dictKey: custom.enumName,
+        };
       }
 
       this.configList.push(newItem);
