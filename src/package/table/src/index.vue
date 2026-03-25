@@ -73,7 +73,7 @@
                       v-for="(item, index) in printTemplateList"
                       :key="index"
                       :command="item.id"
-                      :disabled="item?.disabled"
+                      :disabled="item.disabled"
                       >{{ item.templeteName || "-" }}</el-dropdown-item
                     >
                   </el-dropdown-menu>
