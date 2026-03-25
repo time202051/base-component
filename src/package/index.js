@@ -1,10 +1,11 @@
-import OlTable from "./table";
+import OlTable, { OlDropdownPrint } from "./table";
 import OlSearch from "./formSearch";
 import OlCustomSearch from "./customSearch";
 import Dialog from "./dialog";
 import OlForm from "./form";
 import OlNumberRange from "./numberRange";
 import OlPrintModel from "./printModel";
+
 import OlPrint, { Hiprint } from "./print";
 
 import SwaggerClient from "swagger-client";
@@ -209,6 +210,7 @@ function hideLoading() {
 
 const components = [
   OlTable,
+  OlDropdownPrint,
   OlSearch,
   OlCustomSearch,
   Dialog,
@@ -226,5 +228,15 @@ const install = async function (Vue) {
 };
 
 export default install;
-export { OlTable, OlSearch, OlCustomSearch, Dialog, OlForm, OlNumberRange, OlPrint, OlPrintModel };
+export {
+  OlTable,
+  OlDropdownPrint,
+  OlSearch,
+  OlCustomSearch,
+  Dialog,
+  OlForm,
+  OlNumberRange,
+  OlPrint,
+  OlPrintModel,
+};
 export { swaggerInstall, swaggerUnload, Hiprint };

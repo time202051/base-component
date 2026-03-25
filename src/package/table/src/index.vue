@@ -63,21 +63,9 @@
             v-if="tableData.options.downloadBtn"
             class="avatar-container right-menu-item hover-effect el-dropdown"
           >
-            <!-- @click="printTable" -->
             <div class="avatar-wrapper">
               <div class="layui-table-tool-self">
-                <el-dropdown @command="handleCommand" trigger="click">
-                  <i class="el-icon-printer" />
-                  <el-dropdown-menu slot="dropdown">
-                    <el-dropdown-item
-                      v-for="(item, index) in printTemplateList"
-                      :key="index"
-                      :command="item.id"
-                      :disabled="item.disabled"
-                      >{{ item.templeteName || "-" }}</el-dropdown-item
-                    >
-                  </el-dropdown-menu>
-                </el-dropdown>
+                <print-template-selector />
               </div>
             </div>
           </div>
@@ -260,11 +248,14 @@ import { getData } from "../../index.js";
 import nodata from "./nodata.jpg";
 import printTemplate from "./printTable.vue";
 import TableColumn from "./TableColumn.vue";
+import PrintTemplateSelector from "./components/PrintTemplateSelector.vue";
+
 export default {
   name: "table",
   components: {
     printTemplate,
     TableColumn,
+    PrintTemplateSelector,
     // 函数式组件注册
     renderDom: {
       functional: true,
@@ -463,7 +454,6 @@ export default {
       twinPage: 1,
       columnsWatcher: null,
       key: 0,
-      printTemplateList: [{ id: 1, templeteName: "暂无数据", disabled: true }],
     };
   },
   computed: {
@@ -496,50 +486,12 @@ export default {
   created() {
     // 通过swagger完善columns
     this.init();
-    this.getPrintTemplateList();
   },
   // 组件销毁时清理监听器
   beforeDestroy() {
     this.stopColumnsWatching();
   },
   methods: {
-    async getPrintTemplateList() {
-      const handleMenu = (arr, _this) => {
-        for (const item of arr) {
-          if (item.path === _this.$route.path) {
-            return item;
-          }
-          if (item.child && item.child.length > 0 && item.type !== 1) {
-            const found = handleMenu(item.child, _this);
-            if (found) return found;
-          }
-        }
-        return null;
-      };
-      let wms = JSON.parse(localStorage.getItem("wms"));
-      let SET_MENUS = null;
-      if (wms) SET_MENUS = wms.SET_MENUS;
-      const menus = SET_MENUS;
-      this.currentPageItem = handleMenu(menus, this);
-
-      const targetMenuId = this.menuId || (this.currentPageItem && this.currentPageItem.id);
-
-      try {
-        const res = await this.get({
-          url: "/api/app/print-templete/page-list",
-          data: {
-            MenuId: targetMenuId,
-            page: 1,
-            MaxResultCount: 1000,
-          },
-        });
-        this.printTemplateList = res.result?.items || [
-          { id: 1, templeteName: "暂无数据", disabled: true },
-        ];
-      } catch (error) {
-        console.error("加载模板列表失败:", error);
-      }
-    },
     init() {
       // 从 IndexedDB 中获取 Swagger 数据
       getData()
@@ -692,14 +644,6 @@ export default {
     //   }, 50);
     //   this.$emit("printTable");
     // },
-    handleCommand(command) {
-      if (!Array.isArray(this.printTemplateList)) return;
-      const tempItem = this.printTemplateList.find(item => item.id === command);
-      this.$hiprint.print({
-        printData: this.tableData?.printData || {},
-        defaultTemplate: tempItem.templeteJson ? JSON.parse(tempItem.templeteJson) : {},
-      });
-    },
     selectAll(val) {
       this.$emit("selectAll", val);
     },
