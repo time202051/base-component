@@ -17,6 +17,12 @@
 <script>
 export default {
   name: "dropdown-print",
+  props: {
+    menuId: {
+      type: String,
+      default: "",
+    },
+  },
   data() {
     return {
       templateList: [{ id: 1, templeteName: "暂无数据", disabled: true }],

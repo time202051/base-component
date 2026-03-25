@@ -65,7 +65,7 @@
           >
             <div class="avatar-wrapper">
               <div class="layui-table-tool-self">
-                <print-template-selector />
+                <print-template-selector :menuId="menuId" />
               </div>
             </div>
           </div>
