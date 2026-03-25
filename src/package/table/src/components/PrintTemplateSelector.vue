@@ -1,17 +1,17 @@
 <template>
-    <el-dropdown @command="handleCommand" trigger="click">
-      <i class="el-icon-printer" />
-      <el-dropdown-menu slot="dropdown">
-        <el-dropdown-item
-          v-for="(item, index) in templateList"
-          :key="index"
-          :command="item.id"
-          :disabled="item.disabled"
-        >
-          {{ item.templeteName || "-" }}
-        </el-dropdown-item>
-      </el-dropdown-menu>
-    </el-dropdown>
+  <el-dropdown @command="handleCommand" trigger="click">
+    <i class="el-icon-printer" />
+    <el-dropdown-menu slot="dropdown">
+      <el-dropdown-item
+        v-for="(item, index) in templateList"
+        :key="index"
+        :command="item.id"
+        :disabled="item.disabled"
+      >
+        {{ item.templeteName || "-" }}
+      </el-dropdown-item>
+    </el-dropdown-menu>
+  </el-dropdown>
 </template>
 
 <script>
@@ -56,7 +56,7 @@ export default {
             MaxResultCount: 1000,
           },
         });
-        this.printTemplateList = res.result?.items || [
+        this.templateList = res.result?.items || [
           { id: 1, templeteName: "暂无数据", disabled: true },
         ];
       } catch (error) {
