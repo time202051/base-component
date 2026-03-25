@@ -115,7 +115,7 @@
 <script>
 
 export default {
-  name: "printManage",
+  name: "print-model",
   data() {
     return {
       menuTreeData: [],
