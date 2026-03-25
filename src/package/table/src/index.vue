@@ -62,11 +62,22 @@
           <div
             v-if="tableData.options.downloadBtn"
             class="avatar-container right-menu-item hover-effect el-dropdown"
-            @click="printTable"
           >
+            <!-- @click="printTable" -->
             <div class="avatar-wrapper">
               <div class="layui-table-tool-self">
-                <i class="el-icon-printer" />
+                <el-dropdown @command="handleCommand" trigger="click">
+                  <i class="el-icon-printer" />
+                  <el-dropdown-menu slot="dropdown">
+                    <el-dropdown-item
+                      v-for="(item, index) in printTemplateList"
+                      :key="index"
+                      :command="item.id"
+                      :disabled="item?.disabled"
+                      >{{ item.templeteName || "-" }}</el-dropdown-item
+                    >
+                  </el-dropdown-menu>
+                </el-dropdown>
               </div>
             </div>
           </div>
@@ -342,6 +353,11 @@ export default {
     event: "SelectionChange",
   },
   props: {
+    // 模板打印的id，不传就默认当前菜单id
+    menuId: {
+      type: String,
+      default: "",
+    },
     url: {
       type: String,
       default: "",
@@ -387,6 +403,7 @@ export default {
           operates: [], // 表格里面的操作按钮
           // tableHeightDiff: 300,
           operatesAttrs: {},
+          printData: {}, // 模板打印的数据
         };
       },
     },
@@ -446,6 +463,7 @@ export default {
       twinPage: 1,
       columnsWatcher: null,
       key: 0,
+      printTemplateList: [{ id: 1, templeteName: "暂无数据", disabled: true }],
     };
   },
   computed: {
@@ -478,12 +496,50 @@ export default {
   created() {
     // 通过swagger完善columns
     this.init();
+    this.getPrintTemplateList();
   },
   // 组件销毁时清理监听器
   beforeDestroy() {
     this.stopColumnsWatching();
   },
   methods: {
+    async getPrintTemplateList() {
+      const handleMenu = (arr, _this) => {
+        for (const item of arr) {
+          if (item.path === _this.$route.path) {
+            return item;
+          }
+          if (item.child && item.child.length > 0 && item.type !== 1) {
+            const found = handleMenu(item.child, _this);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      let wms = JSON.parse(localStorage.getItem("wms"));
+      let SET_MENUS = null;
+      if (wms) SET_MENUS = wms.SET_MENUS;
+      const menus = SET_MENUS;
+      this.currentPageItem = handleMenu(menus, this);
+
+      const targetMenuId = this.menuId || (this.currentPageItem && this.currentPageItem.id);
+
+      try {
+        const res = await this.get({
+          url: "/api/app/print-templete/page-list",
+          data: {
+            MenuId: targetMenuId,
+            page: 1,
+            MaxResultCount: 1000,
+          },
+        });
+        this.printTemplateList = res.result?.items || [
+          { id: 1, templeteName: "暂无数据", disabled: true },
+        ];
+      } catch (error) {
+        console.error("加载模板列表失败:", error);
+      }
+    },
     init() {
       // 从 IndexedDB 中获取 Swagger 数据
       getData()
@@ -622,19 +678,27 @@ export default {
       });
       this.$emit("refreshTable");
     },
-    printTable() {
-      console.log("printTable");
-      if (this.tableData.rows.length <= 0) return;
-      this.printListObj.title = this.$router.history.current.name;
-      this.printListObj.tableHeader = this.tableData.columns;
-      this.printListObj.tableData = this.tableData.rows;
-      console.log(this.printListObj);
-      setTimeout(() => {
-        $(".printTemplate").show();
-        $(".printTemplate").jqprint();
-        $(".printTemplate").hide();
-      }, 50);
-      this.$emit("printTable");
+    // printTable() {
+    //   console.log("printTable");
+    //   if (this.tableData.rows.length <= 0) return;
+    //   this.printListObj.title = this.$router.history.current.name;
+    //   this.printListObj.tableHeader = this.tableData.columns;
+    //   this.printListObj.tableData = this.tableData.rows;
+    //   console.log(this.printListObj);
+    //   setTimeout(() => {
+    //     $(".printTemplate").show();
+    //     $(".printTemplate").jqprint();
+    //     $(".printTemplate").hide();
+    //   }, 50);
+    //   this.$emit("printTable");
+    // },
+    handleCommand(command) {
+      if (!Array.isArray(this.printTemplateList)) return;
+      const tempItem = this.printTemplateList.find(item => item.id === command);
+      this.$hiprint.print({
+        printData: this.tableData?.printData || {},
+        defaultTemplate: tempItem.templeteJson ? JSON.parse(tempItem.templeteJson) : {},
+      });
     },
     selectAll(val) {
       this.$emit("selectAll", val);
@@ -784,6 +848,7 @@ export default {
     th {
       padding: 0px;
       background: #f5f7fa;
+
       div {
         line-height: 28px;
         color: #909399;
@@ -800,6 +865,7 @@ export default {
       text-decoration: none;
       display: inline-block;
       margin: 0px 5px;
+
       ::v-deep .el-button {
         width: 100%;
         padding: 7px;
@@ -871,12 +937,14 @@ export default {
 .checkbox {
   display: block;
 }
+
 // 操作列按钮布局
 .operate-group {
   display: flex;
   align-items: center;
   justify-content: space-around;
 }
+
 .toolbox {
   display: flex;
   gap: 10px;

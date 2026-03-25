@@ -4,6 +4,7 @@ import OlCustomSearch from "./customSearch";
 import Dialog from "./dialog";
 import OlForm from "./form";
 import OlNumberRange from "./numberRange";
+import OlPrintModel from "./printModel";
 import OlPrint, { Hiprint } from "./print";
 
 import SwaggerClient from "swagger-client";
@@ -206,7 +207,16 @@ function hideLoading() {
   }
 }
 
-const components = [OlTable, OlSearch, OlCustomSearch, Dialog, OlForm, OlNumberRange, OlPrint];
+const components = [
+  OlTable,
+  OlSearch,
+  OlCustomSearch,
+  Dialog,
+  OlForm,
+  OlNumberRange,
+  OlPrint,
+  OlPrintModel,
+];
 const install = async function (Vue) {
   // 设置全局数据
   components.map(item => {
@@ -216,5 +226,5 @@ const install = async function (Vue) {
 };
 
 export default install;
-export { OlTable, OlSearch, OlCustomSearch, Dialog, OlForm, OlNumberRange, OlPrint };
+export { OlTable, OlSearch, OlCustomSearch, Dialog, OlForm, OlNumberRange, OlPrint, OlPrintModel };
 export { swaggerInstall, swaggerUnload, Hiprint };

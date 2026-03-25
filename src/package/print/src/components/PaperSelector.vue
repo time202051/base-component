@@ -1,31 +1,16 @@
 <template>
   <div class="paper-selector">
     <el-button-group>
-      <el-button
-        v-for="(value, type) in paperTypes"
-        :key="type"
-        :type="curPaperType === type ? 'primary' : 'default'"
-        size="small"
-        @click="setPaper(type, value)"
-      >
+      <el-button v-for="(value, type) in paperTypes" :key="type" :type="curPaperType === type ? 'primary' : 'default'"
+        size="small" @click="setPaper(type, value)">
         {{ type }}
       </el-button>
-      <el-button
-        :type="curPaperType === 'other' ? 'primary' : 'default'"
-        size="small"
-        @click="showPaperPop"
-      >
+      <el-button :type="curPaperType === 'other' ? 'primary' : 'default'" size="small" @click="showPaperPop">
         自定义纸张
       </el-button>
     </el-button-group>
 
-    <el-dialog
-      title="设置纸张宽高(mm)"
-      :visible.sync="paperPopVisible"
-      width="400px"
-      :append-to-body="true"
-      :z-index="3001"
-    >
+    <el-dialog title="设置纸张宽高(mm)" :visible.sync="paperPopVisible" width="400px" :append-to-body="true" :z-index="3001">
       <el-form label-width="80px">
         <el-form-item label="纸张宽度">
           <el-input v-model="paperWidth" type="number" placeholder="宽(mm)" />

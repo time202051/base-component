@@ -12,7 +12,7 @@ let container = null;
 const Hiprint = {
   install(Vue) {
     const hiprint = function (options) {
-      const { printData, onPrintData, defaultTemplate, onTemplate, onSubmit, grid } = options;
+      const { printData, onPrintData, defaultTemplate, onSubmit, grid } = options || {};
       // 销毁旧实例
       if (printInstance) {
         printInstance.$destroy();
@@ -36,10 +36,6 @@ const Hiprint = {
       }
       if (onPrintData) {
         propsData.onPrintData = onPrintData;
-      }
-
-      if (onTemplate) {
-        propsData.onTemplate = onTemplate;
       }
 
       if (defaultTemplate) {

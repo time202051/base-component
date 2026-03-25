@@ -1,11 +1,3 @@
-<!--
- * @Description: 使用 — 入门篇; 
- * @Author: CcSimple
- * @Github: https://github.com/CcSimple
- * @Date: 2023-02-07 11:52:50
- * @LastEditors: CcSimple
- * @LastEditTime: 2023-02-09 11:25:36
--->
 <template>
   <div class="print-dialog-overlay">
     <div class="print-dialog">
@@ -26,7 +18,7 @@
             </slot>
             <el-button type="primary" size="small" @click="print">
               <i class="iconfont sv-printer" />
-              浏览器预览
+              打印
             </el-button>
             <el-button type="danger" size="small" @click="clearPaper" style="margin-left: 10px">
               <i class="iconfont sv-clear" />
@@ -96,14 +88,13 @@ export default {
       type: Object,
       default: () => {},
     },
-    // 模板数据前置钩子
-    onTemplate: {
-      type: Function,
-      default: null,
-    },
     grid: {
       type: Boolean,
       default: false,
+    },
+    paperSize: {
+      type: Object,
+      default: () => ({ width: 210, height: 296.6 }),
     },
   },
   data() {
@@ -133,21 +124,10 @@ export default {
       // eslint-disable-next-line no-undef
       $("#hiprint-printTemplate").empty(); // 先清空, 避免重复构建
 
-      let template = this.defaultTemplate;
-      if (this.onTemplate) {
-        try {
-          const result = await this.onTemplate(this.defaultTemplate);
-          if (result) {
-            template = result;
-          }
-        } catch (error) {
-          console.error("onTemplate 执行失败:", error);
-        }
-      }
 
       this.hiprintTemplate = new hiprint.PrintTemplate({
-        template,
-        settingContainer: "#PrintElementOptionSetting", // 元素参数容器
+        template: this.defaultTemplate,
+        settingContainer: "#PrintElementOptionSetting",
         // paginationContainer: ".hiprint-printPagination", //多页打印
         history: true,
         onDataChanged: (type, json) => {
@@ -155,7 +135,10 @@ export default {
           console.log(json); // 返回 template
         },
       });
-      this.$refs.paperSelector.curPaper = { width: 210, height: 296.6 };
+      // 使用 props 传入的纸张大小
+      if (this.$refs.paperSelector) {
+        this.$refs.paperSelector.curPaper = this.paperSize;
+      }
       // 构建 并填充到 容器中
       // 可以先 console.log($("#hiprint-printTemplate")) 看看是否有该 dom
       this.hiprintTemplate.design("#hiprint-printTemplate", {
@@ -188,6 +171,10 @@ export default {
         //   return "<style>.hiprint-printElement-text{color:red !important;}</style>";
         // },
       };
+      
+      // 使用 props 传入的纸张大小
+      ext.curPaper = this.paperSize;
+      
       // 调用浏览器打印
       this.hiprintTemplate.print(data, options, ext);
     },
