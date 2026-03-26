@@ -7,6 +7,7 @@
           :data="menuTreeData"
           :props="treeProps"
           node-key="id"
+          :current-node-key="currentMenuId"
           default-expand-all
           :expand-on-click-node="false"
           highlight-current
@@ -17,29 +18,16 @@
       <div class="right-panel">
         <div class="panel-header">
           <span class="panel-title">{{ currentMenuName }} - 打印模板</span>
-          <el-button
-            type="primary"
-            size="small"
-            icon="el-icon-plus"
-            @click="handleAdd"
-          >
+          <el-button type="primary" size="small" icon="el-icon-plus" @click="handleAdd">
             新增模板
           </el-button>
         </div>
         <div class="template-list">
-          <div
-            v-if="templateList.length === 0"
-            class="empty-card"
-            @click="handleAdd"
-          >
+          <div v-if="templateList.length === 0" class="empty-card" @click="handleAdd">
             <i class="el-icon-plus add-icon"></i>
             <span class="add-text">点击添加模板</span>
           </div>
-          <div
-            v-for="template in templateList"
-            :key="template.id"
-            class="template-card"
-          >
+          <div v-for="template in templateList" :key="template.id" class="template-card">
             <div class="card-header">
               <i class="el-icon-document card-icon"></i>
               <span class="card-title">{{ template.templeteName }}</span>
@@ -51,12 +39,7 @@
               </div>
             </div>
             <div class="card-footer">
-              <el-button
-                type="text"
-                size="small"
-                icon="el-icon-edit"
-                @click="handleEdit(template)"
-              >
+              <el-button type="text" size="small" icon="el-icon-edit" @click="handleEdit(template)">
                 编辑
               </el-button>
               <el-button
@@ -81,10 +64,7 @@
       >
         <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
           <el-form-item label="模板名称" prop="templeteName">
-            <el-input
-              v-model="form.templeteName"
-              placeholder="请输入模板名称"
-            ></el-input>
+            <el-input v-model="form.templeteName" placeholder="请输入模板名称"></el-input>
           </el-form-item>
           <el-form-item label="备注">
             <el-input
@@ -95,12 +75,8 @@
             ></el-input>
           </el-form-item>
           <el-form-item label="创建模板">
-            <span style="margin-right: 10px">{{
-              form.templeteJson ? "已创建" : "未创建"
-            }}</span>
-            <el-button type="primary" @click="handleCreateTemplate"
-              >创建模板</el-button
-            >
+            <span style="margin-right: 10px">{{ form.templeteJson ? "已创建" : "未创建" }}</span>
+            <el-button type="primary" @click="handleCreateTemplate">创建模板</el-button>
           </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
@@ -113,7 +89,6 @@
 </template>
 
 <script>
-
 export default {
   name: "print-model",
   data() {
@@ -136,24 +111,39 @@ export default {
         templeteJson: "",
       },
       rules: {
-        templeteName: [
-          { required: true, message: "请输入模板名称", trigger: "blur" },
-        ],
+        templeteName: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
       },
     };
   },
   mounted() {
     this.initMenuTree();
-    this.initTemplateList();
   },
   methods: {
     initMenuTree() {
       const wms = JSON.parse(localStorage.getItem("wms") || "{}");
       const menus = wms.SET_MENUS || [];
       this.menuTreeData = this.buildTreeData(menus);
+      const firstNode = this.findFirstMenuNode(this.menuTreeData);
+      if (firstNode) {
+        this.currentMenuId = firstNode.id;
+        this.currentMenuName = firstNode.title;
+        this.currentItem = firstNode;
+        this.loadTemplates(firstNode.id);
+      }
+    },
+    findFirstMenuNode(menus) {
+      if (!menus || menus.length === 0) return null;
+      for (const menu of menus) {
+        if (menu.child && menu.child.length > 0) {
+          const found = this.findFirstMenuNode(menu.child);
+          if (found) return found;
+        }
+        return menu;
+      }
+      return null;
     },
     buildTreeData(menus) {
-      return menus.filter((menu) => {
+      return menus.filter(menu => {
         if (menu.child && menu.child.length > 0) {
           menu.child = this.buildTreeData(menu.child);
         }
@@ -176,21 +166,7 @@ export default {
             MaxResultCount: 1000,
           },
         });
-        if (res.code != 200) return;
-        this.templateList = res.result?.items || [];
-      } catch (error) {
-        console.error("加载模板列表失败:", error);
-      }
-    },
-    async initTemplateList() {
-      try {
-        const res = await this.get({
-          url: "/api/app/print-templete/page-list",
-          data: {
-            page: 1,
-            MaxResultCount: 1000,
-          },
-        });
+        if (res.code !== 200) return;
         this.templateList = res.result?.items || [];
       } catch (error) {
         console.error("加载模板列表失败:", error);
@@ -239,7 +215,7 @@ export default {
         .catch(() => {});
     },
     async handleSubmit() {
-      this.$refs.formRef.validate(async (valid) => {
+      this.$refs.formRef.validate(async valid => {
         if (valid) {
           try {
             if (this.form.id) {
@@ -282,7 +258,7 @@ export default {
       }
       this.$hiprint({
         defaultTemplate: templateData,
-        onSubmit: (res) => {
+        onSubmit: res => {
           this.form.templeteJson = JSON.stringify(res);
           console.log("保存的结果", this.form);
           this.$message.success("模板创建成功！");

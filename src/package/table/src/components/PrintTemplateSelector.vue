@@ -62,9 +62,11 @@ export default {
             MaxResultCount: 1000,
           },
         });
-        this.templateList = res.result?.items || [
-          { id: 1, templeteName: "暂无数据", disabled: true },
-        ];
+        if (Array.isArray(res.result?.items) && res.result.items.length > 0) {
+          this.templateList = res.result.items;
+        } else {
+          this.templateList = [{ id: 1, templeteName: "暂无数据", disabled: true }];
+        }
       } catch (error) {
         console.error("加载模板列表失败:", error);
       }
@@ -72,6 +74,7 @@ export default {
     handleCommand(command) {
       if (!Array.isArray(this.templateList)) return;
       const tempItem = this.templateList.find(item => item.id === command);
+      if (!tempItem) return this.$message.error("未找到打印模板");
       this.$hiprint.print({
         printData: this.tableData?.printData || {},
         defaultTemplate: tempItem.templeteJson ? JSON.parse(tempItem.templeteJson) : {},
