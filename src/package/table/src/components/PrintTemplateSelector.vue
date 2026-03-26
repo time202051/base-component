@@ -22,6 +22,10 @@ export default {
       type: String,
       default: "",
     },
+    printData: {
+      type: [Object, Array],
+      default: () => {},
+    },
   },
   data() {
     return {
@@ -75,8 +79,19 @@ export default {
       if (!Array.isArray(this.templateList)) return;
       const tempItem = this.templateList.find(item => item.id === command);
       if (!tempItem) return this.$message.error("未找到打印模板");
+
+      const data = this.printData;
+      const isValidData =
+        data &&
+        ((Array.isArray(data) && data.length > 0) ||
+          (typeof data === "object" && Object.keys(data).length > 0));
+
+      if (!isValidData) {
+        return this.$message.error("打印数据不能为空");
+      }
+
       this.$hiprint.print({
-        printData: this.tableData?.printData || {},
+        printData: data,
         defaultTemplate: tempItem.templeteJson ? JSON.parse(tempItem.templeteJson) : {},
       });
     },
