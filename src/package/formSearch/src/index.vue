@@ -281,6 +281,15 @@ export default {
       type: Function,
       default: null,
     },
+    isCustoms: {
+      type: Boolean,
+      default: false,
+    },
+    // 请求方式 post get
+    method: {
+      type: String,
+      default: "get",
+    },
   },
   data() {
     return {
@@ -323,13 +332,9 @@ export default {
   },
   methods: {
     async init() {
-      if (
-        !this.formSearchData ||
-        !this.formSearchData.customs ||
-        !this.formSearchData.customs.length
-      ) {
+      if (!this.isCustoms) {
         const swaggerData = await getData();
-        let swaggersearchColumns = swaggerData.paths[this.url].get.parameters || [];
+        let swaggersearchColumns = swaggerData.paths[this.url][this.method].parameters || [];
         if (typeof this.onSwagger === "function") {
           try {
             const res = await this.onSwagger({ columns: swaggersearchColumns });
@@ -496,12 +501,7 @@ export default {
       const filterConditions = [];
       Object.keys(formSearch).forEach(key => {
         const tempItem = this.formSearchData.tableSearch.find(item => item.value === key);
-        if (
-          formSearch[key] !== undefined &&
-          formSearch[key] !== null &&
-          formSearch[key] !== "" &&
-          formSearch[key] != []
-        ) {
+        if (formSearch[key] !== undefined && formSearch[key] !== null && formSearch[key] !== "") {
           filterConditions.push({
             key: key,
             values: Array.isArray(formSearch[key]) ? formSearch[key] : [formSearch[key]], //必须包数组，后端会统一处理
@@ -513,11 +513,7 @@ export default {
     },
     // 搜索查询按钮
     handleSearch(formName, item) {
-      if (
-        !this.formSearchData ||
-        !this.formSearchData.customs ||
-        !this.formSearchData.customs.length
-      ) {
+      if (!this.isCustoms) {
         if (this.formSearch.createdTime) {
           this.formSearch.BeginTime = this.formSearch.createdTime[0];
           this.formSearch.EndTime = this.formSearch.createdTime[1];

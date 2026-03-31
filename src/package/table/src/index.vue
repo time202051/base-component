@@ -440,6 +440,11 @@ export default {
       type: Function,
       default: null,
     },
+    // 请求方式 post get
+    method: {
+      type: String,
+      default: "get",
+    },
   },
 
   data() {
@@ -497,8 +502,8 @@ export default {
       getData()
         .then(async swaggerData => {
           let swaggerColumns =
-            swaggerData.paths[this.url].get.responses["200"].content["application/json"].schema
-              .properties.items.items.properties;
+            swaggerData.paths[this.url][this.method].responses["200"].content["application/json"]
+              .schema.properties.items.items.properties;
           if (typeof this.onSwagger === "function") {
             try {
               const res = await this.onSwagger({ columns: swaggerColumns });

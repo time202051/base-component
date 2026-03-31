@@ -1,10 +1,13 @@
 <template>
   <ol-search
-    :form-search-data="formSearchData"
-    @onSave="onSave"
-    v-bind="$attrs"
-    v-on="$listeners"
     :key="key"
+    :form-search-data="formSearchData"
+    isCustoms
+    v-bind="$attrs"
+    @onSave="onSave"
+    method="post"
+    v-on="$listeners"
+    ref="customSearchRef"
   />
 </template>
 
@@ -78,15 +81,15 @@ export default {
         if (res.code !== 200) return;
         const configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
         this.$set(this.formSearchData, "tableSearch", configList);
-        this.$nextTick(() => {
-          this.key++;
-        });
+        this.$refs.customSearchRef.init();
+        // this.$nextTick(() => {
+        //   this.key++;
+        // });
       });
     },
     //保存
     onSave(configList) {
       const targetMenuId = this.menuId || (this.currentPageItem && this.currentPageItem.id);
-
       this.post({
         url: `/api/app/menu-search-setting`,
         data: {
