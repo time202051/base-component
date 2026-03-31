@@ -288,7 +288,9 @@ export default {
     // 请求方式 post get
     method: {
       type: String,
-      default: "get",
+      default: () => {
+        return this.$olBaseConfig.method || "get";
+      },
     },
   },
   data() {

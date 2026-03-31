@@ -219,11 +219,12 @@ const components = [
   OlPrint,
   OlPrintModel,
 ];
-const install = async function (Vue) {
+const install = async function (Vue, options) {
   // 设置全局数据
   components.map(item => {
     Vue.component(`ol-${item.name}`, item);
   });
+  Vue.prototype.$olBaseConfig = options || {};
   consoleTooltip();
 };
 
