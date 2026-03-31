@@ -332,7 +332,7 @@ export default {
   },
   methods: {
     async init() {
-      if (!this.isCustoms) {
+      if (!this.isCustoms && this.url) {
         const swaggerData = await getData();
         let swaggersearchColumns = swaggerData.paths[this.url][this.method].parameters || [];
         if (typeof this.onSwagger === "function") {

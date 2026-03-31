@@ -490,7 +490,7 @@ export default {
   },
   created() {
     // 通过swagger完善columns
-    this.init();
+    if (this.url) this.init();
   },
   // 组件销毁时清理监听器
   beforeDestroy() {
