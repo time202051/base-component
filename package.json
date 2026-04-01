@@ -1,6 +1,6 @@
 {
   "name": "ol-base-components",
-  "version": "3.3.8",
+  "version": "3.3.9",
   "private": false,
   "main": "src/package/index.js",
   "bin": {

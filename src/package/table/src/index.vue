@@ -443,9 +443,6 @@ export default {
     // 请求方式 post get
     method: {
       type: String,
-      default: () => {
-        return this.$olBaseConfig.method || "get";
-      },
     },
   },
 
@@ -489,6 +486,10 @@ export default {
         });
       },
     },
+    // 优先级：props > 全局配置 > 默认值
+    finalMethod() {
+      return this.method || (this.$olBaseConfig && this.$olBaseConfig.method) || "get";
+    },
   },
   created() {
     // 通过swagger完善columns
@@ -504,8 +505,9 @@ export default {
       getData()
         .then(async swaggerData => {
           let swaggerColumns =
-            swaggerData.paths[this.url][this.method].responses["200"].content["application/json"]
-              .schema.properties.items.items.properties;
+            swaggerData.paths[this.url][this.finalMethod].responses["200"].content[
+              "application/json"
+            ].schema.properties.items.items.properties;
           if (typeof this.onSwagger === "function") {
             try {
               const res = await this.onSwagger({ columns: swaggerColumns });

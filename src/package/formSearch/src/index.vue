@@ -288,9 +288,6 @@ export default {
     // 请求方式 post get
     method: {
       type: String,
-      default: () => {
-        return this.$olBaseConfig.method || "get";
-      },
     },
   },
   data() {
@@ -319,6 +316,12 @@ export default {
       this.loadOptionSources();
     });
   },
+  computed: {
+    // 优先级：props > 全局配置 > 默认值
+    finalMethod() {
+      return this.method || (this.$olBaseConfig && this.$olBaseConfig.method) || "get";
+    },
+  },
   watch: {
     "formSearchData.value": {
       handler: function (newVal, OldVal) {
@@ -336,7 +339,7 @@ export default {
     async init() {
       if (!this.isCustoms && this.url) {
         const swaggerData = await getData();
-        let swaggersearchColumns = swaggerData.paths[this.url][this.method].parameters || [];
+        let swaggersearchColumns = swaggerData.paths[this.url][this.finalMethod].parameters || [];
         if (typeof this.onSwagger === "function") {
           try {
             const res = await this.onSwagger({ columns: swaggersearchColumns });
