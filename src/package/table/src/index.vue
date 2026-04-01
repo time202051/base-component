@@ -533,8 +533,7 @@ export default {
 
           Object.keys(swaggerColumns).forEach(key => {
             const item = swaggerColumns[key];
-            const existingColumn = this.findColumnByProp(this.tableData.columns, key);
-            if (!existingColumn && item.description) {
+            if (item.description) {
               const obj = {
                 prop: key,
                 label: item.description,
@@ -551,7 +550,8 @@ export default {
               if (item.type === "boolean") {
                 obj.prop = `${key}Text`;
               }
-              this.tableData.columns.push(obj);
+              if (!this.findColumnByProp(this.tableData.columns, obj.prop))
+                this.tableData.columns.push(obj);
             }
           });
           // 根据beforeProp排序
