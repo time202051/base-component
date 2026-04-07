@@ -2,10 +2,10 @@
   <ol-search
     :key="key"
     :form-search-data="formSearchData"
-    isCustoms
+    isCustomSearch
     v-bind="$attrs"
     @onSave="onSave"
-    method="post"
+    :method="finalMethod"
     v-on="$listeners"
     ref="customSearchRef"
   />
@@ -37,6 +37,10 @@ export default {
         };
       },
     },
+    // 请求方式 post get
+    method: {
+      type: String,
+    },
   },
   data() {
     return {
@@ -49,6 +53,12 @@ export default {
     this.$nextTick(() => {
       this.init();
     });
+  },
+  computed: {
+    // 优先级：props > 全局配置 > 默认值
+    finalMethod() {
+      return this.method || (this.$olBaseConfig && this.$olBaseConfig.method) || "get";
+    },
   },
   methods: {
     init() {

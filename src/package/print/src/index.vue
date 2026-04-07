@@ -144,7 +144,7 @@ export default {
       this.hiprintTemplate.design("#hiprint-printTemplate", {
         grid: this.grid,
       });
-      console.log(6666, this.hiprintTemplate);
+      // console.log(6666, this.hiprintTemplate);
     },
     async print() {
       // 使用外部传入的打印数据

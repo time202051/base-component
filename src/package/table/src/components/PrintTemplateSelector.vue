@@ -1,6 +1,10 @@
 <template>
   <el-dropdown @command="handleCommand" trigger="click">
-    <i class="el-icon-printer" />
+    <img
+      src="../../../../assets/print.svg"
+      alt="print"
+      style="width: 14px; height: 14px; cursor: pointer"
+    />
     <el-dropdown-menu slot="dropdown">
       <el-dropdown-item
         v-for="(item, index) in templateList"

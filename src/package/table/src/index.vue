@@ -26,6 +26,14 @@
         </div>
         <!-- 右侧工具按钮 -->
         <div class="toolbox">
+          <!-- 工具按钮前插槽 -->
+          <slot
+            name="toolbox-before"
+            :tableData="tableData"
+            :multipleSelection="multipleSelection"
+            :paginations="paginations"
+            :loading="tableData.loading"
+          ></slot>
           <el-dropdown
             v-if="tableData.options.headTool"
             class="avatar-container right-menu-item hover-effect"
@@ -60,7 +68,18 @@
             </div>
           </div>
           <div
-            v-if="tableData.options.downloadBtn"
+            v-if="tableData.options.downloadBtn && !isSmartPrintComputed"
+            class="avatar-container right-menu-item hover-effect el-dropdown"
+            @click="printTable"
+          >
+            <div class="avatar-wrapper">
+              <div class="layui-table-tool-self">
+                <i class="el-icon-printer" />
+              </div>
+            </div>
+          </div>
+          <div
+            v-if="isSmartPrintComputed"
             class="avatar-container right-menu-item hover-effect el-dropdown"
           >
             <div class="avatar-wrapper">
@@ -69,6 +88,14 @@
               </div>
             </div>
           </div>
+          <!-- 工具按钮后插槽 -->
+          <slot
+            name="toolbox-after"
+            :tableData="tableData"
+            :multipleSelection="multipleSelection"
+            :paginations="paginations"
+            :loading="tableData.loading"
+          ></slot>
         </div>
       </div>
     </template>
@@ -444,6 +471,11 @@ export default {
     method: {
       type: String,
     },
+    // 是否启用智能打印
+    isSmartPrint: {
+      type: Boolean,
+      default: null,
+    },
   },
 
   data() {
@@ -489,6 +521,12 @@ export default {
     // 优先级：props > 全局配置 > 默认值
     finalMethod() {
       return this.method || (this.$olBaseConfig && this.$olBaseConfig.method) || "get";
+    },
+    isSmartPrintComputed() {
+      if (this.isSmartPrint !== null) {
+        return this.isSmartPrint;
+      }
+      return (this.$olBaseConfig && this.$olBaseConfig.isSmartPrint) || false;
     },
   },
   created() {
@@ -639,20 +677,20 @@ export default {
       });
       this.$emit("refreshTable");
     },
-    // printTable() {
-    //   console.log("printTable");
-    //   if (this.tableData.rows.length <= 0) return;
-    //   this.printListObj.title = this.$router.history.current.name;
-    //   this.printListObj.tableHeader = this.tableData.columns;
-    //   this.printListObj.tableData = this.tableData.rows;
-    //   console.log(this.printListObj);
-    //   setTimeout(() => {
-    //     $(".printTemplate").show();
-    //     $(".printTemplate").jqprint();
-    //     $(".printTemplate").hide();
-    //   }, 50);
-    //   this.$emit("printTable");
-    // },
+    printTable() {
+      console.log("printTable");
+      if (this.tableData.rows.length <= 0) return;
+      this.printListObj.title = this.$router.history.current.name;
+      this.printListObj.tableHeader = this.tableData.columns;
+      this.printListObj.tableData = this.tableData.rows;
+      console.log(this.printListObj);
+      setTimeout(() => {
+        $(".printTemplate").show();
+        $(".printTemplate").jqprint();
+        $(".printTemplate").hide();
+      }, 50);
+      this.$emit("printTable");
+    },
     selectAll(val) {
       this.$emit("selectAll", val);
     },

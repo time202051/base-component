@@ -164,7 +164,7 @@
             {{ expend ? "收起" : "展开" }}</el-button
           >
           <el-button
-            v-if="formSearchData.customs && formSearchData.customs.length"
+            v-if="isCustomSearch"
             plain
             size="small"
             icon="el-icon-setting"
@@ -281,7 +281,7 @@ export default {
       type: Function,
       default: null,
     },
-    isCustoms: {
+    isCustomSearch: {
       type: Boolean,
       default: false,
     },
@@ -337,7 +337,7 @@ export default {
   },
   methods: {
     async init() {
-      if (!this.isCustoms && this.url) {
+      if (!this.isCustomSearch && this.url) {
         const swaggerData = await getData();
         let swaggersearchColumns = swaggerData.paths[this.url][this.finalMethod].parameters || [];
         if (typeof this.onSwagger === "function") {
@@ -518,7 +518,7 @@ export default {
     },
     // 搜索查询按钮
     handleSearch(formName, item) {
-      if (!this.isCustoms) {
+      if (!this.isCustomSearch) {
         if (this.formSearch.createdTime) {
           this.formSearch.BeginTime = this.formSearch.createdTime[0];
           this.formSearch.EndTime = this.formSearch.createdTime[1];
