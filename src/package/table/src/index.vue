@@ -84,7 +84,12 @@
           >
             <div class="avatar-wrapper">
               <div class="layui-table-tool-self">
-                <print-template-selector :menuId="menuId" :printData="tableData.printData" />
+                <print-template-selector
+                  :menuId="menuId"
+                  :printData="tableData.printData"
+                  :multipleSelection="multipleSelection"
+                  v-bind="$attrs"
+                />
               </div>
             </div>
           </div>

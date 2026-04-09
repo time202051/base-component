@@ -124,7 +124,6 @@ export default {
       // eslint-disable-next-line no-undef
       $("#hiprint-printTemplate").empty(); // 先清空, 避免重复构建
 
-
       this.hiprintTemplate = new hiprint.PrintTemplate({
         template: this.defaultTemplate,
         settingContainer: "#PrintElementOptionSetting",
@@ -152,9 +151,8 @@ export default {
       if (this.onPrintData) {
         try {
           const result = await this.onPrintData(this.printData);
-          if (result) {
-            data = result;
-          }
+          if (result) data = result;
+          else console.error("onPrintData 执行失败，返回数据为空");
         } catch (error) {
           console.error("onPrintData 执行失败:", error);
         }
@@ -171,10 +169,10 @@ export default {
         //   return "<style>.hiprint-printElement-text{color:red !important;}</style>";
         // },
       };
-      
+
       // 使用 props 传入的纸张大小
       ext.curPaper = this.paperSize;
-      
+
       // 调用浏览器打印
       this.hiprintTemplate.print(data, options, ext);
     },

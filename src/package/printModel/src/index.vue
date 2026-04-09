@@ -37,6 +37,10 @@
                 <span class="info-label">备注：</span>
                 <span class="info-value">{{ template.remark || "无" }}</span>
               </div>
+              <div class="card-info">
+                <span class="info-label">数据源URL：</span>
+                <span class="info-value">{{ template.printUrl || "无" }}</span>
+              </div>
             </div>
             <div class="card-footer">
               <el-button type="text" size="small" icon="el-icon-edit" @click="handleEdit(template)">
@@ -66,6 +70,17 @@
           <el-form-item label="模板名称" prop="templeteName">
             <el-input v-model="form.templeteName" placeholder="请输入模板名称"></el-input>
           </el-form-item>
+          <el-form-item label="创建模板" prop="templeteJson">
+            <span style="margin-right: 10px">{{ form.templeteJson ? "已创建" : "未创建" }}</span>
+            <el-button type="primary" @click="handleCreateTemplate">创建模板</el-button>
+          </el-form-item>
+          <el-form-item label="数据源URL" prop="printUrl">
+            <el-input
+              v-model="form.printUrl"
+              placeholder="请输入数据源URL"
+              @blur="form.printUrl = form.printUrl && form.printUrl.trim()"
+            ></el-input>
+          </el-form-item>
           <el-form-item label="备注">
             <el-input
               v-model="form.remark"
@@ -73,10 +88,6 @@
               :rows="3"
               placeholder="请输入备注"
             ></el-input>
-          </el-form-item>
-          <el-form-item label="创建模板">
-            <span style="margin-right: 10px">{{ form.templeteJson ? "已创建" : "未创建" }}</span>
-            <el-button type="primary" @click="handleCreateTemplate">创建模板</el-button>
           </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
@@ -109,9 +120,11 @@ export default {
         templeteName: "",
         remark: "",
         templeteJson: "",
+        printUrl: "",
       },
       rules: {
         templeteName: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
+        templeteJson: [{ required: true, message: "请输入模板JSON", trigger: "blur" }],
       },
     };
   },
@@ -179,6 +192,7 @@ export default {
         templeteName: "",
         remark: "",
         templeteJson: "",
+        printUrl: "",
       };
       this.dialogVisible = true;
       this.$nextTick(() => {
@@ -192,6 +206,7 @@ export default {
         templeteName: template.templeteName,
         remark: template.remark,
         templeteJson: template.templeteJson,
+        printUrl: template.printUrl || "",
       };
       this.dialogVisible = true;
     },
@@ -225,6 +240,7 @@ export default {
                   id: this.form.id,
                   templeteName: this.form.templeteName,
                   templeteJson: this.form.templeteJson,
+                  printUrl: this.form.printUrl,
                 },
               });
               this.$message.success("编辑成功");
@@ -235,6 +251,7 @@ export default {
                   menuId: this.currentMenuId,
                   templeteName: this.form.templeteName,
                   templeteJson: this.form.templeteJson,
+                  printUrl: this.form.printUrl,
                 },
               });
               this.$message.success("新增成功");
