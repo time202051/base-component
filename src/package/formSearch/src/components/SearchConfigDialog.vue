@@ -456,6 +456,12 @@ export default {
       for (const item of this.configList) {
         if (item.inputType === "select" && item.optionSource) {
           await this.loadItemOptionsForSave(item);
+          // 如果是“包含于”则，下拉框多选
+          if (item.compare === "in") {
+            item.props.multiple = true;
+          } else {
+            delete item.props.multiple;
+          }
         }
       }
       this.$emit("save", this.configList);
