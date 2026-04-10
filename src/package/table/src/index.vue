@@ -68,7 +68,7 @@
             </div>
           </div>
           <div
-            v-if="tableData.options.downloadBtn && !isSmartPrintComputed"
+            v-if="tableData.options.downloadBtn"
             class="avatar-container right-menu-item hover-effect el-dropdown"
             @click="printTable"
           >
@@ -79,7 +79,7 @@
             </div>
           </div>
           <div
-            v-if="isSmartPrintComputed"
+            v-if="isSmartPrintBtn"
             class="avatar-container right-menu-item hover-effect el-dropdown"
           >
             <div class="avatar-wrapper">
@@ -420,6 +420,7 @@ export default {
             headTool: true, // 开启头部工具栏
             refreshBtn: true, // 开启表格头部刷新按钮
             downloadBtn: true, // 开启表格头部下载按钮
+            // smartPrintBtn: false,// 是否启用智能打印,字段不存在时候用全局配置
           }, // 序号和复选框
           rows: [], // 表数据
           columns: [], // 表头
@@ -476,11 +477,6 @@ export default {
     method: {
       type: String,
     },
-    // 是否启用智能打印
-    isSmartPrint: {
-      type: Boolean,
-      default: null,
-    },
   },
 
   data() {
@@ -527,11 +523,12 @@ export default {
     finalMethod() {
       return this.method || (this.$olBaseConfig && this.$olBaseConfig.method) || "get";
     },
-    isSmartPrintComputed() {
-      if (this.isSmartPrint !== null) {
-        return this.isSmartPrint;
+    isSmartPrintBtn() {
+      const hasKey = Object.keys(this.tableData.options).includes("smartPrintBtn");
+      if (hasKey) {
+        return !!this.tableData.options.smartPrintBtn;
       }
-      return (this.$olBaseConfig && this.$olBaseConfig.isSmartPrint) || false;
+      return (this.$olBaseConfig && this.$olBaseConfig.smartPrintBtn) || false;
     },
   },
   created() {

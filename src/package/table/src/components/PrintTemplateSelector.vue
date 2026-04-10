@@ -1,7 +1,7 @@
 <template>
   <el-dropdown @command="handleCommand" trigger="click">
     <img
-      src="../../../../assets/print.svg"
+      src="../../../../assets/icon/printModel.svg"
       alt="print"
       style="width: 14px; height: 14px; cursor: pointer"
     />
@@ -50,15 +50,15 @@ export default {
       //     remark: "",
       //     templeteJson:
       //       '{"panels":[{"index":0,"name":1,"paperType":"A4","height":297,"width":210,"paperHeader":0,"paperFooter":841.8897637795277,"printElements":[{"options":{"left":67.5,"top":165,"height":36,"width":550,"fields":[],"field":"table","qid":"table","columns":[[{"width":137.5,"title":"名称","field":"name","checked":true,"columnId":"name","fixed":false,"rowspan":1,"colspan":1,"align":"center"},{"width":137.5,"title":"性别","field":"gender","checked":true,"columnId":"gender","fixed":false,"rowspan":1,"colspan":1,"align":"center"},{"width":137.5,"title":"数量","field":"count","checked":true,"columnId":"count","fixed":false,"rowspan":1,"colspan":1,"align":"center"},{"width":137.5,"title":"金额","field":"amount","checked":true,"columnId":"amount","fixed":false,"rowspan":1,"colspan":1,"align":"center"}]]},"printElementType":{"title":"表格","type":"table","editable":true,"columnDisplayEditable":true,"columnDisplayIndexEditable":true,"columnTitleEditable":true,"columnResizable":true,"columnAlignEditable":true,"isEnableEditField":true,"isEnableContextMenu":true,"isEnableInsertRow":true,"isEnableDeleteRow":true,"isEnableInsertColumn":true,"isEnableDeleteColumn":true,"isEnableMergeCell":true}},{"options":{"left":127.5,"top":301.5,"height":9.75,"width":120,"field":"name","testData":"内容","title":"文本","qid":"name"},"printElementType":{"title":"文本","type":"text"}}],"paperNumberContinue":true,"watermarkOptions":{},"panelLayoutOptions":{}}]}',
-      //     printUrl: "api/app/aaa",
+      //     sourceUrl: "api/app/aaa",
       //   },
       //   {
       //     id: 2,
-      //     templeteName: "printURL模式",
+      //     templeteName: "sourceUrl模式",
       //     remark: "",
       //     templeteJson:
       //       '{"panels":[{"index":0,"name":1,"paperType":"A4","height":297,"width":210,"paperHeader":0,"paperFooter":841.8897637795277,"printElements":[{"options":{"left":67.5,"top":229.5,"height":36,"width":550,"fields":[],"field":"table","qid":"table","columns":[[{"width":137.5,"title":"名称","field":"name","checked":true,"columnId":"name","fixed":false,"rowspan":1,"colspan":1,"align":"center"},{"width":137.5,"title":"性别","field":"gender","checked":true,"columnId":"gender","fixed":false,"rowspan":1,"colspan":1,"align":"center"},{"width":137.5,"title":"数量","field":"count","checked":true,"columnId":"count","fixed":false,"rowspan":1,"colspan":1,"align":"center"},{"width":137.5,"title":"金额","field":"amount","checked":true,"columnId":"amount","fixed":false,"rowspan":1,"colspan":1,"align":"center"}]]},"printElementType":{"title":"表格","type":"table","editable":true,"columnDisplayEditable":true,"columnDisplayIndexEditable":true,"columnTitleEditable":true,"columnResizable":true,"columnAlignEditable":true,"isEnableEditField":true,"isEnableContextMenu":true,"isEnableInsertRow":true,"isEnableDeleteRow":true,"isEnableInsertColumn":true,"isEnableDeleteColumn":true,"isEnableMergeCell":true}},{"options":{"left":247.5,"top":304.5,"height":9.75,"width":120,"field":"name","testData":"内容","title":"文本","qid":"name"},"printElementType":{"title":"文本","type":"text"}},{"options":{"left":79.5,"top":313.5,"height":32,"width":120,"field":"qrcode","testData":"XS888888888","fontSize":12,"lineHeight":18,"textType":"qrcode","title":"二维码","qid":"qrcode"},"printElementType":{"title":"二维码","type":"text"}}],"paperNumberContinue":true,"watermarkOptions":{},"panelLayoutOptions":{}}]}',
-      //     printUrl: "api/app/bbb",
+      //     sourceUrl: "api/app/bbb",
       //   },
       //   {
       //     id: 3,
@@ -66,7 +66,7 @@ export default {
       //     remark: "",
       //     templeteJson:
       //       '{"panels":[{"index":0,"name":1,"paperType":"A4","height":297,"width":210,"paperHeader":0,"paperFooter":841.8897637795277,"printElements":[{"options":{"left":67.5,"top":229.5,"height":36,"width":550,"fields":[],"field":"table","qid":"table","columns":[[{"width":137.5,"title":"名称","field":"name","checked":true,"columnId":"name","fixed":false,"rowspan":1,"colspan":1,"align":"center"},{"width":137.5,"title":"性别","field":"gender","checked":true,"columnId":"gender","fixed":false,"rowspan":1,"colspan":1,"align":"center"},{"width":137.5,"title":"数量","field":"count","checked":true,"columnId":"count","fixed":false,"rowspan":1,"colspan":1,"align":"center"},{"width":137.5,"title":"金额","field":"amount","checked":true,"columnId":"amount","fixed":false,"rowspan":1,"colspan":1,"align":"center"}]]},"printElementType":{"title":"表格","type":"table","editable":true,"columnDisplayEditable":true,"columnDisplayIndexEditable":true,"columnTitleEditable":true,"columnResizable":true,"columnAlignEditable":true,"isEnableEditField":true,"isEnableContextMenu":true,"isEnableInsertRow":true,"isEnableDeleteRow":true,"isEnableInsertColumn":true,"isEnableDeleteColumn":true,"isEnableMergeCell":true}},{"options":{"left":247.5,"top":304.5,"height":9.75,"width":120,"field":"name","testData":"内容","title":"文本","qid":"name"},"printElementType":{"title":"文本","type":"text"}},{"options":{"left":79.5,"top":313.5,"height":32,"width":120,"field":"qrcode","testData":"XS888888888","fontSize":12,"lineHeight":18,"textType":"qrcode","title":"二维码","qid":"qrcode"},"printElementType":{"title":"二维码","type":"text"}}],"paperNumberContinue":true,"watermarkOptions":{},"panelLayoutOptions":{}}]}',
-      //     printUrl: "",
+      //     sourceUrl: "",
       //   },
       // ],
     };
@@ -144,7 +144,7 @@ export default {
 
         // 如果自定义回调没有调用 done，则走默认逻辑
         if (!isCustomHandled) {
-          if (tempItem.printUrl) {
+          if (tempItem.sourceUrl) {
             this.printByApi(options, tempItem);
           } else {
             // 没有自定义回调，走默认逻辑
@@ -152,7 +152,7 @@ export default {
             this.$hiprint.print(options);
           }
         }
-      } else if (tempItem.printUrl) {
+      } else if (tempItem.sourceUrl) {
         this.printByApi(options, tempItem);
       } else {
         this.printDefault(options);
@@ -187,7 +187,7 @@ export default {
           }, []);
         }
         const res = await this.get({
-          url: `${tempItem.printUrl}`,
+          url: `${tempItem.sourceUrl}`,
           data: {
             ids: ids,
           },
@@ -196,7 +196,7 @@ export default {
         if (Array.isArray(res.result) && res.result.length > 0) return res.result;
         return {};
       } catch (error) {
-        console.error(`获取打印数据失败: ${tempItem.printUrl}`, error);
+        console.error(`获取打印数据失败: ${tempItem.sourceUrl}`, error);
       }
     },
   },

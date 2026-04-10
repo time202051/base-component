@@ -34,12 +34,12 @@
             </div>
             <div class="card-body">
               <div class="card-info">
-                <span class="info-label">备注：</span>
-                <span class="info-value">{{ template.remark || "无" }}</span>
+                <span class="info-label">数据源URL：</span>
+                <span class="info-value">{{ template.sourceUrl || "无" }}</span>
               </div>
               <div class="card-info">
-                <span class="info-label">数据源URL：</span>
-                <span class="info-value">{{ template.printUrl || "无" }}</span>
+                <span class="info-label">备注：</span>
+                <span class="info-value">{{ template.remark || "无" }}</span>
               </div>
             </div>
             <div class="card-footer">
@@ -74,11 +74,11 @@
             <span style="margin-right: 10px">{{ form.templeteJson ? "已创建" : "未创建" }}</span>
             <el-button type="primary" @click="handleCreateTemplate">创建模板</el-button>
           </el-form-item>
-          <el-form-item label="数据源URL" prop="printUrl">
+          <el-form-item label="数据源URL" prop="sourceUrl">
             <el-input
-              v-model="form.printUrl"
+              v-model="form.sourceUrl"
               placeholder="请输入数据源URL"
-              @blur="form.printUrl = form.printUrl && form.printUrl.trim()"
+              @blur="form.sourceUrl = form.sourceUrl && form.sourceUrl.trim()"
             ></el-input>
           </el-form-item>
           <el-form-item label="备注">
@@ -120,7 +120,7 @@ export default {
         templeteName: "",
         remark: "",
         templeteJson: "",
-        printUrl: "",
+        sourceUrl: "",
       },
       rules: {
         templeteName: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
@@ -192,7 +192,7 @@ export default {
         templeteName: "",
         remark: "",
         templeteJson: "",
-        printUrl: "",
+        sourceUrl: "",
       };
       this.dialogVisible = true;
       this.$nextTick(() => {
@@ -206,7 +206,7 @@ export default {
         templeteName: template.templeteName,
         remark: template.remark,
         templeteJson: template.templeteJson,
-        printUrl: template.printUrl || "",
+        sourceUrl: template.sourceUrl || "",
       };
       this.dialogVisible = true;
     },
@@ -240,7 +240,7 @@ export default {
                   id: this.form.id,
                   templeteName: this.form.templeteName,
                   templeteJson: this.form.templeteJson,
-                  printUrl: this.form.printUrl,
+                  sourceUrl: this.form.sourceUrl,
                 },
               });
               this.$message.success("编辑成功");
@@ -251,7 +251,7 @@ export default {
                   menuId: this.currentMenuId,
                   templeteName: this.form.templeteName,
                   templeteJson: this.form.templeteJson,
-                  printUrl: this.form.printUrl,
+                  sourceUrl: this.form.sourceUrl,
                 },
               });
               this.$message.success("新增成功");
