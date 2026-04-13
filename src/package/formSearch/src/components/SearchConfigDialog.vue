@@ -342,6 +342,14 @@ export default {
       type: Boolean,
       default: false,
     },
+    formSearchData: {
+      type: Object,
+      default: () => {},
+    },
+    formSearch: {
+      type: Object,
+      default: () => {},
+    },
     tableSearch: {
       type: Array,
       default: () => [],
@@ -396,6 +404,8 @@ export default {
   },
   created() {
     this.loadAllDictList();
+    // 重置数据
+    this.setArrVModelReset();
   },
   watch: {
     visible: {
@@ -875,6 +885,16 @@ export default {
 
       this.configList.push(newItem);
       this.customsDialogVisible = false;
+    },
+    // 处理数组和非数组的双向绑定值, 例如：下拉框和日期选择器切换成多选下拉框时间范围时候 双向绑定的值的类型要改变。this.formSearch是实际双向绑定的值
+    setArrVModelReset() {
+      this.tableSearch.forEach(item => {
+        const { value: key, inputType } = item;
+        if (!Object.keys(this.formSearch).includes(key)) return;
+        if (!(inputType === "select" || inputType === "picker")) return; //只有下拉框和日期选择器会有 双向绑定数组
+        delete this.formSearchData.value[key];
+        delete this.formSearch[key];
+      });
     },
   },
 };

@@ -14,6 +14,7 @@
         v-bind="{
           ...(formSearchData.options && formSearchData.options.formProps),
         }"
+        :key="key"
       >
         <!-- 'label-width': '100px', -->
         <div
@@ -179,6 +180,8 @@
       v-if="configDialogVisible"
       :visible.sync="configDialogVisible"
       :table-search="formSearchData.tableSearch"
+      :formSearchData="formSearchData"
+      :formSearch="formSearch"
       :customs="formSearchData.customs"
       @save="handleSaveConfig"
       v-bind="$attrs"
@@ -306,6 +309,7 @@ export default {
       },
       tempBoxData: [],
       optionBox: [],
+      key: 0,
     };
   },
   async created() {
@@ -601,11 +605,15 @@ export default {
       this.configDialogVisible = true;
     },
     handleSaveConfig(configList) {
+      if (this.isCustomSearch) {
+        this.key++; // 下拉框多选时候高度被撑开，改成单选时候高度无法重置。所以重写渲染。这里不管直接全都重写渲染
+      }
       this.formSearchData.tableSearch = configList;
       this.findTableSearch =
         this.formSearchData.tableSearch.length > this.tableSearchSlice
           ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
           : this.formSearchData.tableSearch;
+
       this.$emit("onSave", configList);
     },
     async loadOptionSources() {
