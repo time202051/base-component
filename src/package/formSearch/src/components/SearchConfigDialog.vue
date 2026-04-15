@@ -5,6 +5,7 @@
     width="60%"
     :close-on-click-modal="false"
     @close="handleClose"
+    append-to-body
   >
     <div class="search-config-container">
       <div class="config-header">
