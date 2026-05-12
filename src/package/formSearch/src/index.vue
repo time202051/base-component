@@ -831,21 +831,21 @@ export default {
     width: calc(100% / 5);
   }
 
-  .picker {
-    width: 25%;
+  // .picker {
+  //   width: 25%;
 
-    ::v-deep .el-form-item__label {
-      width: 27% !important;
-      padding: 0 5px 0 0;
-      word-break: break-all;
-      white-space: nowrap;
-    }
+  //   ::v-deep .el-form-item__label {
+  //     width: 27% !important;
+  //     padding: 0 5px 0 0;
+  //     word-break: break-all;
+  //     white-space: nowrap;
+  //   }
 
-    ::v-deep .el-form-item__content {
-      width: 73% !important;
-      height: 28px;
-    }
-  }
+  //   ::v-deep .el-form-item__content {
+  //     width: 73% !important;
+  //     height: 28px;
+  //   }
+  // }
 }
 
 .formSearchBtnArrowDowns {
