@@ -169,7 +169,8 @@ const MethodEnum = {
   get: "get",
   post: "post",
   put: "put",
-  delete: "del",
+  // delete: "del",
+  delete: "delete",
 };
 const generateApiModules = swagger => {
   const { tags, paths } = swagger;
