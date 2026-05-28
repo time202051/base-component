@@ -1,8 +1,14 @@
 {
   "name": "ol-base-components",
-  "version": "3.4.5",
+  "version": "3.4.6",
   "private": false,
-  "main": "src/package/index.js",
+  "main": "dist/index.umd.js",
+  "module": "dist/index.mjs",
+  "files": [
+    "dist/",
+    "package.json",
+    "README.md"
+  ],
   "bin": {
     "init": "src/api/init.js",
     "run": "src/api/run.js",
@@ -11,12 +17,14 @@
   },
   "scripts": {
     "serve": "vue-cli-service serve --no-verify",
-    "build": "vue-cli-service build",
+    "build": "vite build",
+    "build:cli": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "add": "node src/bin/add.js",
     "openCloseloop": "node src/bin/openCloseloop.js",
     "openLoop": "node src/bin/openLoop.js",
-    "news": "node src/bin/news.js"
+    "news": "node src/bin/news.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "commander": "^14.0.0",
@@ -34,14 +42,20 @@
     "@babel/core": "^7.12.16",
     "@babel/eslint-parser": "^7.12.16",
     "@types/vscode": "^1.60.0",
+    "@vitejs/plugin-legacy": "^8.0.2",
+    "@vue/babel-helper-vue-jsx-merge-props": "^1.4.0",
+    "@vue/babel-preset-jsx": "^1.4.0",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
+    "babel-plugin-transform-vue-jsx": "^3.7.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "prettier": "^2.8.8",
     "sass": "^1.89.2",
     "sass-loader": "^16.0.5",
+    "vite": "^4.5.0",
+    "vite-plugin-vue2": "^2.0.3",
     "vue-template-compiler": "^2.6.14"
   },
   "eslintConfig": {

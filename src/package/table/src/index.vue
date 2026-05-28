@@ -295,7 +295,7 @@ export default {
         render: Function,
       },
       render(createElement, renDom) {
-        return <div>{renDom.props.render()}</div>;
+        return createElement('div', [renDom.props.render()]);
       },
     },
     // myTableColumn: {

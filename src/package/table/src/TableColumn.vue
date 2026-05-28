@@ -52,7 +52,7 @@ export default {
       functional: true,
       props: { render: Function },
       render(h, ctx) {
-        return <div>{ctx.props.render()}</div>;
+        return h("div", [ctx.props.render()]);
       },
     },
     TableColumn: null, // 递归自身，见下方
