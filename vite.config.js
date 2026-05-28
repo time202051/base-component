@@ -26,6 +26,7 @@ module.exports = defineConfig({
           sortablejs: "Sortable",
           "vue-plugin-hiprint": "vuePluginHiprint",
         },
+        exports: "named",
       },
     },
     minify: "terser",
