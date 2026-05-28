@@ -1,31 +1,47 @@
 <template>
   <div id="app">
-    <div>table组件案例</div>
-    <ol-search
+    <ol-print-model />
+    <ol-customSearch
+      :form-search-data="formSearchData"
+      @handleSearch="handleSearch"
+      :dragable="false"
+      @onSave="save"
+      dragable
+    ></ol-customSearch>
+    =========
+    <!-- <div>table组件案例</div> -->
+    <!-- url="/api/app/stock-in/stock-in-pages" -->
+    <!-- <ol-search
       :form-search-data="formSearchData"
       @handleSearch="handleSearch"
       @handleReset="handleReset"
-      url="/api/app/admission-info/paged-result"
-    />
-    <!-- url="/api/app/admission-info/paged-result" -->
-
+      @onSave="saveHandler"
+    /> -->
+    <button @click="aaa">123</button>
+    <!-- url="/api/app/bind-record/bind-record-detail-pages" -->
     <ol-table
       :paginations="paginations"
       :empty-img="tableData.emptyImg"
       :btnlist="[]"
-      url="/api/app/bind-record/bind-record-detail-pages"
       :table-data="tableData"
       :multiple-selection="multipleSelection"
       @SelectionChange="SelectionChange"
       @handleSizeChange="handleSizeChange"
       @handleindexChange="handleindexChange"
-    ></ol-table>
-    <el-button @click="handlePrint">接口</el-button>
+      :onPrintData="onPrintData"
+    >
+      <template slot="ceshi" slot-scope="scope">
+        <span>333433{{ scope.row.ceshi }}</span>
+      </template>
+      <template slot="toolbox-before" slot-scope="scope">
+        <el-button type="primary" size="mini" @click="handlePrint1(scope)">打印</el-button>
+      </template>
+    </ol-table>
+    <!-- <el-button @click="handlePrint">接口</el-button>
     <el-button @click="onAdd">新建</el-button>
-    <el-button @click="onEdit">编辑</el-button>
+    <el-button @click="onEdit">编辑</el-button> -->
 
-    <!-- 编辑,查看弹窗 -->
-    <el-dialog :title="`${this.form.title}`" :visible.sync="dialogVisible" width="80%">
+    <!-- <el-dialog :title="`${this.form.title}`" :visible.sync="dialogVisible" width="80%">
       <ol-form
         v-if="dialogVisible"
         url="/api/app/admission-info/admission-info"
@@ -33,32 +49,8 @@
         @onCancel="dialogVisible = false"
         @onSubmit="onSubmit"
       />
-    </el-dialog>
-
-    <!-- <el-button @click="handlePrint">接口</el-button>
-
-    <div
-      class="ellipsis-container"
-      id="ellipsis-container"
-      v-for="item in 5"
-      :key="item"
-    >如何处理文本溢出如何实现单行文本溢出显示省略号</div>
-
-    <div class="triangle-up"></div>
-    <div class="grid-content">
-      <div>11</div>
-      <div>11</div>
-    </div>
-
-    <div class="container">
-      <div class="item">1</div>
-      <div class="item item2">2</div>
-      <div class="item">3</div>
-    </div>
-
-    <div class="square-container">
-      <div class="square"></div>
-    </div> -->
+    </el-dialog> -->
+    <!-- <ol-print /> -->
   </div>
 </template>
 
@@ -78,14 +70,21 @@ export default {
           headTool: true, // 开启头部工具栏
           refreshBtn: true, // 开启表格头部刷新按钮
           downloadBtn: true, // 开启表格头部下载按钮
+          // smartPrintBtn: false,
         }, // 序号和复选框
         rows: [
           {
             bindStateEnum: "11",
-            tagNumber: "22",
+            creationTime: "22",
+            ceshi: "hhh",
           },
         ], // 表数据
         columns: [
+          {
+            label: "测试",
+            prop: "ceshi",
+            renderSlot: true,
+          },
           {
             prop: "unit",
             show: false,
@@ -129,6 +128,10 @@ export default {
         ],
         operates: [], // 表格里面的操作按钮
         tableHeightDiff: 300,
+        printData: {
+          name: "默认数据",
+          table: [{ name: "默认数据1" }],
+        },
       },
       paginations: {
         page: 1, // 当前位于那页面
@@ -138,17 +141,18 @@ export default {
       },
 
       formSearchData: {
+        enableConfig: true,
         reset: true, // 重置
         expendShow: true, // 展开
         tableSearchSlice: 5,
         value: {
-          DocNo: null, // 对应输入框的value字段
-          QualityCheckStateType: null,
-          QualityCheckState: null,
-          timer: [],
-          range: [10, 200],
+          // DocNo: null, // 对应输入框的value字段
+          // QualityCheckStateType: null,
+          // QualityCheckState: null,
+          // timer: [],
+          // range: [10, 200],
         },
-        tableSearch: [
+        tableSearch1: [
           {
             label: "数字区间",
             value: "range",
@@ -285,6 +289,44 @@ export default {
           //   value: "tempProject",
           //   inputType: "text"
           // }
+        ],
+        tableSearch: [],
+        customs: [
+          {
+            name: "库位编码",
+            keyType: 1,
+            key: "WarehouseLocationCode",
+            enumName: null,
+            custom: false,
+          },
+          {
+            name: "使用状态",
+            keyType: 3,
+            key: "UsageStatus",
+            enumName: "usageStatusEnum",
+            custom: false,
+          },
+          {
+            name: "是否启用",
+            keyType: 1,
+            key: "Enabled",
+            enumName: null,
+            custom: false,
+          },
+          {
+            name: "创建时间",
+            keyType: 4,
+            key: "CreationTime",
+            enumName: null,
+            custom: false,
+          },
+          {
+            name: "备注",
+            keyType: 1,
+            key: "Remark",
+            enumName: null,
+            custom: false,
+          },
         ],
       },
 
@@ -423,7 +465,9 @@ export default {
     SelectionChange(row) {
       this.multipleSelection = row;
     },
-    handleSearch(from) {
+    handleSearch(from, item) {
+      console.log(1112223, item);
+
       this.formSearchData.value = { ...from };
       this.paginations.page = 1;
       this.getTable();
@@ -460,17 +504,6 @@ export default {
     // ================
     getTable() {
       console.log("getTable参数", this.formSearchData.value);
-    },
-    handleSearch(from) {
-      this.formSearchData.value = { ...from };
-      this.paginations.page = 1;
-      this.getTable();
-    },
-    handleReset() {
-      for (let key in this.formSearchData.value) {
-        this.formSearchData.value[key] = null;
-      }
-      this.paginations.page = 1;
     },
     truncateMiddleByWidth(el) {
       let text = el.textContent;
@@ -526,6 +559,302 @@ export default {
           this.message({ type: "success", message: "操作成功!" });
         });
       }
+    },
+    aaa() {
+      const printEnpty = this.$hiprint({
+        grid: true,
+        printData: {
+          name: "CcSimple",
+          barcode: "33321323",
+          table: [
+            { id: "1", name: "王小可123", gender: "男", count: "120", amount: "9089元" },
+            { id: "2", name: "梦之遥", gender: "女", count: "20", amount: "89元" },
+          ],
+          table1: [
+            { id: "1", name: "王小可11", gender: "男", count: "120", amount: "9089元" },
+            { id: "2", name: "梦之遥", gender: "女", count: "20", amount: "89元" },
+          ],
+        },
+        onPrintData: data => {
+          return data;
+        },
+        defaultTemplate: {
+          panels: [
+            {
+              index: 0,
+              name: 1,
+              paperType: "A4",
+              height: 297,
+              width: 210,
+              paperHeader: 0,
+              paperFooter: 841.8897637795277,
+              printElements: [
+                {
+                  options: {
+                    left: 117,
+                    top: 94.5,
+                    height: 9.75,
+                    width: 120,
+                    field: "name",
+                    testData: "内容",
+                    title: "文本",
+                    qid: "name",
+                  },
+                  printElementType: {
+                    title: "文本",
+                    type: "text",
+                  },
+                },
+                {
+                  options: {
+                    left: 160.5,
+                    top: 174,
+                    height: 36,
+                    width: 550,
+                    fields: [],
+                    field: "table",
+                    qid: "table",
+                    columns: [
+                      [
+                        {
+                          width: 137.5,
+                          title: "名称",
+                          field: "name",
+                          checked: true,
+                          columnId: "name",
+                          fixed: false,
+                          rowspan: 1,
+                          colspan: 1,
+                          align: "center",
+                        },
+                        {
+                          width: 137.5,
+                          title: "性别",
+                          field: "gender",
+                          checked: true,
+                          columnId: "gender",
+                          fixed: false,
+                          rowspan: 1,
+                          colspan: 1,
+                          align: "center",
+                        },
+                        {
+                          width: 137.5,
+                          title: "数量",
+                          field: "count",
+                          checked: true,
+                          columnId: "count",
+                          fixed: false,
+                          rowspan: 1,
+                          colspan: 1,
+                          align: "center",
+                        },
+                        {
+                          width: 137.5,
+                          title: "金额",
+                          field: "amount",
+                          checked: true,
+                          columnId: "amount",
+                          fixed: false,
+                          rowspan: 1,
+                          colspan: 1,
+                          align: "center",
+                        },
+                      ],
+                    ],
+                  },
+                  printElementType: {
+                    title: "表格",
+                    type: "table",
+                    editable: true,
+                    columnDisplayEditable: true,
+                    columnDisplayIndexEditable: true,
+                    columnTitleEditable: true,
+                    columnResizable: true,
+                    columnAlignEditable: true,
+                    isEnableEditField: true,
+                    isEnableContextMenu: true,
+                    isEnableInsertRow: true,
+                    isEnableDeleteRow: true,
+                    isEnableInsertColumn: true,
+                    isEnableDeleteColumn: true,
+                    isEnableMergeCell: true,
+                  },
+                },
+              ],
+              paperNumberContinue: true,
+              watermarkOptions: {},
+              panelLayoutOptions: {},
+            },
+          ],
+        },
+        onSubmit: data => {
+          // console.log(6666, data);
+        },
+      });
+
+      // this.$hiprint.print({
+      //   printData: {
+      //     name: "CcSimple",
+      //     barcode: "33321323",
+      //     table: [
+      //       { id: "1", name: "王小可123", gender: "男", count: "120", amount: "9089元" },
+      //       { id: "2", name: "梦之遥", gender: "女", count: "20", amount: "89元" },
+      //     ],
+      //     table1: [
+      //       { id: "1", name: "王小可11", gender: "男", count: "120", amount: "9089元" },
+      //       { id: "2", name: "梦之遥", gender: "女", count: "20", amount: "89元" },
+      //     ],
+      //   },
+      //   onPrintData: data => {
+      //     return data;
+      //   },
+      //   defaultTemplate: {
+      //     panels: [
+      //       {
+      //         index: 0,
+      //         name: 1,
+      //         paperType: "A4",
+      //         height: 297,
+      //         width: 210,
+      //         paperHeader: 0,
+      //         paperFooter: 841.8897637795277,
+      //         printElements: [
+      //           {
+      //             options: {
+      //               left: 117,
+      //               top: 94.5,
+      //               height: 9.75,
+      //               width: 120,
+      //               field: "name",
+      //               testData: "内容",
+      //               title: "文本",
+      //               qid: "name",
+      //             },
+      //             printElementType: {
+      //               title: "文本",
+      //               type: "text",
+      //             },
+      //           },
+      //           {
+      //             options: {
+      //               left: 160.5,
+      //               top: 174,
+      //               height: 36,
+      //               width: 550,
+      //               fields: [],
+      //               field: "table",
+      //               qid: "table",
+      //               columns: [
+      //                 [
+      //                   {
+      //                     width: 137.5,
+      //                     title: "名称",
+      //                     field: "name",
+      //                     checked: true,
+      //                     columnId: "name",
+      //                     fixed: false,
+      //                     rowspan: 1,
+      //                     colspan: 1,
+      //                     align: "center",
+      //                   },
+      //                   {
+      //                     width: 137.5,
+      //                     title: "性别",
+      //                     field: "gender",
+      //                     checked: true,
+      //                     columnId: "gender",
+      //                     fixed: false,
+      //                     rowspan: 1,
+      //                     colspan: 1,
+      //                     align: "center",
+      //                   },
+      //                   {
+      //                     width: 137.5,
+      //                     title: "数量",
+      //                     field: "count",
+      //                     checked: true,
+      //                     columnId: "count",
+      //                     fixed: false,
+      //                     rowspan: 1,
+      //                     colspan: 1,
+      //                     align: "center",
+      //                   },
+      //                   {
+      //                     width: 137.5,
+      //                     title: "金额",
+      //                     field: "amount",
+      //                     checked: true,
+      //                     columnId: "amount",
+      //                     fixed: false,
+      //                     rowspan: 1,
+      //                     colspan: 1,
+      //                     align: "center",
+      //                   },
+      //                 ],
+      //               ],
+      //             },
+      //             printElementType: {
+      //               title: "表格",
+      //               type: "table",
+      //               editable: true,
+      //               columnDisplayEditable: true,
+      //               columnDisplayIndexEditable: true,
+      //               columnTitleEditable: true,
+      //               columnResizable: true,
+      //               columnAlignEditable: true,
+      //               isEnableEditField: true,
+      //               isEnableContextMenu: true,
+      //               isEnableInsertRow: true,
+      //               isEnableDeleteRow: true,
+      //               isEnableInsertColumn: true,
+      //               isEnableDeleteColumn: true,
+      //               isEnableMergeCell: true,
+      //             },
+      //           },
+      //         ],
+      //         paperNumberContinue: true,
+      //         watermarkOptions: {},
+      //         panelLayoutOptions: {},
+      //       },
+      //     ],
+      //   },
+      //   onSubmit: data => {
+      //     console.log(6666, data);
+      //   },
+      // });
+    },
+    saveHandler(configList) {
+      console.log("保存配置", configList);
+    },
+    handlePrint1(row) {
+      console.log(11122333, row);
+    },
+    onPrintData(tempItem, done) {
+      console.log("111app", tempItem, done);
+      if (tempItem.templeteName === "自定义模式") {
+        // 模拟异步接口请求
+        const data = {
+          name: "自定义模式",
+          table: [
+            { name: "2233" },
+            { name: "3344" },
+            { name: "2233" },
+            { name: "2233" },
+            { name: "2233" },
+            { name: "2233" },
+            { name: "2233" },
+            { name: "2233" },
+            { name: "2233" },
+          ],
+        };
+        done(data);
+      }
+    },
+    save(e) {
+      console.log(123, e);
+
+      // this.formSearchData.value.usageStatus = null;
     },
   },
 };
