@@ -51,12 +51,12 @@
 </template>
 
 <script>
-// import { onMounted } from "vue";
-// import * as HiPrint from "vue-plugin-hiprint";
+import { hiprint } from "vue-plugin-hiprint";
+import jQuery from "jquery";
 import { provider1 } from "./provide/provider1.js";
 import PaperSelector from "./components/PaperSelector.vue";
-const HiPrint = require("vue-plugin-hiprint");
-const hiprint = HiPrint.hiprint || HiPrint.default?.hiprint || HiPrint.default;
+
+window.$ = window.jQuery = jQuery;
 export default {
   name: "print",
   components: {

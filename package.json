@@ -1,14 +1,33 @@
 {
   "name": "ol-base-components",
-  "version": "3.4.9",
+  "version": "3.4.10",
   "private": false,
   "main": "dist/index.umd.js",
   "module": "dist/index.mjs",
+  "style": "dist/style.css",
+  "sideEffects": [
+    "dist/style.css",
+    "dist/print-lock.css"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.umd.js"
+    },
+    "./dist/style.css": "./dist/style.css",
+    "./dist/print-lock.css": "./dist/print-lock.css"
+  },
   "files": [
     "dist/",
     "package.json",
     "README.md"
   ],
+  "peerDependencies": {
+    "vue": "^2.6.14",
+    "element-ui": "^2.15.14",
+    "swagger-client": "^3.0.1",
+    "sortablejs": "^1.15.7"
+  },
   "bin": {
     "init": "src/api/init.js",
     "run": "src/api/run.js",
@@ -29,14 +48,9 @@
   "dependencies": {
     "commander": "^14.0.0",
     "core-js": "^3.8.3",
-    "element-ui": "^2.15.14",
     "eslint": "^8.57.1",
     "eslint-plugin-vue": "^10.3.0",
-    "inquirer": "^8.2.6",
-    "sortablejs": "^1.15.7",
-    "swagger-client": "^3.0.1",
-    "vue": "^2.6.14",
-    "vue-plugin-hiprint": "^0.0.60"
+    "inquirer": "^8.2.6"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
@@ -49,13 +63,19 @@
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
     "babel-plugin-transform-vue-jsx": "^3.7.0",
+    "element-ui": "^2.15.14",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
+    "jquery": "^3.6.0",
     "prettier": "^2.8.8",
     "sass": "^1.89.2",
     "sass-loader": "^16.0.5",
+    "sortablejs": "^1.15.7",
+    "swagger-client": "^3.0.1",
     "vite": "^4.5.0",
     "vite-plugin-vue2": "^2.0.3",
+    "vue": "^2.6.14",
+    "vue-plugin-hiprint": "^0.0.60",
     "vue-template-compiler": "^2.6.14"
   },
   "eslintConfig": {

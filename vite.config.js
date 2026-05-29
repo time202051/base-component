@@ -16,6 +16,10 @@ module.exports = defineConfig({
       fileName: "index",
       formats: ["umd", "es"],
     },
+    commonjsOptions: {
+      transformMixedEsModules: true,
+      defaultIsModuleExports: "auto",
+    },
     rollupOptions: {
       external: ["vue", "element-ui", "swagger-client", "sortablejs"],
       output: {
@@ -26,6 +30,7 @@ module.exports = defineConfig({
           sortablejs: "Sortable",
         },
         exports: "named",
+        inlineDynamicImports: true,
       },
     },
     minify: "terser",

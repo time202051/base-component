@@ -1,7 +1,4 @@
-// import { hiprint } from "vue-plugin-hiprint";
-// import * as HiPrint from "vue-plugin-hiprint";
-const HiPrint = require("vue-plugin-hiprint");
-const hiprint = HiPrint.hiprint || HiPrint.default?.hiprint || HiPrint.default;
+import { hiprint } from "vue-plugin-hiprint";
 export const provider1 = function () {
   const addElementTypes = context => {
     context.removePrintElementTypes("providerModule1");
