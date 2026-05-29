@@ -17,14 +17,13 @@ module.exports = defineConfig({
       formats: ["umd", "es"],
     },
     rollupOptions: {
-      external: ["vue", "element-ui", "swagger-client", "sortablejs", "vue-plugin-hiprint"],
+      external: ["vue", "element-ui", "swagger-client", "sortablejs"],
       output: {
         globals: {
           vue: "Vue",
           "element-ui": "ELEMENT",
           "swagger-client": "SwaggerClient",
           sortablejs: "Sortable",
-          "vue-plugin-hiprint": "vuePluginHiprint",
         },
         exports: "named",
       },
