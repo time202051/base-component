@@ -272,7 +272,12 @@
         </el-col>
       </el-row>
     </div>
-    <printTemplate v-show="false" class="printTemplate" :print-list-obj="printListObj" />
+    <printTemplate
+      ref="printTemplate"
+      v-show="false"
+      class="printTemplate"
+      :print-list-obj="printListObj"
+    />
   </div>
 </template>
 <script>
@@ -281,6 +286,7 @@ import nodata from "./nodata.jpg";
 import printTemplate from "./printTable.vue";
 import TableColumn from "./TableColumn.vue";
 import PrintTemplateSelector from "./components/PrintTemplateSelector.vue";
+import { printTableElement } from "./tablePrint.js";
 
 export default {
   name: "table",
@@ -680,17 +686,27 @@ export default {
       this.$emit("refreshTable");
     },
     printTable() {
-      console.log("printTable");
       if (this.tableData.rows.length <= 0) return;
-      this.printListObj.title = this.$router.history.current.name;
+
+      const current =
+        (this.$router && this.$router.history && this.$router.history.current) ||
+        this.$route;
+      this.printListObj.title = (current && current.name) || document.title;
       this.printListObj.tableHeader = this.tableData.columns;
       this.printListObj.tableData = this.tableData.rows;
-      console.log(this.printListObj);
-      setTimeout(() => {
-        $(".printTemplate").show();
-        $(".printTemplate").jqprint();
-        $(".printTemplate").hide();
-      }, 50);
+
+      this.$nextTick(() => {
+        setTimeout(() => {
+          const printRoot =
+            (this.$refs.printTemplate && this.$refs.printTemplate.$el) ||
+            this.$el.querySelector(".printTemplate");
+          if (!printRoot) {
+            console.error("[ol-table] 未找到打印区域");
+            return;
+          }
+          printTableElement(printRoot);
+        }, 50);
+      });
       this.$emit("printTable");
     },
     selectAll(val) {
@@ -925,6 +941,24 @@ export default {
   color: #333;
   border: 1px solid #ccc;
   cursor: pointer;
+}
+
+.avatar-container {
+  display: inline-flex;
+  align-items: center;
+}
+
+.right-menu-item {
+  margin-left: 0;
+}
+
+.hover-effect {
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.75;
+  }
 }
 
 .checkbox {
