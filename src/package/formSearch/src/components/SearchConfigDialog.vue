@@ -136,11 +136,17 @@
       </el-table>
     </div>
 
-    <div class="dialog-footer">
+    <!-- <div class="dialog-footer">
       <slot name="footer">
         <el-button @click="handleClose">取消</el-button>
         <el-button type="primary" @click="handleSave">确定</el-button>
       </slot>
+    </div> -->
+    <div class="dialog-footer">
+      <div slot="footer" >
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" @click="handleSave">确定</el-button>
+      </div>
     </div>
 
     <el-dialog title="配置选项" :visible.sync="optionsDialogVisible" width="700px" append-to-body>
@@ -249,10 +255,10 @@
         </el-form-item>
       </el-form>
       <div class="dialog-footer">
-        <slot name="footer">
+        <div slot="footer">
           <el-button @click="optionsDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleSaveOptions">确定</el-button>
-        </slot>
+        </div>
       </div>
     </el-dialog>
 
@@ -367,7 +373,7 @@ export default {
     },
     dragable: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     isPreview: {
       type: Boolean,
