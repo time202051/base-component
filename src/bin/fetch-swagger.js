@@ -11,7 +11,7 @@ const http = require('http')
 const https = require('https')
 
 // 读取 configBaseUrl.js 文件
-const configPath = path.join(__dirname, '../public/configBaseUrl.js')
+const configPath = path.join(process.cwd(), "public", "configBaseUrl.js");
 const configContent = fs.readFileSync(configPath, 'utf8')
 
 // 使用正则表达式提取 baseURL（排除注释行）
@@ -23,7 +23,8 @@ if (!baseURLMatch) {
 
 const baseURL = baseURLMatch[1]
 const swaggerUrl = `${baseURL}/swagger/v1/swagger.json`
-const outputPath = path.join(__dirname, '../swagger/swagger.json')
+const outputPath = path.join(process.cwd(), "swagger", "swagger.json");
+
 const swaggerDir = path.dirname(outputPath)
 
 // 如果 swagger 目录不存在，则创建
