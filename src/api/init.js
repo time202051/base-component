@@ -17,31 +17,31 @@ let swaggerUrl = process.argv[2];
 // };
 async function extractSwaggerUrl() {
   const configPath = path.join(process.cwd(), "public", "configBaseUrl.js");
-  
+
   if (!fs.existsSync(configPath)) {
     console.error("\n❌ 错误: 找不到 configBaseUrl.js 文件");
     console.error(`路径: ${configPath}`);
     return null;
   }
-  
+
   try {
     const configContent = fs.readFileSync(configPath, "utf8");
     // 使用正则表达式提取 baseURL（排除注释行，支持缩进）
     const baseURLMatch = configContent.match(/^\s*[^\/]*baseURL:\s*["']([^"']+)["']/m);
-    
+
     if (!baseURLMatch) {
       console.error("\n❌ 错误: 无法从 configBaseUrl.js 中提取 baseURL");
       console.error("请确保配置文件中有类似这样的配置:");
       console.error("  window.config = { baseURL: 'http://your-swagger-url' }");
       return null;
     }
-    
+
     const baseURL = baseURLMatch[1] || "";
     if (!baseURL) {
       console.error("\n❌ 错误: baseURL 为空");
       return null;
     }
-    
+
     return baseURL;
   } catch (err) {
     console.error("\n❌ 读取配置文件失败:", err.message);
@@ -52,15 +52,12 @@ async function extractSwaggerUrl() {
 // 执行 api.js 脚本
 function runApiScript() {
   return new Promise((resolve, reject) => {
-    console.log("📝 正在执行 swagger 脚本...");
-
     const apiProcess = spawn("node", [path.join(__dirname, "api.js"), swaggerUrl], {
       stdio: "inherit",
     });
 
     apiProcess.on("close", code => {
       if (code === 0) {
-        console.log("✅ swagger脚本执行完成");
         resolve();
       } else {
         reject(new Error(`swagger 脚本执行失败，退出码: ${code}`));
@@ -76,15 +73,12 @@ function runApiScript() {
 // 执行 run.js 脚本
 function runRunScript() {
   return new Promise((resolve, reject) => {
-    console.log("🔧 正在执行 接口 脚本...");
-
     const runProcess = spawn("node", [path.join(__dirname, "run.js"), swaggerUrl], {
       stdio: "inherit",
     });
 
     runProcess.on("close", code => {
       if (code === 0) {
-        console.log("✅ 接口脚本执行完成");
         resolve();
       } else {
         reject(new Error(`接口脚本执行失败，退出码: ${code}`));
@@ -100,8 +94,6 @@ function runRunScript() {
 // 执行 fetch-swagger.js 脚本
 function runFetchSwaggerScript() {
   return new Promise((resolve, reject) => {
-    console.log("📥 正在下载 swagger.json...");
-
     const fetchProcess = spawn("node", [path.join(__dirname, "../bin/fetch-swagger.js")], {
       stdio: "inherit",
     });
@@ -126,11 +118,9 @@ async function main() {
   try {
     // 如果命令行没有传参，尝试从配置文件提取
     if (!swaggerUrl) {
-      console.log("🔍 未指定 URL，正在从 configBaseUrl.js 自动检测...");
       const extractedUrl = await extractSwaggerUrl();
       if (extractedUrl) {
         swaggerUrl = extractedUrl;
-        console.log(`✨ 自动检测到 baseURL: ${swaggerUrl}`);
       }
     }
 
@@ -138,12 +128,10 @@ async function main() {
     if (!swaggerUrl) {
       console.error("\n❌ 错误: 无法获取有效的 swagger URL");
       console.error("请手动指定 URL，用法:");
-      console.error("  npx ol-base-components init http://your-swagger-url");
+      console.error("npx init http://你的swagger地址");
       process.exit(1);
     }
-
-    console.log(`\n🚀 开始初始化，URL: ${swaggerUrl}`);
-
+    console.log(`\n🚀 正在执行接口脚本...`);
     // 先执行 api.js
     await runApiScript();
 
