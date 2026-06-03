@@ -92,26 +92,26 @@ function runRunScript() {
 }
 
 // 执行 fetch-swagger.js 脚本
-function runFetchSwaggerScript() {
-  return new Promise((resolve, reject) => {
-    const fetchProcess = spawn("node", [path.join(__dirname, "../bin/fetch-swagger.js")], {
-      stdio: "inherit",
-    });
+// function runFetchSwaggerScript() {
+//   return new Promise((resolve, reject) => {
+//     const fetchProcess = spawn("node", [path.join(__dirname, "../bin/fetch-swagger.js")], {
+//       stdio: "inherit",
+//     });
 
-    fetchProcess.on("close", code => {
-      if (code === 0) {
-        console.log("✅ swagger.json 下载完成");
-        resolve();
-      } else {
-        reject(new Error(`swagger.json 下载失败，退出码: ${code}`));
-      }
-    });
+//     fetchProcess.on("close", code => {
+//       if (code === 0) {
+//         console.log("✅ swagger.json 下载完成");
+//         resolve();
+//       } else {
+//         reject(new Error(`swagger.json 下载失败，退出码: ${code}`));
+//       }
+//     });
 
-    fetchProcess.on("error", err => {
-      reject(new Error(`执行 fetch-swagger 时出错: ${err.message}`));
-    });
-  });
-}
+//     fetchProcess.on("error", err => {
+//       reject(new Error(`执行 fetch-swagger 时出错: ${err.message}`));
+//     });
+//   });
+// }
 
 // 主执行函数
 async function main() {
@@ -139,7 +139,7 @@ async function main() {
     await runRunScript();
 
     // 最后执行 fetch-swagger.js 下载 swagger.json
-    await runFetchSwaggerScript();
+    // await runFetchSwaggerScript();
 
     console.log("\n🎉 所有脚本执行完成！");
   } catch (error) {
