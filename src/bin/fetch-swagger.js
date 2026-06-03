@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * @file fetch-swagger.js
  * @description 用于从指定的 baseURL 路径自动抓取 swagger.json 文件到 swagger 目录
