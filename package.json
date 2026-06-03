@@ -35,9 +35,6 @@
     "build:cli": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "add": "node src/bin/add.js",
-    "openCloseloop": "node src/bin/openCloseloop.js",
-    "openLoop": "node src/bin/openLoop.js",
-    "news": "node src/bin/news.js",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
