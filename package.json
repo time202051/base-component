@@ -1,6 +1,6 @@
 {
   "name": "ol-base-components",
-  "version": "3.5.5",
+  "version": "3.5.6",
   "private": false,
   "main": "dist/index.umd.js",
   "module": "dist/index.mjs",
@@ -28,7 +28,7 @@
     "run": "src/api/run.js",
     "api": "src/api/api.js",
     "add": "src/bin/add.js",
-    "swagger": "src/bin/fetch-swagger.js"
+    "ol:swagger": "src/bin/fetch-swagger.js"
   },
   "scripts": {
     "serve": "vue-cli-service serve --no-verify",
