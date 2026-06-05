@@ -206,7 +206,7 @@
 
     <!-- ==================== 工具栏 ==================== -->
     <div
-      v-if="$slots.toolbar || $slots.toolbarActions || showColumnFilter || showRefreshBtn || showPrintBtn || showSmartPrintBtn"
+      v-if="$slots.toolbar || $slots.toolbarActions || showColumnFilter || showRefreshBtn || showPrintBtn || showSmartPrintBtn || showEntityChangeBtn"
       class="crud-toolbar"
     >
       <div class="crud-toolbar-left">
@@ -258,6 +258,11 @@
             :multiple-selection="currentSelection"
             v-bind="$attrs"
           />
+        </span>
+
+        <!-- 实体变更记录 -->
+        <span v-if="showEntityChangeBtn && currentSelection.length" class="crud-toolbar-icon" @click="entityChangeVisible = true" title="实体变更记录">
+          <i class="el-icon-receiving" />
         </span>
       </div>
     </div>
@@ -371,6 +376,13 @@
       @save="onColumnConfigSave"
     />
 
+    <!-- ==================== 实体变更记录弹窗 ==================== -->
+    <entity-change-record
+      :visible.sync="entityChangeVisible"
+      :selected-rows="currentSelection"
+      :page-params="pageParams"
+    />
+
     <!-- ==================== 隐藏打印模板 ==================== -->
     <print-template ref="printTemplate" v-show="false" class="crud-print-template" :print-list-obj="printListObj" />
 
@@ -380,6 +392,7 @@
 </template>
 
 <script>
+import EntityChangeRecord from "./components/EntityChangeRecord.vue";
 import OlNumberRange from "../../numberRange/index.js";
 import SearchConfigDialog from "../../formSearch/src/components/SearchConfigDialog.vue";
 import TableColumn from "../../table/src/TableColumn.vue";
@@ -465,6 +478,7 @@ export default {
     PrintTemplateSelector,
     PrintTemplate,
     OlColumnConfig,
+    EntityChangeRecord,
   },
 
   directives: {
@@ -563,6 +577,8 @@ export default {
     smartPrintMenuId: { type: String, default: "" },
     /** 智能打印的数据 */
     printData: { type: Array, default: () => [] },
+    /** 是否显示实体变更记录按钮（勾选行后出现） */
+    showEntityChangeBtn: { type: Boolean, default: false },
 
     // ===== 分页相关 =====
     /** 分页配置 { page, limit, total, show } */
@@ -573,16 +589,15 @@ export default {
     /** 每页条数选项 */
     pageSizes: { type: Array, default: () => [20, 30, 40, 60, 100, 200] },
 
-    // ===== 钩子 =====
-    /** Swagger 数据加载后回调，在搜索字段生成完、合并前触发 (swaggerFields) => ({ searchFields, columns }) */
-    onSwagger: { type: Function, default: null },
-    /** columns 合并完成后回调，用于二次处理 (mergedColumns) => columns */
-    onMerged: { type: Function, default: null },
-    /**
-     * 搜索字段合并完成后回调（Swagger + 手动 + 日期识别 全部完成后）
-     * (currentSearchFields) => searchFields 或返回新数组替换
-     */
-    onSearchFieldsReady: { type: Function, default: null },
+    // ===== 钩子（普通模式，4 个独立钩子） =====
+    /** 搜索字段：Swagger 数据映射后、合并前。入参 searchFields 数组，返回修改后的数组 */
+    onSearchSwagger: { type: Function, default: null },
+    /** 搜索字段：合并完成+日期识别后。入参 searchFields 数组，返回修改后的数组 */
+    onSearchMerged: { type: Function, default: null },
+    /** 表格列：Swagger 数据映射后、合并前。入参 columnProps 对象，返回修改后的对象 */
+    onTableSwagger: { type: Function, default: null },
+    /** 表格列：合并完成+补标签后。入参 columns 数组，返回修改后的数组 */
+    onTableMerged: { type: Function, default: null },
 
     // ===== 自动请求 =====
     /** 是否自动通过 Swagger URL 拉取表格数据 */
@@ -641,7 +656,9 @@ export default {
 
       // 列配置弹窗（persisted 模式）
       columnConfigVisible: false,
-      _hasColumnConfig: false, // API 列配置是否已成功加载
+      // 实体变更记录弹窗
+      entityChangeVisible: false,
+      hasColumnConfig: false,
       showColumnRoleConfig: false,
       columnRoleList: [],
 
@@ -894,21 +911,14 @@ export default {
             .map((p) => this.mapParameterToSearchField(p))
             .filter(Boolean);
 
-          // Step 2: onSwagger 钩子（处理原始 Swagger 字段，允许增删改）
-          let processedSwaggerFields = swaggerSearchFields;
-          if (typeof this.onSwagger === "function") {
+          // Step 2: onSwaggerSearch 钩子
+          if (typeof this.onSearchSwagger === "function") {
             try {
-              const res = await this.onSwagger({
-                searchFields: swaggerSearchFields,
-                columns: this.columns,
-              });
-              if (res && Array.isArray(res.searchFields)) {
-                processedSwaggerFields = res.searchFields;
-              }
-            } catch (err) {
-              // ignore
-            }
+              const res = await this.onSearchSwagger(swaggerSearchFields);
+              if (Array.isArray(res)) swaggerSearchFields = res;
+            } catch (err) { /* ignore */ }
           }
+          const processedSwaggerFields = swaggerSearchFields;
 
           // Step 3: 合并 Swagger 字段到手动配置的 searchFields
           // 策略：Object.assign(swagger, user) — Swagger 打底，用户覆盖；prop 不修改
@@ -935,64 +945,47 @@ export default {
           // Step 4: 普通模式自动识别日期范围字段
           this.autoDetectRangeTimeFields(parameters);
 
-          // Step 5: onSearchFieldsReady 钩子（合并完成+日期识别后，最后的调整机会）
-          if (typeof this.onSearchFieldsReady === "function") {
+          // Step 5: onSearchFieldsReady
+          if (typeof this.onSearchMerged === "function") {
             try {
-              const result = await this.onSearchFieldsReady({
-                searchFields: this.searchFields,
-              });
-              if (Array.isArray(result)) {
-                this.searchFields.splice(0, this.searchFields.length, ...result);
-              }
-            } catch (err) {
-              // ignore
-            }
+              const res = await this.onSearchMerged(this.searchFields);
+              if (Array.isArray(res)) this.searchFields.splice(0, this.searchFields.length, ...res);
+            } catch (err) { /* ignore */ }
           }
 
-          // 更新初始搜索模型快照（包含新加的字段）
           this.initSearchDefaults();
         }
 
-        // --- 自动生成 columns（_hasColumnConfig 为 true 时表示 API 列配置已加载，跳过 Swagger） ---
-        if (!this._hasColumnConfig) {
-          const responseData =
-            methodData.responses &&
-            methodData.responses["200"] &&
-            methodData.responses["200"].content &&
-            methodData.responses["200"].content["application/json"] &&
-            methodData.responses["200"].content["application/json"].schema;
+        // --- 自动生成 columns（hasColumnConfig 为 true 时表示 API 列配置已加载，跳过 Swagger） ---
+        if (!this.hasColumnConfig) {
+          const { responseData } = this._extractSwaggerResponse(methodData);
+          let itemsProps = responseData ? this._extractItemsProps(responseData) : null;
 
-          if (responseData) {
+          // onSwaggerColumn 钩子
+          if (itemsProps && typeof this.onTableSwagger === "function") {
+            try {
+              const res = await this.onTableSwagger(itemsProps);
+              if (res && typeof res === "object") itemsProps = res;
+            } catch (err) { /* ignore */ }
+          }
+
+          if (itemsProps && Object.keys(itemsProps).length) {
             let swaggerColumns = [];
-
-            const itemsProps =
-              (responseData.properties &&
-                responseData.properties.items &&
-                responseData.properties.items.items &&
-                responseData.properties.items.items.properties) ||
-              responseData.properties;
-
-            if (itemsProps) {
-              const existingColumnProps = new Set(
-                this.columns.filter((c) => !c.children).map((c) => c.prop)
-              );
-
-              Object.keys(itemsProps).forEach((key) => {
-                if (!existingColumnProps.has(key)) {
-                  const prop = itemsProps[key];
-                  if (prop.description) {
-                    const col = this.mapPropertyToColumn(key, prop);
-                    if (col) swaggerColumns.push(col);
-                  }
-                }
-              });
-            }
-
-            const existingColProps = new Set(
+            const existingColumnProps = new Set(
               this.columns.filter((c) => !c.children).map((c) => c.prop)
             );
+            Object.keys(itemsProps).forEach((key) => {
+              if (!existingColumnProps.has(key)) {
+                const prop = itemsProps[key];
+                if (prop.description) {
+                  const col = this.mapPropertyToColumn(key, prop);
+                  if (col) swaggerColumns.push(col);
+                }
+              }
+            });
+
             swaggerColumns.forEach((col) => {
-              if (!existingColProps.has(col.prop)) {
+              if (!existingColumnProps.has(col.prop)) {
                 this.columns.push(col);
               }
             });
@@ -1011,17 +1004,15 @@ export default {
               }
             });
 
-            if (typeof this.onMerged === "function") {
-              try {
-                const res = await this.onMerged({ columns: this.columns });
-                if (Array.isArray(res)) {
-                  this.columns.splice(0, this.columns.length, ...res);
-                }
-              } catch (err) {
-                // ignore
-              }
-            }
           }
+        }
+
+        // onColumnsReady：列合并+补标签完成后
+        if (typeof this.onTableMerged === "function") {
+          try {
+            const res = await this.onTableMerged(this.columns);
+            if (Array.isArray(res)) this.columns.splice(0, this.columns.length, ...res);
+          } catch (err) { /* ignore */ }
         }
 
         this.syncColumnSlots();
@@ -1049,6 +1040,30 @@ export default {
         .toLowerCase()
         .replace(/^-/, "");
       return `/api/app/${kebab}/${kebab}`;
+    },
+
+    /** 提取 Swagger response schema */
+    _extractSwaggerResponse(methodData) {
+      return {
+        responseData:
+          methodData.responses &&
+          methodData.responses["200"] &&
+          methodData.responses["200"].content &&
+          methodData.responses["200"].content["application/json"] &&
+          methodData.responses["200"].content["application/json"].schema,
+      };
+    },
+
+    /** 提取 response 中的 items properties（支持分页包裹） */
+    _extractItemsProps(responseData) {
+      return (
+        (responseData.properties &&
+          responseData.properties.items &&
+          responseData.properties.items.items &&
+          responseData.properties.items.items.properties) ||
+        responseData.properties ||
+        {}
+      );
     },
 
     /** 将 Swagger parameter 映射为 searchField（组件格式） */
@@ -1577,7 +1592,7 @@ export default {
 
         this.columns.splice(0, this.columns.length, ...apiColumns);
         // 标记已成功加载，Swagger 列生成不再覆盖
-        this._hasColumnConfig = true;
+        this.hasColumnConfig = true;
         console.log(`\x1b[36m\x1b[4mol-curd 已加载列配置`, apiColumns.length, "列");
       } catch (err) {
         console.warn("[ol-curd] 加载列配置失败:", err);
