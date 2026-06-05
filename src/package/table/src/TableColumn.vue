@@ -39,7 +39,7 @@
     </template>
     <template v-slot="scope" v-if="!column.children">
       <render-dom v-if="column.render" :render="() => column.render(scope.row)" />
-      <slot v-else-if="column.renderSlot" :row="scope.row" :name="column.prop" />
+      <slot v-else-if="column.renderSlot" :row="scope.row" :$index="scope.$index" :column="column" :name="column.prop" />
       <span v-else>{{ scope.row[column.prop] }}</span>
     </template>
   </el-table-column>
