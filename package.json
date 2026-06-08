@@ -9,14 +9,6 @@
     "dist/style.css",
     "dist/print-lock.css"
   ],
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.umd.js"
-    },
-    "./dist/style.css": "./dist/style.css",
-    "./dist/print-lock.css": "./dist/print-lock.css"
-  },
   "files": [
     "dist/",
     "src/api/",
