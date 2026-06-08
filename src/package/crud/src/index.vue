@@ -1018,7 +1018,7 @@ export default {
             } else {
               // 无手动配置：直接追加 Swagger 字段，同步补上 model 的 key
               this.searchFields.push(swaggerField);
-              this.$set(this.internalSearchModel, swaggerField.prop, swaggerField.defaultValue ?? null);
+              this.$set(this.internalSearchModel, swaggerField.prop, (swaggerField.defaultValue != null ? swaggerField.defaultValue : null));
             }
           });
 
@@ -1278,7 +1278,7 @@ export default {
       // 追加合成字段，同步补上 model 的 key
       toAdd.forEach((f) => {
         searchFields.push(f);
-        this.$set(this.internalSearchModel, f.prop, f.defaultValue ?? null);
+        this.$set(this.internalSearchModel, f.prop, (f.defaultValue != null ? f.defaultValue : null));
       });
       if (toAdd.length) {
         this.initSearchDefaults(); // 更新初始快照
@@ -1506,7 +1506,7 @@ export default {
 
       // 格式1: { result: { items/records/list: [], total/totalCount: N } }
       const rows = result.items || result.records || result.list || result.data || [];
-      const total = result.total ?? result.totalCount ?? result.count ?? rows.length ?? 0;
+      const total = (result.total != null ? result.total : result.totalCount != null ? result.totalCount : result.count != null ? result.count : rows.length != null ? rows.length : 0);
 
       // 格式2: { result: [] } — 直接返回数组，无分页
       if (Array.isArray(result)) {
@@ -1676,7 +1676,7 @@ export default {
         walkUser(this.columns);
 
         // API order 排序 → 构建列
-        const sorted = [...fields].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const sorted = [...fields].sort((a, b) => ((a.order != null ? a.order : 0)) - ((b.order != null ? b.order : 0)));
         const apiColumns = sorted.map((f) => {
           const user = userColMap[f.fieldName];
           const base = { prop: f.fieldName, label: f.displayName || f.fieldName, show: f.isVisible !== false, fixed: f.isFixed || false, sortable: false };

@@ -1,14 +1,22 @@
 {
   "name": "ol-base-components",
-  "version": "3.6.1",
+  "version": "3.6.2",
   "private": false,
   "main": "dist/index.umd.js",
-  "module": "dist/index.mjs",
   "style": "dist/style.css",
   "sideEffects": [
     "dist/style.css",
     "dist/print-lock.css"
   ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.umd.js",
+      "default": "./dist/index.umd.js"
+    },
+    "./dist/style.css": "./dist/style.css",
+    "./dist/print-lock.css": "./dist/print-lock.css"
+  },
   "files": [
     "dist/",
     "src/api/",
