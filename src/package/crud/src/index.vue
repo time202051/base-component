@@ -1,5 +1,5 @@
 <template>
-  <div class="ol-curd" :class="{ 'ol-curd--loading': fetchingData }">
+  <div class="ol-crud" :class="{ 'ol-crud--loading': fetchingData }">
     <!-- ==================== 搜索栏 ==================== -->
     <div v-if="$cfg('showSearch')" class="crud-search">
       <!-- 动态配置模式 + 无搜索字段：引导配置 -->
@@ -425,7 +425,7 @@ import OlColumnConfig from "../../columnConfig/src/index.vue";
 import { getEnum } from "../../../utils/getEnum.js";
 
 /**
- * ol-curd — 增删改查一体化组件
+ * ol-crud — 增删改查一体化组件
  *
  * 将搜索栏 + 数据表格 + 分页封装为一个组件，通过 slot 扩展按钮、列、表单等区域。
  *
@@ -491,7 +491,7 @@ const oldFieldToNew = (field) => {
 };
 
 export default {
-  name: "curd",
+  name: "crud",
 
   components: {
     OlNumberRange,
@@ -620,7 +620,7 @@ export default {
     // ===== 数据请求 =====
     /**
      * 自定义数据请求函数 ({ searchParams, filterConditions, page, limit, pagination }) => ({ rows, total })
-     * 提供后走手动请求模式（父组件调接口），不传则走自动模式（curd 内部调接口）
+     * 提供后走手动请求模式（父组件调接口），不传则走自动模式（crud 内部调接口）
      */
     fetchData: { type: Function, default: null },
     /**
@@ -693,12 +693,12 @@ export default {
       return !!this.url || typeof this.fetchData === "function";
     },
 
-    /** 实际展示的表格数据（curd 内部管理） */
+    /** 实际展示的表格数据（crud 内部管理） */
     displayTableData() {
       return this.internalTableData;
     },
 
-    /** 实际使用的分页对象（curd 内部管理） */
+    /** 实际使用的分页对象（crud 内部管理） */
     displayPagination() {
       return this.internalPagination;
     },
@@ -972,7 +972,7 @@ export default {
         // 确定 URL
         const apiUrl = this.url;
         if (!apiUrl || !swaggerData.paths[apiUrl]) {
-          console.warn(`[ol-curd] Swagger 中未找到路径: ${apiUrl}`);
+          console.warn(`[ol-crud] Swagger 中未找到路径: ${apiUrl}`);
           return;
         }
 
@@ -1097,7 +1097,7 @@ export default {
 
         this.syncColumnSlots();
 
-        console.log(`\x1b[36m\x1b[4mol-curd Swagger 初始化完成`, {
+        console.log(`\x1b[36m\x1b[4mol-crud Swagger 初始化完成`, {
           searchFields: this.searchFields,
           columns: this.columns,
         });
@@ -1107,7 +1107,7 @@ export default {
           await this.fetchList();
         }
       } catch (err) {
-        console.error("[ol-curd] Swagger 初始化失败:", err);
+        console.error("[ol-crud] Swagger 初始化失败:", err);
       }
     },
 
@@ -1282,7 +1282,7 @@ export default {
       });
       if (toAdd.length) {
         this.initSearchDefaults(); // 更新初始快照
-        console.log(`\x1b[36m\x1b[4mol-curd 自动识别日期范围字段`, toAdd.map((f) => f.prop));
+        console.log(`\x1b[36m\x1b[4mol-crud 自动识别日期范围字段`, toAdd.map((f) => f.prop));
       }
     },
 
@@ -1361,7 +1361,7 @@ export default {
 
       this.$emit("search", model, { filterConditions });
       this.$emit("update:searchModel", model);
-      console.log(`\x1b[36m\x1b[4mol-curd 查询`, model, { filterConditions });
+      console.log(`\x1b[36m\x1b[4mol-crud 查询`, model, { filterConditions });
 
       // 自动拉取数据
       if (this.shouldAutoFetch) {
@@ -1421,12 +1421,12 @@ export default {
           rows = (result && result.rows) || [];
           total = (result && result.total) || 0;
         } else {
-          // === 自动请求：curd 内部调 API ===
+          // === 自动请求：crud 内部调 API ===
           const apiUrl = this.url;
           if (!apiUrl) return;
 
           if (typeof this.get !== "function" && typeof this.post !== "function") {
-            console.warn("[ol-curd] 未找到 this.get/this.post，无法自动拉取数据，请使用 fetchData 或手动传入 tableData");
+            console.warn("[ol-crud] 未找到 this.get/this.post，无法自动拉取数据，请使用 fetchData 或手动传入 tableData");
             return;
           }
 
@@ -1471,11 +1471,11 @@ export default {
 
         this.$emit("data-loaded", { rows, total });
         console.log(
-          `\x1b[36m\x1b[4mol-curd 数据加载完成`,
+          `\x1b[36m\x1b[4mol-crud 数据加载完成`,
           `共 ${total} 条，当前 ${(rows || []).length} 条`
         );
       } catch (err) {
-        console.error("[ol-curd] 数据请求失败:", err);
+        console.error("[ol-crud] 数据请求失败:", err);
         this.$emit("data-error", err);
       } finally {
         this.fetchingData = false;
@@ -1485,7 +1485,7 @@ export default {
 
     /**
      * 刷新表格数据（保持当前搜索条件+分页）。
-     * 供父组件通过 $refs.curd.refresh() 调用，如自定义按钮操作后刷新。
+     * 供父组件通过 $refs.crud.refresh() 调用，如自定义按钮操作后刷新。
      */
     refresh() {
       return this.fetchList();
@@ -1640,9 +1640,9 @@ export default {
         const newFields = configList.map(oldFieldToNew);
         this.searchFields.splice(0, this.searchFields.length, ...newFields);
         this.initSearchDefaults();
-        console.log(`\x1b[36m\x1b[4mol-curd 已加载搜索配置`, newFields);
+        console.log(`\x1b[36m\x1b[4mol-crud 已加载搜索配置`, newFields);
       } catch (err) {
-        console.warn("[ol-curd] 加载搜索配置失败:", err);
+        console.warn("[ol-crud] 加载搜索配置失败:", err);
       }
     },
 
@@ -1694,9 +1694,9 @@ export default {
         this.columns.splice(0, this.columns.length, ...apiColumns);
         // 标记已成功加载，Swagger 列生成不再覆盖
         this.hasColumnConfig = true;
-        console.log(`\x1b[36m\x1b[4mol-curd 已加载列配置`, apiColumns.length, "列");
+        console.log(`\x1b[36m\x1b[4mol-crud 已加载列配置`, apiColumns.length, "列");
       } catch (err) {
-        console.warn("[ol-curd] 加载列配置失败:", err);
+        console.warn("[ol-crud] 加载列配置失败:", err);
       }
     },
 
@@ -1796,11 +1796,11 @@ export default {
             this.$message && this.$message.success("搜索配置保存成功");
           }
         } catch (err) {
-          console.warn("[ol-curd] 保存搜索配置失败:", err);
+          console.warn("[ol-crud] 保存搜索配置失败:", err);
         }
       }
 
-      console.log(`\x1b[36m\x1b[4mol-curd 保存搜索配置`, newFields);
+      console.log(`\x1b[36m\x1b[4mol-crud 保存搜索配置`, newFields);
     },
 
     // ===================== 表格 =====================
@@ -1853,7 +1853,7 @@ export default {
         setTimeout(() => {
           const printRoot = (this.$refs.printTemplate && this.$refs.printTemplate.$el) || this.$el.querySelector(".crud-print-template");
           if (!printRoot) {
-            console.error("[ol-curd] 未找到打印区域");
+            console.error("[ol-crud] 未找到打印区域");
             return;
           }
           printTableElement(printRoot);
@@ -1932,7 +1932,7 @@ export default {
 
 <style lang="scss" scoped>
 /* ==================== 容器 ==================== */
-.ol-curd {
+.ol-crud {
   display: flex;
   flex-direction: column;
   height: 100%;

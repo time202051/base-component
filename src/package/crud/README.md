@@ -1,4 +1,4 @@
-# ol-curd 通用增删改查组件
+# ol-crud 通用增删改查组件
 
 基于 Element UI 的 Vue 2 企业级 CRUD 组件，集成搜索、表格、分页、工具栏、列配置、打印、实体变更记录等功能。支持从 Swagger 自动映射搜索字段和表格列。
 
@@ -9,13 +9,13 @@
 最简单的使用方式，只需传 `url`，其他全部用默认值：
 
 ```html
-<ol-curd url="/api/app/product" />
+<ol-crud url="/api/app/product" />
 ```
 
 这等价于：
 
 ```html
-<ol-curd
+<ol-crud
   url="/api/app/product"
   showSearch
   showSelection
@@ -109,32 +109,32 @@
 
 ### 模式一：自动模式（零代码）
 
-curd 自动通过 `url` 调用接口，管理 loading、分页、数据。
+crud 自动通过 `url` 调用接口，管理 loading、分页、数据。
 
 ```html
-<ol-curd url="/api/app/product" />
+<ol-crud url="/api/app/product" />
 ```
 
-**数据流：** 用户点查询 → curd 调 `this.get/post({ url, data: params })` → 解析 response → 表格自动渲染。
+**数据流：** 用户点查询 → crud 调 `this.get/post({ url, data: params })` → 解析 response → 表格自动渲染。
 
 **接口返回格式要求：** 内置支持 `{ result: { items/records/list/data: [], total/totalCount/count: N } }` 或 `{ result: [] }`。不匹配时用 `responseHandler` 自定义解析。
 
 ### 模式二：fetchData 自定义请求
 
-curd 管理 UI 状态（loading、分页），父组件只负责调接口返回 `{ rows, total }`。
+crud 管理 UI 状态（loading、分页），父组件只负责调接口返回 `{ rows, total }`。
 
 ```html
-<ol-curd
+<ol-crud
   url="/api/app/product"
   :fetchData="fetchList"
-  ref="curd"
+  ref="crud"
 />
 ```
 
 ```js
 export default {
   methods: {
-    // curd 自动传参，父组件只管调接口和返回数据
+    // crud 自动传参，父组件只管调接口和返回数据
     async fetchList({ searchParams, filterConditions, page, limit, pagination }) {
       const res = await this.$http.get('/api/app/product', {
         params: {
@@ -152,7 +152,7 @@ export default {
     // 自定义按钮操作后刷新
     async batchDelete() {
       await this.$http.post('/api/app/product/delete', { ids })
-      this.$refs.curd.refresh()
+      this.$refs.crud.refresh()
     },
   }
 }
@@ -207,7 +207,7 @@ export default {
 ### 基础搜索
 
 ```html
-<ol-curd url="/api/app/product" :searchFields="searchFields" />
+<ol-crud url="/api/app/product" :searchFields="searchFields" />
 ```
 
 ```js
@@ -228,13 +228,13 @@ data() {
 ### 搜索表单初始值
 
 ```html
-<ol-curd :searchFields="searchFields" :searchModel="{ status: 1 }" />
+<ol-crud :searchFields="searchFields" :searchModel="{ status: 1 }" />
 ```
 
 ### 搜索条件双向绑定
 
 ```html
-<ol-curd :searchFields="searchFields" :searchModel.sync="myModel" />
+<ol-crud :searchFields="searchFields" :searchModel.sync="myModel" />
 ```
 
 > 点击"查询"按钮时触发同步，不是实时 keystroke。
@@ -242,17 +242,17 @@ data() {
 ### 每行字段数
 
 ```html
-<ol-curd :columnsPerRow="3" />
+<ol-crud :columnsPerRow="3" />
 ```
 
 超出自动折叠，显示"展开/收起"按钮。
 
 ### Swagger 自动映射搜索字段
 
-传 `url` 后，curd 自动从 Swagger 获取接口参数生成搜索字段：
+传 `url` 后，crud 自动从 Swagger 获取接口参数生成搜索字段：
 
 ```html
-<ol-curd url="/api/app/product" />
+<ol-crud url="/api/app/product" />
 ```
 
 手动传的 `searchFields` 会与 Swagger 字段合并（Swagger 打底，手动覆盖）。
@@ -260,7 +260,7 @@ data() {
 **4 个钩子控制处理过程：**
 
 ```html
-<ol-curd
+<ol-crud
   url="/api/app/product"
   :onSearchSwagger="({ columns }) => ({ columns: columns.filter(c => c.prop !== 'debug') })"
   :onSearchMerged="({ columns }) => ({ columns })"
@@ -305,7 +305,7 @@ data() {
 ### 基础列
 
 ```html
-<ol-curd url="/api/app/product" :columns="columns" />
+<ol-crud url="/api/app/product" :columns="columns" />
 ```
 
 ```js
@@ -326,7 +326,7 @@ data() {
 传 `url` 后自动从 Swagger 响应的 properties 提取列定义：
 
 ```html
-<ol-curd url="/api/app/product" />
+<ol-crud url="/api/app/product" />
 ```
 
 手动传的 `columns` 中已有的 prop 不会重复添加。枚举字段自动映射为 `xxxDesc`，boolean 字段映射为 `xxxText`。
@@ -336,7 +336,7 @@ data() {
 **方式一：插槽（推荐）**
 
 ```html
-<ol-curd url="/api/app/product" :columns="columns">
+<ol-crud url="/api/app/product" :columns="columns">
   <!-- 插槽名 = 列的 prop -->
   <template #status="{ row, $index, column }">
     <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
@@ -347,10 +347,10 @@ data() {
   <template #price="{ row }">
     <span style="color: #e74c3c">¥{{ row.price.toFixed(2) }}</span>
   </template>
-</ol-curd>
+</ol-crud>
 ```
 
-curd 自动检测父组件插槽，为匹配的列设置 `renderSlot: true`。
+crud 自动检测父组件插槽，为匹配的列设置 `renderSlot: true`。
 
 > 插槽作用域：`{ row, $index, column }`
 
@@ -390,7 +390,7 @@ columns: [
 ### #column 插槽（完全自定义列）
 
 ```html
-<ol-curd url="/api/app/product">
+<ol-crud url="/api/app/product">
   <template #column="{ columns }">
     <el-table-column
       v-for="col in columns"
@@ -399,7 +399,7 @@ columns: [
       :label="col.label"
     />
   </template>
-</ol-curd>
+</ol-crud>
 ```
 
 ---
@@ -407,7 +407,7 @@ columns: [
 ## 操作列
 
 ```html
-<ol-curd url="/api/app/product" :operates="operates" />
+<ol-crud url="/api/app/product" :operates="operates" />
 ```
 
 ```js
@@ -469,7 +469,7 @@ data() {
 ## 表格多选
 
 ```html
-<ol-curd url="/api/app/product" ref="curd" :selection.sync="selectedRows" />
+<ol-crud url="/api/app/product" ref="crud" :selection.sync="selectedRows" />
 ```
 
 ```js
@@ -492,7 +492,7 @@ methods: {
 ### 内置工具按钮
 
 ```html
-<ol-curd
+<ol-crud
   url="/api/app/product"
   showRefreshBtn        <!-- 刷新，默认 true -->
   showPrintBtn          <!-- 打印，默认 true -->
@@ -507,7 +507,7 @@ methods: {
 通过菜单管理系统配置，`hasBtn` 工具函数自动从 `localStorage.wms.SET_MENUS` 读取按钮并绑定方法：
 
 ```html
-<ol-curd url="/api/app/product" :btnlist="this.hasBtn(this)" />
+<ol-crud url="/api/app/product" :btnlist="this.hasBtn(this)" />
 ```
 
 ```js
@@ -533,7 +533,7 @@ methods: {
 ```
 
 ```html
-<ol-curd url="/api/app/product">
+<ol-crud url="/api/app/product">
   <template #toolbarBefore="{ selection, pagination }">
     <span>已选 {{ selection.length }} / 共 {{ pagination.total }} 条</span>
   </template>
@@ -549,7 +549,7 @@ methods: {
   <template #toolbarActionsAfter="{ tableData }">
     <span>当前页 {{ tableData.length }} 条</span>
   </template>
-</ol-curd>
+</ol-crud>
 ```
 
 **插槽作用域：**
@@ -572,7 +572,7 @@ methods: {
 点击列图标 → 下拉 checkbox 列表 → 勾选即时生效。
 
 ```html
-<ol-curd
+<ol-crud
   url="/api/app/product"
   showColumnFilterBtn
   columnConfigMode="simple"
@@ -584,7 +584,7 @@ methods: {
 点击列图标 → 弹窗拖拽排序、设置显示/别名/角色 → 保存调 API 持久化 → 下次打开自动恢复。
 
 ```html
-<ol-curd
+<ol-crud
   url="/api/app/product"
   showColumnFilterBtn
   columnConfigMode="persisted"
@@ -606,13 +606,13 @@ methods: {
 **普通打印：** 打印当前表格数据（同步列可见性和顺序）。
 
 ```html
-<ol-curd url="/api/app/product" showPrintBtn />
+<ol-crud url="/api/app/product" showPrintBtn />
 ```
 
 **智能打印（模板打印）：**
 
 ```html
-<ol-curd
+<ol-crud
   url="/api/app/product"
   showSmartPrintBtn
   :smartPrintMenuId="123"
@@ -627,7 +627,7 @@ methods: {
 勾选行后点击图标，弹窗展示变更历史（字段级别新旧值对比）。内部使用 Swagger 自动生成列。
 
 ```html
-<ol-curd url="/api/app/product" showEntityChangeBtn />
+<ol-crud url="/api/app/product" showEntityChangeBtn />
 ```
 
 接口地址：`/api/app/audit-logging/entity-change-pages`
@@ -710,7 +710,7 @@ methods: {
 **使用示例：**
 
 ```html
-<ol-curd url="/api/app/product" :responseHandler="handleResponse" />
+<ol-crud url="/api/app/product" :responseHandler="handleResponse" />
 ```
 
 ```js
@@ -729,7 +729,7 @@ methods: {
 
 ## 全局配置 $olBaseConfig
 
-项目入口注册时设置，所有 `ol-curd` 实例生效：
+项目入口注册时设置，所有 `ol-crud` 实例生效：
 
 ```js
 import OlBaseComponents from 'ol-base-components'
@@ -763,7 +763,7 @@ Vue.use(OlBaseComponents, {
 
 ```html
 <!-- 全局开了智能打印，这里可以关闭 -->
-<ol-curd url="/api/app/product" :showSmartPrintBtn="false" />
+<ol-crud url="/api/app/product" :showSmartPrintBtn="false" />
 ```
 
 ---
@@ -772,14 +772,14 @@ Vue.use(OlBaseComponents, {
 
 ```html
 <template>
-  <ol-curd
+  <ol-crud
     url="/api/app/product"
     :fetchData="fetchList"
     :btnlist="this.hasBtn(this)"
     :selection.sync="selectedRows"
     :searchModel.sync="query"
     :operates="operates"
-    ref="curd"
+    ref="crud"
   >
     <!-- 工具栏 -->
     <template #toolbarBefore="{ selection, pagination }">
@@ -792,7 +792,7 @@ Vue.use(OlBaseComponents, {
         {{ row.status === 1 ? '启用' : '禁用' }}
       </el-tag>
     </template>
-  </ol-curd>
+  </ol-crud>
 </template>
 
 <script>
@@ -833,7 +833,7 @@ export default {
       await this.$confirm('确认删除？')
       await this.$http.delete(`/api/app/product/${row.id}`)
       this.$message.success('删除成功')
-      this.$refs.curd.refresh()
+      this.$refs.crud.refresh()
     },
   },
 }
