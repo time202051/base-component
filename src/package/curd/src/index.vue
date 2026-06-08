@@ -410,8 +410,6 @@
     <!-- ==================== 隐藏打印模板 ==================== -->
     <print-template ref="printTemplate" v-show="false" class="crud-print-template" :print-list-obj="printListObj" />
 
-    <!-- ==================== 表单插槽（增/改弹窗，父组件自行管理弹窗状态） ==================== -->
-    <slot name="form" :mode="formMode" :data="formData" :visible="formDialogVisible" />
   </div>
 </template>
 
@@ -681,10 +679,6 @@ export default {
       showColumnRoleConfig: false,
       columnRoleList: [],
 
-      // 表单弹窗状态（供 #form 插槽使用）
-      formMode: "add", // 'add' | 'edit' | 'view'
-      formData: null,
-      formDialogVisible: false,
     };
   },
 
@@ -1932,32 +1926,6 @@ export default {
       return this.handleReset();
     },
 
-    /** 打开新增表单弹窗 */
-    openAdd(data) {
-      this.formMode = "add";
-      this.formData = data || null;
-      this.formDialogVisible = true;
-    },
-
-    /** 打开编辑表单弹窗 */
-    openEdit(data) {
-      this.formMode = "edit";
-      this.formData = data || null;
-      this.formDialogVisible = true;
-    },
-
-    /** 打开查看表单弹窗 */
-    openView(data) {
-      this.formMode = "view";
-      this.formData = data || null;
-      this.formDialogVisible = true;
-    },
-
-    /** 关闭表单弹窗 */
-    closeForm() {
-      this.formDialogVisible = false;
-      this.formData = null;
-    },
   },
 };
 </script>
