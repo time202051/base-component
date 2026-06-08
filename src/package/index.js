@@ -5,6 +5,7 @@ import Dialog from "./dialog";
 import OlForm from "./form";
 import OlNumberRange from "./numberRange";
 import OlPrintModel from "./printModel";
+import OlCurd from "./curd";
 
 import OlPrint, { Hiprint } from "./print";
 
@@ -218,6 +219,7 @@ const components = [
   OlNumberRange,
   OlPrint,
   OlPrintModel,
+  OlCurd,
 ];
 const install = async function (Vue, options) {
   // 设置全局数据
@@ -239,5 +241,6 @@ export {
   OlNumberRange,
   OlPrint,
   OlPrintModel,
+  OlCurd,
 };
 export { swaggerInstall, swaggerUnload, Hiprint };

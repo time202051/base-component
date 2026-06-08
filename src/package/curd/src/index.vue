@@ -1,9 +1,9 @@
 <template>
-  <div class="ol-curd" :class="{ 'ol-curd--loading': loading }">
+  <div class="ol-curd" :class="{ 'ol-curd--loading': fetchingData }">
     <!-- ==================== 搜索栏 ==================== -->
-    <div v-if="showSearch" class="crud-search">
-      <!-- 无搜索字段但开了配置模式：显示占位引导 -->
-      <div v-if="searchFields.length === 0 && showSearchConfig" class="crud-search-empty">
+    <div v-if="$cfg('showSearch')" class="crud-search">
+      <!-- 动态配置模式 + 无搜索字段：引导配置 -->
+      <div v-if="searchFields.length === 0 && $cfg('showCustomSearch')" class="crud-search-empty">
         <span class="crud-search-empty-text">暂未配置搜索条件</span>
         <el-button plain size="small" icon="el-icon-setting" @click="openConfigDialog">配置搜索字段</el-button>
       </div>
@@ -168,7 +168,7 @@
 
         <!-- 操作按钮 -->
         <div class="crud-search-actions">
-          <el-button type="primary" size="small" @click="handleSearch">查询</el-button>
+          <el-button type="primary" size="small" :disabled="fetchingData" @click="handleSearch">查询</el-button>
           <el-button plain size="small" @click="handleReset">重置</el-button>
           <el-button
             v-if="searchFields.length > columnsPerRow"
@@ -180,7 +180,7 @@
             {{ searchExpanded ? '收起' : '展开' }}
           </el-button>
           <el-button
-            v-if="showSearchConfig"
+            v-if="$cfg('showCustomSearch')"
             plain
             size="small"
             icon="el-icon-setting"
@@ -190,6 +190,12 @@
           </el-button>
         </div>
       </el-form>
+
+      <!-- 无搜索字段 + 非配置模式：至少展示查询/重置按钮 -->
+      <div v-if="searchFields.length === 0 && !$cfg('showCustomSearch')" class="crud-search-actions">
+        <el-button type="primary" size="small" :disabled="fetchingData" @click="handleSearch">查询</el-button>
+        <el-button plain size="small" @click="handleReset">重置</el-button>
+      </div>
     </div>
 
     <!-- ==================== 搜索配置弹窗 ==================== -->
@@ -199,24 +205,39 @@
       :table-search="searchFieldsForDialog"
       :form-search-data="formSearchDataForDialog"
       :form-search="searchModelForDialog"
-      :customs="customs"
+      :customs="resolvedCustoms"
       @save="handleSaveConfig"
       v-bind="$attrs"
     />
 
     <!-- ==================== 工具栏 ==================== -->
-    <div
-      v-if="$slots.toolbar || $slots.toolbarActions || showColumnFilter || showRefreshBtn || showPrintBtn || showSmartPrintBtn || showEntityChangeBtn"
-      class="crud-toolbar"
-    >
+    <div v-if="toolbarVisible" class="crud-toolbar">
       <div class="crud-toolbar-left">
-        <slot name="toolbar" :loading="loading" :selection="currentSelection" />
+        <!-- 配置按钮之前 -->
+        <slot name="toolbarBefore" v-bind="toolbarSlotScope" />
+
+        <!-- 菜单配置的按钮 -->
+        <el-button
+          v-for="(btn, index) in btnlist"
+          :key="index"
+          size="small"
+          :type="btn.types ? btn.types : 'primary'"
+          :disabled="btn.disabled"
+          @click="btn.method"
+        >
+          <i v-if="btn.icon" :class="btn.icon" />
+          {{ btn.title }}
+        </el-button>
+
+        <!-- 配置按钮之后 -->
+        <slot name="toolbarAfter" v-bind="toolbarSlotScope" />
       </div>
       <div class="crud-toolbar-right">
-        <slot name="toolbarActions" :loading="loading" :selection="currentSelection" />
+        <!-- 工具按钮之前 -->
+        <slot name="toolbarActions" v-bind="toolbarSlotScope" />
 
         <!-- 列配置：simple=下拉checkbox / persisted=弹窗拖拽 -->
-        <template v-if="showColumnFilter">
+        <template v-if="$cfg('showColumnFilterBtn')">
           <!-- simple 模式：下拉 checkbox -->
           <el-dropdown v-if="columnConfigMode === 'simple'" trigger="click" class="crud-toolbar-action">
             <span class="crud-toolbar-icon"><i class="el-icon-s-operation" /></span>
@@ -241,17 +262,17 @@
         </template>
 
         <!-- 刷新 -->
-        <span v-if="showRefreshBtn" class="crud-toolbar-icon" @click="handleRefresh">
+        <span v-if="$cfg('showRefreshBtn')" class="crud-toolbar-icon" @click="handleRefresh">
           <i class="el-icon-refresh" />
         </span>
 
         <!-- 打印 -->
-        <span v-if="showPrintBtn" class="crud-toolbar-icon" @click="handlePrint">
+        <span v-if="$cfg('showPrintBtn')" class="crud-toolbar-icon" @click="handlePrint">
           <i class="el-icon-printer" />
         </span>
 
         <!-- 智能打印（模板打印） -->
-        <span v-if="showSmartPrintBtn" class="crud-toolbar-icon">
+        <span v-if="$cfg('showSmartPrintBtn')" class="crud-toolbar-icon">
           <print-template-selector
             :menu-id="smartPrintMenuId"
             :print-data="printData || displayTableData"
@@ -261,9 +282,12 @@
         </span>
 
         <!-- 实体变更记录 -->
-        <span v-if="showEntityChangeBtn" class="crud-toolbar-icon" @click="openEntityChange" title="实体变更记录">
+        <span v-if="$cfg('showEntityChangeBtn')" class="crud-toolbar-icon" @click="openEntityChange" title="实体变更记录">
           <i class="el-icon-receiving" />
         </span>
+
+        <!-- 工具按钮之后 -->
+        <slot name="toolbarActionsAfter" v-bind="toolbarSlotScope" />
       </div>
     </div>
 
@@ -271,7 +295,7 @@
     <div class="crud-table" :key="tableKey">
       <el-table
         ref="crudTable"
-        v-loading="loading || fetchingData"
+        v-loading="fetchingData"
         border
         :data="displayTableData"
         style="width: 100%"
@@ -283,7 +307,7 @@
       >
         <!-- 多选列 -->
         <el-table-column
-          v-if="showSelection"
+          v-if="$cfg('showSelection')"
           width="55"
           align="center"
           type="selection"
@@ -291,7 +315,7 @@
 
         <!-- 序号列 -->
         <el-table-column
-          v-if="showIndex"
+          v-if="$cfg('showIndex')"
           width="55"
           align="center"
           type="index"
@@ -328,12 +352,12 @@
             <div class="crud-operate-group">
               <template v-for="(btn, idx) in operates">
                 <el-button
-                  v-if="!btn.hidden || (btn.hidden && !btn.hidden(row, $index))"
+                  v-if="typeof btn.hidden === 'function' ? !btn.hidden(row, $index) : !btn.hidden"
                   :key="idx"
                   :size="btn.size || 'small'"
                   :type="btn.type || 'text'"
                   :icon="btn.icon"
-                  :disabled="btn.disabled && btn.disabled(row, $index)"
+                  :disabled="typeof btn.disabled === 'function' ? btn.disabled(row, $index) : !!btn.disabled"
                   @click.stop="btn.click && btn.click(row, $index)"
                 >
                   {{ btn.label }}
@@ -516,13 +540,11 @@ export default {
 
   props: {
     // ===== Swagger 自动映射 =====
-    /** Swagger 实体名称（如 "Product"），用于自动匹配接口路径 */
-    entity: { type: String, default: "" },
-    /** Swagger 接口路径（如 "/api/app/product"），优先级高于 entity */
+    /** Swagger 接口路径（如 "/api/app/product"），自动获取列和搜索字段 */
     url: { type: String, default: "" },
 
     // ===== 搜索相关 =====
-    /** 是否显示搜索栏（默认 true），设为 false 可隐藏整个搜索区域 */
+    /** 是否显示搜索栏。未传时回退到 $olBaseConfig */
     showSearch: { type: Boolean, default: true },
     /** 搜索字段配置数组 */
     searchFields: { type: Array, default: () => [] },
@@ -532,8 +554,8 @@ export default {
     columnsPerRow: { type: Number, default: 4 },
     /** 搜索表单校验规则 */
     searchRules: { type: Object, default: () => ({}) },
-    /** 是否显示"配置"按钮（动态勾选搜索字段） */
-    showSearchConfig: { type: Boolean, default: false },
+    /** 是否显示"配置"按钮（动态勾选搜索字段）。未传时回退到 $olBaseConfig */
+    showCustomSearch: { type: Boolean, default: false },
     /** 后端返回的可选搜索字段列表，用于配置弹窗 */
     customs: { type: Array, default: () => [] },
     /**
@@ -545,14 +567,10 @@ export default {
     // ===== 表格相关 =====
     /** 列配置数组 */
     columns: { type: Array, default: () => [] },
-    /** 表格数据 */
-    tableData: { type: Array, default: () => [] },
-    /** 加载状态 */
-    loading: { type: Boolean, default: false },
-    /** 是否显示多选列 */
-    showSelection: { type: Boolean, default: false },
-    /** 是否显示序号列 */
-    showIndex: { type: Boolean, default: false },
+    /** 是否显示多选列。未传时回退到 $olBaseConfig */
+    showSelection: { type: Boolean, default: true },
+    /** 是否显示序号列。未传时回退到 $olBaseConfig */
+    showIndex: { type: Boolean, default: true },
     /** 操作列按钮 */
     operates: { type: Array, default: () => [] },
     /** 操作列配置（透传 el-table-column） */
@@ -565,20 +583,22 @@ export default {
     columnConfigMode: { type: String, default: "simple" },
     /** 列配置持久化的页面标识（默认取 $route.path） */
     pageKey: { type: String, default: "" },
-    /** 是否显示列过滤入口（两种模式统一用这个开关） */
-    showColumnFilter: { type: Boolean, default: false },
-    /** 是否显示刷新按钮 */
-    showRefreshBtn: { type: Boolean, default: false },
-    /** 是否显示打印按钮 */
-    showPrintBtn: { type: Boolean, default: false },
-    /** 是否显示智能打印按钮（模板打印），需配合 smartPrintMenuId / printData */
+    /** 是否显示列过滤入口。未传时回退到 $olBaseConfig */
+    showColumnFilterBtn: { type: Boolean, default: false },
+    /** 是否显示刷新按钮。未传时回退到 $olBaseConfig */
+    showRefreshBtn: { type: Boolean, default: true },
+    /** 是否显示打印按钮。未传时回退到 $olBaseConfig */
+    showPrintBtn: { type: Boolean, default: true },
+    /** 是否显示智能打印按钮（模板打印），需配合 smartPrintMenuId / printData。未传时回退到 $olBaseConfig */
     showSmartPrintBtn: { type: Boolean, default: false },
     /** 智能打印的菜单 ID */
     smartPrintMenuId: { type: String, default: "" },
     /** 智能打印的数据 */
     printData: { type: Array, default: () => [] },
-    /** 是否显示实体变更记录按钮（勾选行后出现） */
+    /** 是否显示实体变更记录按钮（勾选行后出现）。未传时回退到 $olBaseConfig */
     showEntityChangeBtn: { type: Boolean, default: false },
+    /** 菜单配置的按钮列表 [{ title, types, icon, disabled, method }] */
+    btnlist: { type: Array, default: () => [] },
 
     // ===== 分页相关 =====
     /** 分页配置 { page, limit, total, show } */
@@ -589,36 +609,35 @@ export default {
     /** 每页条数选项 */
     pageSizes: { type: Array, default: () => [20, 30, 40, 60, 100, 200] },
 
-    // ===== 钩子（普通模式，4 个独立钩子） =====
-    /** 搜索字段：Swagger 数据映射后、合并前。入参 searchFields 数组，返回修改后的数组 */
+    // ===== 钩子（对象入参，方便后期扩展） =====
+    /** Swagger 搜索字段映射后、合并前。入参 { columns }，返回 { columns } */
     onSearchSwagger: { type: Function, default: null },
-    /** 搜索字段：合并完成+日期识别后。入参 searchFields 数组，返回修改后的数组 */
+    /** 搜索字段合并完成+日期识别后。入参 { columns }，返回 { columns } */
     onSearchMerged: { type: Function, default: null },
-    /** 表格列：Swagger 数据映射后、合并前。入参 columnProps 对象，返回修改后的对象 */
+    /** Swagger 表格列映射后、合并前。入参 { columns }，返回 { columns } */
     onTableSwagger: { type: Function, default: null },
-    /** 表格列：合并完成+补标签后。入参 columns 数组，返回修改后的数组 */
+    /** 表格列合并完成+补标签后。入参 { columns }，返回 { columns } */
     onTableMerged: { type: Function, default: null },
 
-    // ===== 自动请求 =====
-    /** 是否自动通过 Swagger URL 拉取表格数据 */
-    autoFetch: { type: Boolean, default: true },
-    /** 列表接口地址（默认与 url 相同），用于覆盖自动推导的列表 URL */
-    listApi: { type: String, default: "" },
+    // ===== 数据请求 =====
+    /**
+     * 自定义数据请求函数 ({ searchParams, filterConditions, page, limit, pagination }) => ({ rows, total })
+     * 提供后走手动请求模式（父组件调接口），不传则走自动模式（curd 内部调接口）
+     */
+    fetchData: { type: Function, default: null },
     /**
      * 分页参数名映射，适配不同后端命名习惯
-     * 默认 { page: 'page', limit: 'limit' }
-     * 如 ABP 框架: { page: 'Page', limit: 'MaxResultCount' }
+     * 默认 { page: 'Page', limit: 'MaxResultCount' }（ABP 框架）
      */
     pageParams: {
       type: Object,
-      default: () => ({ page: "page", limit: "limit" }),
+      default: () => ({ page: "Page", limit: "MaxResultCount" }),
     },
     /** 响应数据解析函数 (response) => ({ rows: [], total: 0 })，适配不同后端返回格式 */
     responseHandler: { type: Function, default: null },
-
     // ===== 其他 =====
-    /** 请求方式 get / post */
-    method: { type: String, default: "" },
+    /** 请求方式 get / post，默认 get */
+    method: { type: String, default: "get" },
   },
 
   data() {
@@ -632,6 +651,9 @@ export default {
       // 配置弹窗
       configDialogVisible: false,
 
+      // autoFetch 模式下从接口返回中自动捕获的 customs
+      fetchedCustoms: [],
+
       // 当前选中行
       currentSelection: [],
 
@@ -640,9 +662,6 @@ export default {
 
       // 表格 key，用于强制重渲染
       tableKey: 0,
-
-      // 保存初始搜索值（用于重置）
-      initialSearchModel: {},
 
       // 自动请求时内部 loading 标识
       fetchingData: false,
@@ -675,22 +694,47 @@ export default {
       return this.method || (this.$olBaseConfig && this.$olBaseConfig.method) || "get";
     },
 
-    /**
-     * 实际展示的表格数据
-     * - autoFetch 模式：使用内部 internalTableData（fetchList 自动填充）
-     * - 手动模式：使用父组件传入的 tableData prop
-     */
-    displayTableData() {
-      return this.autoFetch ? this.internalTableData : this.tableData;
+    /** 是否启用内部数据管理（自动模式有 url，手动模式有 fetchData） */
+    shouldAutoFetch() {
+      return !!this.url || typeof this.fetchData === "function";
     },
 
-    /**
-     * 实际使用的分页对象
-     * - autoFetch 模式：使用内部 internalPagination
-     * - 手动模式：使用父组件传入的 pagination prop
-     */
+    /** 实际展示的表格数据（curd 内部管理） */
+    displayTableData() {
+      return this.internalTableData;
+    },
+
+    /** 实际使用的分页对象（curd 内部管理） */
     displayPagination() {
-      return this.autoFetch ? this.internalPagination : this.pagination;
+      return this.internalPagination;
+    },
+
+    /** 工具栏插槽统一作用域，尽可能多传数据方便用户 */
+    toolbarSlotScope() {
+      return {
+        loading: this.fetchingData,
+        selection: this.currentSelection,
+        tableData: this.displayTableData,
+        pagination: this.displayPagination,
+        searchModel: this.internalSearchModel,
+        columns: this.visibleColumns,
+      };
+    },
+
+    /** 工具栏是否显示 */
+    toolbarVisible() {
+      return (
+        this.btnlist.length ||
+        this.$slots.toolbarBefore ||
+        this.$slots.toolbarAfter ||
+        this.$slots.toolbarActions ||
+        this.$slots.toolbarActionsAfter ||
+        this.$cfg("showColumnFilterBtn") ||
+        this.$cfg("showRefreshBtn") ||
+        this.$cfg("showPrintBtn") ||
+        this.$cfg("showSmartPrintBtn") ||
+        this.$cfg("showEntityChangeBtn")
+      );
     },
 
     /** 可见的搜索字段（visible !== false） */
@@ -773,9 +817,17 @@ export default {
         value: this.internalSearchModel || {},
         options: {},
         reset: false,
-        customs: this.customs || [],
+        customs: this.resolvedCustoms,
       };
     },
+    /** customs 解析：自动模式自动捕获，手动模式（fetchData）由父组件传入 */
+    resolvedCustoms() {
+      if (this.url && typeof this.fetchData !== "function") {
+        return this.fetchedCustoms;
+      }
+      return this.customs;
+    },
+
     /** 旧格式的 formSearch */
     searchModelForDialog() {
       return { ...this.internalSearchModel };
@@ -796,7 +848,6 @@ export default {
     searchFields: {
       handler(fields) {
         this.initSearchDefaults();
-        this.syncCheckedColumns();
       },
       immediate: true,
     },
@@ -810,21 +861,18 @@ export default {
       deep: true,
     },
 
-    checkedColumns: {
-      handler(val) {
-        const walk = (cols) => {
-          (cols || []).forEach((col) => {
-            if (col.children && col.children.length) {
-              walk(col.children);
-            } else if (col.prop) {
-              this.$set(col, "show", val.includes(col.prop));
-            }
-          });
-        };
-        walk(this.columns);
-        this.tableKey++;
-      },
-      deep: true,
+    checkedColumns(val) {
+      const walk = (cols) => {
+        (cols || []).forEach((col) => {
+          if (col.children && col.children.length) {
+            walk(col.children);
+          } else if (col.prop) {
+            this.$set(col, "show", val.includes(col.prop));
+          }
+        });
+      };
+      walk(this.columns);
+      this.tableKey++;
     },
   },
 
@@ -836,21 +884,38 @@ export default {
     this.syncColumnSlots();
 
     // persisted 模式：先从 API 加载列配置（决定列的顺序/可见性/标签）
-    if (this.showColumnFilter && this.columnConfigMode === "persisted") {
+    if (this.$cfg("showColumnFilterBtn") && this.columnConfigMode === "persisted") {
       await this.loadColumnConfig();
     }
 
-    if (this.showSearchConfig) {
+    if (this.$cfg("showCustomSearch")) {
       await this.loadSearchConfig();
     }
 
-    if (this.url || this.entity) {
+    if (this.url) {
       this.initFromSwagger();
     }
   },
 
   methods: {
     // ===================== 初始化 =====================
+
+    /**
+     * 获取配置值，优先级：prop 显式传值 > $olBaseConfig 全局 > 默认值
+     * @param {string} key - prop 名称
+     * @param {*} defaultVal - 兜底默认值
+     */
+    $cfg(key) {
+      // 父组件显式传了 → 最高优先级
+      if (this.$options.propsData && key in this.$options.propsData) {
+        return this[key];
+      }
+      // 全局配置
+      const base = this.$olBaseConfig || {};
+      if (base[key] !== undefined) return base[key];
+      // 兜底：prop 自身的 default 值
+      return this[key];
+    },
 
     /** 自动检测父组件传入的列插槽（#propName），自动设置 renderSlot */
     syncColumnSlots() {
@@ -868,6 +933,28 @@ export default {
       walk(this.columns);
     },
 
+    /** 同步 checkedColumns：从 columns 的 show 状态回写到 checkedColumns */
+    syncCheckedColumns() {
+      const result = [];
+      const walk = (cols) => {
+        (cols || []).forEach((col) => {
+          if (col.children && col.children.length) {
+            walk(col.children);
+          } else if (col.prop && col.show !== false) {
+            result.push(col.prop);
+          }
+        });
+      };
+      walk(this.columns);
+      // 仅值变化时更新，打断 checkedColumns ↔ columns 循环
+      if (
+        result.length !== this.checkedColumns.length ||
+        result.some((v, i) => v !== this.checkedColumns[i])
+      ) {
+        this.checkedColumns = result;
+      }
+    },
+
     /** 初始化搜索默认值 */
     initSearchDefaults() {
       const model = { ...this.searchModel };
@@ -879,7 +966,6 @@ export default {
         }
       });
       this.internalSearchModel = model;
-      this.initialSearchModel = JSON.parse(JSON.stringify(model));
     },
 
     /** 从 Swagger 自动生成 searchFields 和 columns */
@@ -890,7 +976,7 @@ export default {
         if (!swaggerData || !swaggerData.paths) return;
 
         // 确定 URL
-        const apiUrl = this.url || this.resolveEntityUrl(this.entity);
+        const apiUrl = this.url;
         if (!apiUrl || !swaggerData.paths[apiUrl]) {
           console.warn(`[ol-curd] Swagger 中未找到路径: ${apiUrl}`);
           return;
@@ -903,22 +989,21 @@ export default {
 
         // --- 普通模式：从 Swagger 参数自动生成 searchFields ---
         // 配置模式下搜索字段来自 loadSearchConfig() 后端接口，不走 Swagger 映射
-        if (!this.showSearchConfig) {
+        if (!this.$cfg("showCustomSearch")) {
           const parameters = methodData.parameters || [];
 
           // Step 1: Swagger params → 组件格式的 searchField 列表
-          const swaggerSearchFields = parameters
+          let swaggerSearchFields = parameters
             .map((p) => this.mapParameterToSearchField(p))
             .filter(Boolean);
 
-          // Step 2: onSwaggerSearch 钩子
+          // Step 2: onSearchSwagger 钩子 ({ columns })
           if (typeof this.onSearchSwagger === "function") {
             try {
-              const res = await this.onSearchSwagger(swaggerSearchFields);
-              if (Array.isArray(res)) swaggerSearchFields = res;
+              const res = await this.onSearchSwagger({ columns: [...swaggerSearchFields] });
+              if (res && Array.isArray(res.columns)) swaggerSearchFields = res.columns;
             } catch (err) { /* ignore */ }
           }
-          const processedSwaggerFields = swaggerSearchFields;
 
           // Step 3: 合并 Swagger 字段到手动配置的 searchFields
           // 策略：Object.assign(swagger, user) — Swagger 打底，用户覆盖；prop 不修改
@@ -927,7 +1012,7 @@ export default {
             if (f.prop) manualByProp[f.prop.toLowerCase()] = f;
           });
 
-          processedSwaggerFields.forEach((swaggerField) => {
+          swaggerSearchFields.forEach((swaggerField) => {
             const key = (swaggerField.prop || "").toLowerCase();
             const manualField = manualByProp[key];
 
@@ -937,19 +1022,20 @@ export default {
               Object.assign(manualField, swaggerField, manualField);
               manualField.prop = userProp;
             } else {
-              // 无手动配置：直接追加 Swagger 字段
+              // 无手动配置：直接追加 Swagger 字段，同步补上 model 的 key
               this.searchFields.push(swaggerField);
+              this.$set(this.internalSearchModel, swaggerField.prop, swaggerField.defaultValue ?? null);
             }
           });
 
           // Step 4: 普通模式自动识别日期范围字段
           this.autoDetectRangeTimeFields(parameters);
 
-          // Step 5: onSearchFieldsReady
+          // Step 5: onSearchMerged 钩子 ({ columns })
           if (typeof this.onSearchMerged === "function") {
             try {
-              const res = await this.onSearchMerged(this.searchFields);
-              if (Array.isArray(res)) this.searchFields.splice(0, this.searchFields.length, ...res);
+              const res = await this.onSearchMerged({ columns: this.searchFields.slice() });
+              if (res && Array.isArray(res.columns)) this.searchFields.splice(0, this.searchFields.length, ...res.columns);
             } catch (err) { /* ignore */ }
           }
 
@@ -961,11 +1047,11 @@ export default {
           const { responseData } = this._extractSwaggerResponse(methodData);
           let itemsProps = responseData ? this._extractItemsProps(responseData) : null;
 
-          // onSwaggerColumn 钩子
+          // onTableSwagger 钩子 ({ columns })
           if (itemsProps && typeof this.onTableSwagger === "function") {
             try {
-              const res = await this.onTableSwagger(itemsProps);
-              if (res && typeof res === "object") itemsProps = res;
+              const res = await this.onTableSwagger({ columns: { ...itemsProps } });
+              if (res && res.columns && typeof res.columns === "object") itemsProps = res.columns;
             } catch (err) { /* ignore */ }
           }
 
@@ -1007,11 +1093,11 @@ export default {
           }
         }
 
-        // onColumnsReady：列合并+补标签完成后
+        // onTableMerged 钩子 ({ columns })
         if (typeof this.onTableMerged === "function") {
           try {
-            const res = await this.onTableMerged(this.columns);
-            if (Array.isArray(res)) this.columns.splice(0, this.columns.length, ...res);
+            const res = await this.onTableMerged({ columns: this.columns.slice() });
+            if (res && Array.isArray(res.columns)) this.columns.splice(0, this.columns.length, ...res.columns);
           } catch (err) { /* ignore */ }
         }
 
@@ -1023,23 +1109,12 @@ export default {
         });
 
         // 自动拉取首屏数据
-        if (this.autoFetch) {
+        if (this.shouldAutoFetch) {
           await this.fetchList();
         }
       } catch (err) {
         console.error("[ol-curd] Swagger 初始化失败:", err);
       }
-    },
-
-    /** 根据 entity 名称推测接口 URL */
-    resolveEntityUrl(entity) {
-      if (!entity) return "";
-      // 支持多种命名约定
-      const kebab = entity
-        .replace(/([A-Z])/g, "-$1")
-        .toLowerCase()
-        .replace(/^-/, "");
-      return `/api/app/${kebab}/${kebab}`;
     },
 
     /** 提取 Swagger response schema */
@@ -1150,10 +1225,10 @@ export default {
     /**
      * 普通模式下自动识别日期范围字段（xxxBegin + xxxEnd → xxxTime）
      * 因为 Element UI daterange 绑定数组，但后端需要两个独立字段
-     * 只在非配置模式（!showSearchConfig）下执行
+     * 只在非配置模式（!showCustomSearch）下执行
      */
     autoDetectRangeTimeFields(parameters) {
-      if (this.showSearchConfig) return;
+      if (this.$cfg("showCustomSearch")) return;
 
       const searchFields = this.searchFields;
       const toAdd = [];
@@ -1206,8 +1281,11 @@ export default {
         delete this.internalSearchModel[endName];
       });
 
-      // 追加合成字段
-      toAdd.forEach((f) => searchFields.push(f));
+      // 追加合成字段，同步补上 model 的 key
+      toAdd.forEach((f) => {
+        searchFields.push(f);
+        this.$set(this.internalSearchModel, f.prop, f.defaultValue ?? null);
+      });
       if (toAdd.length) {
         this.initSearchDefaults(); // 更新初始快照
         console.log(`\x1b[36m\x1b[4mol-curd 自动识别日期范围字段`, toAdd.map((f) => f.prop));
@@ -1218,15 +1296,17 @@ export default {
 
     /** 查询 */
     handleSearch() {
+      if (this.fetchingData) return;
       const form = this.$refs.searchForm;
       if (form && this.searchRules && Object.keys(this.searchRules).length) {
-        form.validate((valid) => {
-          if (!valid) return;
-          this.emitSearch();
+        return new Promise((resolve, reject) => {
+          form.validate((valid) => {
+            if (!valid) return reject(new Error("表单验证未通过"));
+            resolve(this.emitSearch());
+          });
         });
-      } else {
-        this.emitSearch();
       }
+      return this.emitSearch();
     },
 
     /**
@@ -1237,7 +1317,7 @@ export default {
       const model = { ...this.internalSearchModel };
 
       // 普通模式：拆分日期范围字段（xxxTime → xxxBegin / xxxEnd）
-      if (!this.showSearchConfig) {
+      if (!this.$cfg("showCustomSearch")) {
         (this.searchFields || []).forEach((field) => {
           if (
             (field.type === "daterange" || field.type === "datetimerange") &&
@@ -1290,9 +1370,9 @@ export default {
       console.log(`\x1b[36m\x1b[4mol-curd 查询`, model, { filterConditions });
 
       // 自动拉取数据
-      if (this.autoFetch && (this.url || this.entity)) {
+      if (this.shouldAutoFetch) {
         this.internalPagination.page = 1;
-        this.fetchList();
+        return this.fetchList();
       }
     },
 
@@ -1301,83 +1381,103 @@ export default {
      * 通过 Swagger URL 调用后端接口，解析响应并更新 tableData / pagination
      */
     async fetchList() {
-      const apiUrl = this.listApi || this.url;
-      if (!apiUrl) return;
-
-      // 检查 HTTP 方法是否存在（依赖父应用全局注入）
-      if (typeof this.get !== "function" && typeof this.post !== "function") {
-        console.warn("[ol-curd] 未找到 this.get/this.post，无法自动拉取数据，请手动传入 tableData");
-        return;
-      }
-
-      const method = this.finalMethod;
+      if (!this.shouldAutoFetch) return;
       const { page: pageKey, limit: limitKey } = this.pageParams || {};
+      const page = this.internalPagination.page;
+      const limit = this.internalPagination.limit;
+
+      // 搜索参数（含日期范围拆分 + 空值清理）
+      const { cleanParams } = this.buildSearchParams();
 
       // 分页参数
       const pageParams = {
-        [pageKey || "page"]: this.internalPagination.page,
-        [limitKey || "limit"]: this.internalPagination.limit,
+        [pageKey || "Page"]: page,
+        [limitKey || "MaxResultCount"]: limit,
       };
-
-      // 使用 buildSearchParams 统一构建（含日期范围拆分 + 空值清理）
-      const { cleanParams } = this.buildSearchParams();
-
-      let params;
-
-      if (this.showSearchConfig) {
-        // === 动态配置模式：构建 FilterConditions 数组 ===
-        const filterConditions = [];
-        Object.keys(cleanParams).forEach((key) => {
-          const field = this.searchFields.find((f) => f.prop === key);
-          filterConditions.push({
-            key,
-            values: Array.isArray(cleanParams[key]) ? cleanParams[key] : [cleanParams[key]],
-            compare: (field && field.compare) || "",
-          });
-        });
-        params = {
-          FilterConditions: filterConditions,
-          ...pageParams,
-        };
-      } else {
-        // === 普通模式：扁平的键值对（cleanParams 已包含拆分后的 Begin/End） ===
-        params = {
-          ...cleanParams,
-          ...pageParams,
-        };
-      }
 
       this.fetchingData = true;
       this.$emit("update:loading", true);
 
       try {
-        let response;
-        if (method === "post") {
-          response = await this.post({ url: apiUrl, data: params });
-        } else {
-          response = await this.get({ url: apiUrl, data: params });
+        let rows, total;
+
+        // 构建 filterConditions（自定义搜索配置模式时用）
+        let filterConditions;
+        if (this.$cfg("showCustomSearch")) {
+          filterConditions = [];
+          Object.keys(cleanParams).forEach((key) => {
+            const field = this.searchFields.find((f) => f.prop === key);
+            filterConditions.push({
+              key,
+              values: Array.isArray(cleanParams[key]) ? cleanParams[key] : [cleanParams[key]],
+              compare: (field && field.compare) || "",
+            });
+          });
         }
 
-        // 解析响应
-        const { rows, total } = this.parseResponse(response);
+        if (typeof this.fetchData === "function") {
+          // === 自定义请求：父组件负责 API 调用 ===
+          const result = await this.fetchData({
+            searchParams: cleanParams,
+            filterConditions,
+            page,
+            limit,
+            pagination: { ...this.internalPagination },
+          });
+          rows = (result && result.rows) || [];
+          total = (result && result.total) || 0;
+        } else {
+          // === 自动请求：curd 内部调 API ===
+          const apiUrl = this.url;
+          if (!apiUrl) return;
 
-        // 写入内部数据（autoFetch 模式下由 displayTableData 使用）
+          if (typeof this.get !== "function" && typeof this.post !== "function") {
+            console.warn("[ol-curd] 未找到 this.get/this.post，无法自动拉取数据，请使用 fetchData 或手动传入 tableData");
+            return;
+          }
+
+          let params;
+          if (this.$cfg("showCustomSearch")) {
+            params = { FilterConditions: filterConditions, ...pageParams };
+          } else {
+            params = { ...cleanParams, ...pageParams };
+          }
+
+          const method = this.finalMethod;
+          let response;
+          if (method === "post") {
+            response = await this.post({ url: apiUrl, data: params });
+          } else {
+            response = await this.get({ url: apiUrl, data: params });
+          }
+
+          const parsed = this.parseResponse(response);
+          rows = parsed.rows || [];
+          total = parsed.total || 0;
+
+          // 自动捕获 customs（分页接口返回的可用搜索字段列表，供 showCustomSearch 配置弹窗使用）
+          const customs = (response && response.result && response.result.customs) || [];
+          if (customs.length) {
+            this.fetchedCustoms = customs;
+          }
+        }
+
+        // 写入内部数据
         this.internalTableData = rows || [];
         this.internalPagination = {
           ...this.internalPagination,
           total: total || 0,
         };
 
-        // 同时发出事件，方便父组件监听
         this.$emit("update:tableData", rows || []);
         this.$emit("update:pagination", {
           ...this.internalPagination,
           total: total || 0,
         });
 
-        this.$emit("data-loaded", { rows, total, response });
+        this.$emit("data-loaded", { rows, total });
         console.log(
-          `\x1b[36m\x1b[4mol-curd 自动拉取数据完成`,
+          `\x1b[36m\x1b[4mol-curd 数据加载完成`,
           `共 ${total} 条，当前 ${(rows || []).length} 条`
         );
       } catch (err) {
@@ -1387,6 +1487,14 @@ export default {
         this.fetchingData = false;
         this.$emit("update:loading", false);
       }
+    },
+
+    /**
+     * 刷新表格数据（保持当前搜索条件+分页）。
+     * 供父组件通过 $refs.curd.refresh() 调用，如自定义按钮操作后刷新。
+     */
+    refresh() {
+      return this.fetchList();
     },
 
     /**
@@ -1422,8 +1530,6 @@ export default {
         model[field.prop] = field.defaultValue !== undefined ? field.defaultValue : null;
       });
       this.internalSearchModel = model;
-      // 更新初始快照
-      this.initialSearchModel = JSON.parse(JSON.stringify(model));
 
       // 清除表单校验红字
       if (this.$refs.searchForm) {
@@ -1433,9 +1539,9 @@ export default {
       this.$emit("reset", { ...this.internalSearchModel });
 
       // 重置后自动刷新
-      if (this.autoFetch && (this.url || this.entity)) {
+      if (this.shouldAutoFetch) {
         this.internalPagination.page = 1;
-        this.fetchList();
+        return this.fetchList();
       }
     },
 
@@ -1489,7 +1595,7 @@ export default {
       }
     },
 
-    // ===================== 配置弹窗（仅 showSearchConfig 时走接口） =====================
+    // ===================== 配置弹窗（仅 showCustomSearch 时走接口） =====================
 
     /** 获取菜单ID：优先 props，其次从 localStorage 自动匹配当前路由 */
     resolveMenuId() {
@@ -1539,6 +1645,7 @@ export default {
         // 旧格式转新格式，覆盖 searchFields
         const newFields = configList.map(oldFieldToNew);
         this.searchFields.splice(0, this.searchFields.length, ...newFields);
+        this.initSearchDefaults();
         console.log(`\x1b[36m\x1b[4mol-curd 已加载搜索配置`, newFields);
       } catch (err) {
         console.warn("[ol-curd] 加载搜索配置失败:", err);
@@ -1670,6 +1777,7 @@ export default {
     async handleSaveConfig(configList) {
       const newFields = (configList || []).map(oldFieldToNew);
       this.searchFields.splice(0, this.searchFields.length, ...newFields);
+      this.initSearchDefaults();
       this.$emit("config-save", newFields);
 
       // 持久化到后端
@@ -1730,8 +1838,8 @@ export default {
 
     /** 刷新 */
     handleRefresh() {
-      // auto-fetch 模式直接重新拉数据
-      if (this.autoFetch && (this.url || this.entity)) {
+      if (this.fetchingData) return;
+      if (this.shouldAutoFetch) {
         this.fetchList();
       }
       this.$emit("refresh");
@@ -1765,23 +1873,23 @@ export default {
 
     /** 每页条数变化 */
     onSizeChange(limit) {
-      const pg = this.autoFetch ? this.internalPagination : this.pagination;
+      const pg = this.internalPagination;
       pg.limit = limit;
       pg.page = 1;
       this.$emit("update:pagination", { ...pg });
       this.$emit("size-change", limit);
-      if (this.autoFetch && (this.url || this.entity)) {
+      if (this.shouldAutoFetch) {
         this.fetchList();
       }
     },
 
     /** 页码变化 */
     onPageChange(page) {
-      const pg = this.autoFetch ? this.internalPagination : this.pagination;
+      const pg = this.internalPagination;
       pg.page = page;
       this.$emit("update:pagination", { ...pg });
       this.$emit("page-change", page);
-      if (this.autoFetch && (this.url || this.entity)) {
+      if (this.shouldAutoFetch) {
         this.fetchList();
       }
     },
@@ -1814,14 +1922,14 @@ export default {
       }
     },
 
-    /** 触发查询（供外部调用） */
+    /** 触发查询（供外部调用），返回 Promise 可 await */
     search() {
-      this.handleSearch();
+      return this.handleSearch();
     },
 
-    /** 触发重置（供外部调用） */
+    /** 触发重置（供外部调用），返回 Promise 可 await */
     reset() {
-      this.handleReset();
+      return this.handleReset();
     },
 
     /** 打开新增表单弹窗 */

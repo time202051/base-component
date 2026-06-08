@@ -6,16 +6,18 @@
     top="5vh"
     append-to-body
     :close-on-click-modal="false"
+    @opened="onDialogOpened"
   >
-    <ol-table
-      ref="table"
-      :url="url"
-      :table-data="tableData"
-      :paginations="paginations"
-      :btnlist="[]"
-      @handleSizeChange="(v) => { paginations.limit = v; paginations.page = 1; fetch(); }"
-      @handleindexChange="(v) => { paginations.page = v; fetch(); }"
-    >
+    <div class="ecr-table-wrap">
+      <ol-table
+        ref="table"
+        :url="url"
+        :table-data="tableData"
+        :paginations="paginations"
+        :btnlist="[]"
+        @handleSizeChange="(v) => { paginations.limit = v; paginations.page = 1; fetch(); }"
+        @handleindexChange="(v) => { paginations.page = v; fetch(); }"
+      >
       <template #changeInfo="{ row }">
         <el-popover placement="bottom" trigger="click" width="420" popper-class="ecr-popover">
           <el-table :data="row.customPropertyChanges || []" border size="small" max-height="280">
@@ -27,6 +29,7 @@
         </el-popover>
       </template>
     </ol-table>
+    </div>
 
     <div slot="footer">
       <el-button @click="dialogVisible = false">关闭</el-button>
@@ -78,6 +81,14 @@ export default {
   },
 
   methods: {
+    onDialogOpened() {
+      // 设置弹窗内表格区域高度，防止撑开弹窗
+      const wrap = this.$el.querySelector(".ecr-table-wrap");
+      if (wrap) {
+        wrap.style.maxHeight = document.documentElement.clientHeight * 0.65 + "px";
+        wrap.style.overflow = "auto";
+      }
+    },
     async fetch() {
       if (typeof this.post !== "function" || !this.selectedRows.length) return;
       const p = this.pageParams || {};
@@ -108,6 +119,7 @@ export default {
 
 <style lang="scss" scoped>
 .ecr-link { color: #1682e6; cursor: pointer; }
+.ecr-table-wrap { overflow: auto; }
 </style>
 
 <style lang="scss">
