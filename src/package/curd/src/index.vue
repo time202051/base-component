@@ -261,7 +261,7 @@
         </span>
 
         <!-- 实体变更记录 -->
-        <span v-if="showEntityChangeBtn && currentSelection.length" class="crud-toolbar-icon" @click="entityChangeVisible = true" title="实体变更记录">
+        <span v-if="showEntityChangeBtn" class="crud-toolbar-icon" @click="openEntityChange" title="实体变更记录">
           <i class="el-icon-receiving" />
         </span>
       </div>
@@ -1602,6 +1602,15 @@ export default {
     /** 打开列配置弹窗（persisted 模式） */
     openColumnConfig() {
       this.columnConfigVisible = true;
+    },
+
+    /** 打开实体变更记录（需勾选至少一条） */
+    openEntityChange() {
+      if (!this.currentSelection.length) {
+        this.$message && this.$message.warning("请至少勾选一条数据");
+        return;
+      }
+      this.entityChangeVisible = true;
     },
 
     /** 列配置保存：更新 show/fixed/label，按弹窗顺序重排 */
