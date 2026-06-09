@@ -5,7 +5,9 @@
       <!-- 动态配置模式 + 无搜索字段：引导配置 -->
       <div v-if="searchFields.length === 0 && $cfg('showCustomSearch')" class="crud-search-empty">
         <span class="crud-search-empty-text">暂未配置搜索条件</span>
-        <el-button plain size="small" icon="el-icon-setting" @click="openConfigDialog">配置搜索字段</el-button>
+        <el-button plain size="small" icon="el-icon-setting" @click="openConfigDialog"
+          >配置搜索字段</el-button
+        >
       </div>
 
       <!-- 有搜索字段：正常渲染表单 -->
@@ -65,7 +67,7 @@
               @keyup.enter.native="handleSearch"
             >
               <el-option
-                v-for="opt in (field.options || [])"
+                v-for="opt in field.options || []"
                 :key="opt.key !== undefined ? opt.key : opt.value"
                 :label="opt.label || opt.value || opt.key"
                 :value="opt.key !== undefined ? opt.key : opt.value"
@@ -82,7 +84,7 @@
               reserve-keyword
               clearable
               :placeholder="field.placeholder || `请输入关键字搜索`"
-              :remote-method="(query) => handleRemoteSearch(field, query)"
+              :remote-method="query => handleRemoteSearch(field, query)"
               :loading="field.loading"
               :multiple="field.props && field.props.multiple"
               v-bind="field.props || {}"
@@ -91,7 +93,7 @@
               @keyup.enter.native="handleSearch"
             >
               <el-option
-                v-for="opt in (field.options || [])"
+                v-for="opt in field.options || []"
                 :key="opt.key !== undefined ? opt.key : opt.value"
                 :label="opt.label || opt.value || opt.key"
                 :value="opt.key !== undefined ? opt.key : opt.value"
@@ -168,7 +170,9 @@
 
         <!-- 操作按钮 -->
         <div class="crud-search-actions">
-          <el-button type="primary" size="small" :disabled="fetchingData" @click="handleSearch">查询</el-button>
+          <el-button type="primary" size="small" :disabled="fetchingData" @click="handleSearch"
+            >查询</el-button
+          >
           <el-button plain size="small" @click="handleReset">重置</el-button>
           <el-button
             v-if="searchFields.length > columnsPerRow"
@@ -177,7 +181,7 @@
             :icon="searchExpanded ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"
             @click="searchExpanded = !searchExpanded"
           >
-            {{ searchExpanded ? '收起' : '展开' }}
+            {{ searchExpanded ? "收起" : "展开" }}
           </el-button>
           <el-button
             v-if="$cfg('showCustomSearch')"
@@ -192,8 +196,13 @@
       </el-form>
 
       <!-- 无搜索字段 + 非配置模式：至少展示查询/重置按钮 -->
-      <div v-if="searchFields.length === 0 && !$cfg('showCustomSearch')" class="crud-search-actions">
-        <el-button type="primary" size="small" :disabled="fetchingData" @click="handleSearch">查询</el-button>
+      <div
+        v-if="searchFields.length === 0 && !$cfg('showCustomSearch')"
+        class="crud-search-actions"
+      >
+        <el-button type="primary" size="small" :disabled="fetchingData" @click="handleSearch"
+          >查询</el-button
+        >
         <el-button plain size="small" @click="handleReset">重置</el-button>
       </div>
     </div>
@@ -239,7 +248,11 @@
         <!-- 列配置：simple=下拉checkbox / persisted=弹窗拖拽 -->
         <template v-if="$cfg('showColumnFilterBtn')">
           <!-- simple 模式：下拉 checkbox -->
-          <el-dropdown v-if="columnConfigMode === 'simple'" trigger="click" class="crud-toolbar-action">
+          <el-dropdown
+            v-if="resolvedColumnConfigMode === 'simple'"
+            trigger="click"
+            class="crud-toolbar-action"
+          >
             <span class="crud-toolbar-icon"><i class="el-icon-s-operation" /></span>
             <el-dropdown-menu slot="dropdown" class="crud-column-filter">
               <el-checkbox-group v-model="checkedColumns">
@@ -282,7 +295,12 @@
         </span>
 
         <!-- 实体变更记录 -->
-        <span v-if="$cfg('showEntityChangeBtn')" class="crud-toolbar-icon" @click="openEntityChange" title="实体变更记录">
+        <span
+          v-if="$cfg('showEntityChangeBtn')"
+          class="crud-toolbar-icon"
+          @click="openEntityChange"
+          title="实体变更记录"
+        >
           <i class="el-icon-receiving" />
         </span>
 
@@ -306,12 +324,7 @@
         @sort-change="onSortChange"
       >
         <!-- 多选列 -->
-        <el-table-column
-          v-if="$cfg('showSelection')"
-          width="55"
-          align="center"
-          type="selection"
-        />
+        <el-table-column v-if="$cfg('showSelection')" width="55" align="center" type="selection" />
 
         <!-- 序号列 -->
         <el-table-column
@@ -330,10 +343,7 @@
         <template v-else>
           <template v-for="col in visibleColumns">
             <TableColumn :column="col" :key="col.prop">
-              <template
-                v-for="(slotFn, slotName) in $scopedSlots"
-                v-slot:[slotName]="slotProps"
-              >
+              <template v-for="(slotFn, slotName) in $scopedSlots" v-slot:[slotName]="slotProps">
                 <slot :name="slotName" v-bind="slotProps" />
               </template>
             </TableColumn>
@@ -343,10 +353,12 @@
         <!-- 操作列 -->
         <el-table-column
           v-if="operates && operates.length > 0"
-          label="操作"
-          align="center"
-          v-bind="operatesAttrs || {}"
-          :min-width="operatesMinWidth"
+          v-bind="{
+            label: '操作',
+            align: 'center',
+            minWidth: operatesMinWidth,
+            ...(operatesAttrs || {}),
+          }"
         >
           <template slot-scope="{ row, $index }">
             <div class="crud-operate-group">
@@ -357,7 +369,9 @@
                   :size="btn.size || 'small'"
                   :type="btn.type || 'text'"
                   :icon="btn.icon"
-                  :disabled="typeof btn.disabled === 'function' ? btn.disabled(row, $index) : !!btn.disabled"
+                  :disabled="
+                    typeof btn.disabled === 'function' ? btn.disabled(row, $index) : !!btn.disabled
+                  "
                   @click.stop="btn.click && btn.click(row, $index)"
                 >
                   {{ btn.label }}
@@ -380,7 +394,7 @@
     <div v-if="displayPagination.show !== false" class="crud-pagination">
       <el-pagination
         :current-page="displayPagination.page"
-        :page-sizes="pageSizes"
+        :page-sizes="resolvedPageSizes"
         :page-size="displayPagination.limit"
         :total="displayPagination.total"
         layout="total, sizes, prev, pager, next, jumper"
@@ -391,7 +405,7 @@
 
     <!-- ==================== 列配置弹窗（persisted 模式，接口内置在 ol-column-config 中） ==================== -->
     <ol-column-config
-      v-if="columnConfigMode === 'persisted'"
+      v-if="resolvedColumnConfigMode === 'persisted'"
       :visible.sync="columnConfigVisible"
       :columns="columnsForConfig"
       :page-key="pageKey"
@@ -404,12 +418,16 @@
     <entity-change-record
       :visible.sync="entityChangeVisible"
       :selected-rows="currentSelection"
-      :page-params="pageParams"
+      :page-params="resolvedPageParams"
     />
 
     <!-- ==================== 隐藏打印模板 ==================== -->
-    <print-template ref="printTemplate" v-show="false" class="crud-print-template" :print-list-obj="printListObj" />
-
+    <print-template
+      ref="printTemplate"
+      v-show="false"
+      class="crud-print-template"
+      :print-list-obj="printListObj"
+    />
   </div>
 </template>
 
@@ -464,9 +482,17 @@ import { getEnum } from "../../../utils/getEnum.js";
 // 注意：新格式 visible=true 表示展示；旧格式 show=false 表示展示（语义相反）
 // 日期类型在旧格式统一用 inputType='picker'，实际类型存在 dateType 或 props.type
 
-const DATE_TYPES = ["date", "datetime", "daterange", "datetimerange", "month", "monthrange", "year"];
+const DATE_TYPES = [
+  "date",
+  "datetime",
+  "daterange",
+  "datetimerange",
+  "month",
+  "monthrange",
+  "year",
+];
 
-const newFieldToOld = (field) => ({
+const newFieldToOld = field => ({
   ...field,
   value: field.prop,
   inputType: DATE_TYPES.includes(field.type) ? "picker" : field.type,
@@ -475,7 +501,7 @@ const newFieldToOld = (field) => ({
   show: !field.visible,
 });
 
-const oldFieldToNew = (field) => {
+const oldFieldToNew = field => {
   const { value, inputType, children, dateType, ...rest } = field;
   // picker → 从 dateType 或 props.type 推导具体类型
   let type = inputType || field.type;
@@ -666,7 +692,11 @@ export default {
 
       // 自动请求模式下的内部数据存储
       internalTableData: [],
-      internalPagination: { page: 1, limit: 30, total: 0 },
+      internalPagination: {
+        page: 1,
+        limit: (this.$olBaseConfig && this.$olBaseConfig.pagination && this.$olBaseConfig.pagination.limit) || 30,
+        total: 0,
+      },
 
       // 打印数据
       printListObj: { title: "", tableHeader: [], tableData: [] },
@@ -678,14 +708,48 @@ export default {
       hasColumnConfig: false,
       showColumnRoleConfig: false,
       columnRoleList: [],
-
     };
   },
 
   computed: {
-    /** 实际请求方式 */
+    /** 实际请求方式（三级优先级：prop > $olBaseConfig > 默认 'get'） */
     finalMethod() {
-      return this.method || (this.$olBaseConfig && this.$olBaseConfig.method) || "get";
+      if (this.$options.propsData && "method" in this.$options.propsData) {
+        return this.method;
+      }
+      const base = this.$olBaseConfig || {};
+      if (base.method !== undefined) return base.method;
+      return "get";
+    },
+
+    /** 列配置模式（三级优先级） */
+    resolvedColumnConfigMode() {
+      if (this.$options.propsData && "columnConfigMode" in this.$options.propsData) {
+        return this.columnConfigMode;
+      }
+      const base = this.$olBaseConfig || {};
+      if (base.columnConfigMode !== undefined) return base.columnConfigMode;
+      return this.columnConfigMode;
+    },
+
+    /** 分页参数名映射（三级优先级） */
+    resolvedPageParams() {
+      if (this.$options.propsData && "pageParams" in this.$options.propsData) {
+        return this.pageParams;
+      }
+      const base = this.$olBaseConfig || {};
+      if (base.pageParams !== undefined) return base.pageParams;
+      return this.pageParams;
+    },
+
+    /** 每页条数选项（三级优先级） */
+    resolvedPageSizes() {
+      if (this.$options.propsData && "pageSizes" in this.$options.propsData) {
+        return this.pageSizes;
+      }
+      const base = this.$olBaseConfig || {};
+      if (base.pageSizes !== undefined) return base.pageSizes;
+      return this.pageSizes;
     },
 
     /** 是否启用内部数据管理（自动模式有 url，手动模式有 fetchData） */
@@ -733,7 +797,7 @@ export default {
 
     /** 可见的搜索字段（visible !== false） */
     visibleSearchFields() {
-      const all = this.searchFields.filter((f) => f.visible !== false);
+      const all = this.searchFields.filter(f => f.visible !== false);
       if (!this.searchExpanded && all.length > this.columnsPerRow) {
         return all.slice(0, this.columnsPerRow);
       }
@@ -742,7 +806,7 @@ export default {
 
     /** 可见的表格列 */
     visibleColumns() {
-      return this.columns.filter((col) => {
+      return this.columns.filter(col => {
         if (col.children && col.children.length) return true;
         return col.show !== false;
       });
@@ -756,8 +820,8 @@ export default {
     /** 可供过滤的列（有 prop 的叶子列） */
     filterableColumns() {
       const result = [];
-      const walk = (cols) => {
-        (cols || []).forEach((col) => {
+      const walk = cols => {
+        (cols || []).forEach(col => {
           if (col.children && col.children.length) {
             walk(col.children);
           } else if (col.prop) {
@@ -779,7 +843,7 @@ export default {
 
     /** 传给 OlColumnConfig 的列数据（全部叶子列） */
     columnsForConfig() {
-      return this.filterableColumns.map((col) => ({
+      return this.filterableColumns.map(col => ({
         ...col,
         alias: col.alias || col.label,
         fixed: col.fixed || false,
@@ -856,8 +920,8 @@ export default {
     },
 
     checkedColumns(val) {
-      const walk = (cols) => {
-        (cols || []).forEach((col) => {
+      const walk = cols => {
+        (cols || []).forEach(col => {
           if (col.children && col.children.length) {
             walk(col.children);
           } else if (col.prop) {
@@ -878,7 +942,7 @@ export default {
     this.syncColumnSlots();
 
     // persisted 模式：先从 API 加载列配置（决定列的顺序/可见性/标签）
-    if (this.$cfg("showColumnFilterBtn") && this.columnConfigMode === "persisted") {
+    if (this.$cfg("showColumnFilterBtn") && this.resolvedColumnConfigMode === "persisted") {
       await this.loadColumnConfig();
     }
 
@@ -915,8 +979,8 @@ export default {
     syncColumnSlots() {
       const slotNames = Object.keys(this.$scopedSlots || {});
       if (slotNames.length === 0) return;
-      const walk = (cols) => {
-        (cols || []).forEach((col) => {
+      const walk = cols => {
+        (cols || []).forEach(col => {
           if (col.children && col.children.length) {
             walk(col.children);
           } else if (col.prop && slotNames.includes(col.prop) && !col.render) {
@@ -930,8 +994,8 @@ export default {
     /** 同步 checkedColumns：从 columns 的 show 状态回写到 checkedColumns */
     syncCheckedColumns() {
       const result = [];
-      const walk = (cols) => {
-        (cols || []).forEach((col) => {
+      const walk = cols => {
+        (cols || []).forEach(col => {
           if (col.children && col.children.length) {
             walk(col.children);
           } else if (col.prop && col.show !== false) {
@@ -952,7 +1016,7 @@ export default {
     /** 初始化搜索默认值 */
     initSearchDefaults() {
       const model = { ...this.searchModel };
-      (this.searchFields || []).forEach((field) => {
+      (this.searchFields || []).forEach(field => {
         if (!(field.prop in model) && field.defaultValue !== undefined) {
           model[field.prop] = field.defaultValue;
         } else if (!(field.prop in model)) {
@@ -988,7 +1052,7 @@ export default {
 
           // Step 1: Swagger params → 组件格式的 searchField 列表
           let swaggerSearchFields = parameters
-            .map((p) => this.mapParameterToSearchField(p))
+            .map(p => this.mapParameterToSearchField(p))
             .filter(Boolean);
 
           // Step 2: onSearchSwagger 钩子 ({ columns })
@@ -996,17 +1060,19 @@ export default {
             try {
               const res = await this.onSearchSwagger({ columns: [...swaggerSearchFields] });
               if (res && Array.isArray(res.columns)) swaggerSearchFields = res.columns;
-            } catch (err) { /* ignore */ }
+            } catch (err) {
+              /* ignore */
+            }
           }
 
           // Step 3: 合并 Swagger 字段到手动配置的 searchFields
           // 策略：Object.assign(swagger, user) — Swagger 打底，用户覆盖；prop 不修改
           const manualByProp = {};
-          this.searchFields.forEach((f) => {
+          this.searchFields.forEach(f => {
             if (f.prop) manualByProp[f.prop.toLowerCase()] = f;
           });
 
-          swaggerSearchFields.forEach((swaggerField) => {
+          swaggerSearchFields.forEach(swaggerField => {
             const key = (swaggerField.prop || "").toLowerCase();
             const manualField = manualByProp[key];
 
@@ -1018,7 +1084,11 @@ export default {
             } else {
               // 无手动配置：直接追加 Swagger 字段，同步补上 model 的 key
               this.searchFields.push(swaggerField);
-              this.$set(this.internalSearchModel, swaggerField.prop, (swaggerField.defaultValue != null ? swaggerField.defaultValue : null));
+              this.$set(
+                this.internalSearchModel,
+                swaggerField.prop,
+                swaggerField.defaultValue != null ? swaggerField.defaultValue : null
+              );
             }
           });
 
@@ -1029,8 +1099,11 @@ export default {
           if (typeof this.onSearchMerged === "function") {
             try {
               const res = await this.onSearchMerged({ columns: this.searchFields.slice() });
-              if (res && Array.isArray(res.columns)) this.searchFields.splice(0, this.searchFields.length, ...res.columns);
-            } catch (err) { /* ignore */ }
+              if (res && Array.isArray(res.columns))
+                this.searchFields.splice(0, this.searchFields.length, ...res.columns);
+            } catch (err) {
+              /* ignore */
+            }
           }
 
           this.initSearchDefaults();
@@ -1046,15 +1119,17 @@ export default {
             try {
               const res = await this.onTableSwagger({ columns: { ...itemsProps } });
               if (res && res.columns && typeof res.columns === "object") itemsProps = res.columns;
-            } catch (err) { /* ignore */ }
+            } catch (err) {
+              /* ignore */
+            }
           }
 
           if (itemsProps && Object.keys(itemsProps).length) {
             let swaggerColumns = [];
             const existingColumnProps = new Set(
-              this.columns.filter((c) => !c.children).map((c) => c.prop)
+              this.columns.filter(c => !c.children).map(c => c.prop)
             );
-            Object.keys(itemsProps).forEach((key) => {
+            Object.keys(itemsProps).forEach(key => {
               if (!existingColumnProps.has(key)) {
                 const prop = itemsProps[key];
                 if (prop.description) {
@@ -1064,15 +1139,15 @@ export default {
               }
             });
 
-            swaggerColumns.forEach((col) => {
+            swaggerColumns.forEach(col => {
               if (!existingColumnProps.has(col.prop)) {
                 this.columns.push(col);
               }
             });
 
-            this.columns.forEach((col) => {
+            this.columns.forEach(col => {
               if (col.children && col.children.length) {
-                col.children.forEach((child) => {
+                col.children.forEach(child => {
                   if (!child.label && child.prop && itemsProps[child.prop]) {
                     this.$set(child, "label", itemsProps[child.prop].description);
                   }
@@ -1083,7 +1158,6 @@ export default {
                 }
               }
             });
-
           }
         }
 
@@ -1091,8 +1165,11 @@ export default {
         if (typeof this.onTableMerged === "function") {
           try {
             const res = await this.onTableMerged({ columns: this.columns.slice() });
-            if (res && Array.isArray(res.columns)) this.columns.splice(0, this.columns.length, ...res.columns);
-          } catch (err) { /* ignore */ }
+            if (res && Array.isArray(res.columns))
+              this.columns.splice(0, this.columns.length, ...res.columns);
+          } catch (err) {
+            /* ignore */
+          }
         }
 
         this.syncColumnSlots();
@@ -1159,14 +1236,15 @@ export default {
           const enumName = refParts[refParts.length - 1];
           try {
             const resolvedEnum = getEnum(enumName);
-            field.options = resolvedEnum && resolvedEnum.length
-              ? resolvedEnum
-              : schema.enum.map((e) => ({ key: e, value: e }));
+            field.options =
+              resolvedEnum && resolvedEnum.length
+                ? resolvedEnum
+                : schema.enum.map(e => ({ key: e, value: e }));
           } catch {
-            field.options = schema.enum.map((e) => ({ key: e, value: e }));
+            field.options = schema.enum.map(e => ({ key: e, value: e }));
           }
         } else {
-          field.options = schema.enum.map((e) => ({ key: e, value: e }));
+          field.options = schema.enum.map(e => ({ key: e, value: e }));
         }
       } else if (schema.format === "date-time") {
         // 日期时间 → date picker
@@ -1228,9 +1306,9 @@ export default {
       const toAdd = [];
 
       // 规则1：BeginTime + EndTime → createdTime（创单时间专用）
-      const hasBeginTime = parameters.some((p) => p.name === "BeginTime");
-      const hasEndTime = parameters.some((p) => p.name === "EndTime");
-      const hasCreatedTime = searchFields.some((f) => f.prop === "createdTime");
+      const hasBeginTime = parameters.some(p => p.name === "BeginTime");
+      const hasEndTime = parameters.some(p => p.name === "EndTime");
+      const hasCreatedTime = searchFields.some(f => f.prop === "createdTime");
       if (hasBeginTime && hasEndTime && !hasCreatedTime) {
         toAdd.push({
           prop: "createdTime",
@@ -1238,22 +1316,26 @@ export default {
           type: "datetimerange",
           visible: true,
           defaultValue: null,
-          props: { valueFormat: "yyyy-MM-dd HH:mm:ss", format: "yyyy/MM/dd HH:mm:ss", defaultTime: ["00:00:00", "23:59:59"] },
+          props: {
+            valueFormat: "yyyy-MM-dd HH:mm:ss",
+            format: "yyyy/MM/dd HH:mm:ss",
+            defaultTime: ["00:00:00", "23:59:59"],
+          },
           originalFields: { begin: "BeginTime", end: "EndTime" },
         });
       }
 
       // 规则2：自动识别 xxxBegin + xxxEnd 成对字段 → xxxTime
-      const beginFields = parameters.filter((p) => p.name.endsWith("Begin"));
-      const endFields = parameters.filter((p) => p.name.endsWith("End"));
+      const beginFields = parameters.filter(p => p.name.endsWith("Begin"));
+      const endFields = parameters.filter(p => p.name.endsWith("End"));
 
-      beginFields.forEach((beginParam) => {
+      beginFields.forEach(beginParam => {
         const prefix = beginParam.name.replace(/Begin$/, "");
         const endName = prefix + "End";
         const timeName = prefix + "Time";
-        const hasEnd = endFields.some((p) => p.name === endName);
+        const hasEnd = endFields.some(p => p.name === endName);
         if (!hasEnd) return;
-        if (searchFields.some((f) => f.prop === timeName)) return;
+        if (searchFields.some(f => f.prop === timeName)) return;
 
         toAdd.push({
           prop: timeName,
@@ -1261,13 +1343,17 @@ export default {
           type: "datetimerange",
           visible: true,
           defaultValue: null,
-          props: { valueFormat: "yyyy-MM-dd HH:mm:ss", format: "yyyy/MM/dd HH:mm:ss", defaultTime: ["00:00:00", "23:59:59"] },
+          props: {
+            valueFormat: "yyyy-MM-dd HH:mm:ss",
+            format: "yyyy/MM/dd HH:mm:ss",
+            defaultTime: ["00:00:00", "23:59:59"],
+          },
           originalFields: { begin: beginParam.name, end: endName },
         });
 
         // 从 searchFields 中移除原始的 Begin/End 独立字段
-        const rmBeginIdx = searchFields.findIndex((f) => f.prop === beginParam.name);
-        const rmEndIdx = searchFields.findIndex((f) => f.prop === endName);
+        const rmBeginIdx = searchFields.findIndex(f => f.prop === beginParam.name);
+        const rmEndIdx = searchFields.findIndex(f => f.prop === endName);
         if (rmBeginIdx >= 0) searchFields.splice(rmBeginIdx, 1);
         if (rmEndIdx >= 0) searchFields.splice(rmEndIdx, 1);
         // 从 searchModel 中也移除
@@ -1276,13 +1362,16 @@ export default {
       });
 
       // 追加合成字段，同步补上 model 的 key
-      toAdd.forEach((f) => {
+      toAdd.forEach(f => {
         searchFields.push(f);
-        this.$set(this.internalSearchModel, f.prop, (f.defaultValue != null ? f.defaultValue : null));
+        this.$set(this.internalSearchModel, f.prop, f.defaultValue != null ? f.defaultValue : null);
       });
       if (toAdd.length) {
         this.initSearchDefaults(); // 更新初始快照
-        console.log(`\x1b[36m\x1b[4mol-crud 自动识别日期范围字段`, toAdd.map((f) => f.prop));
+        console.log(
+          `\x1b[36m\x1b[4mol-crud 自动识别日期范围字段`,
+          toAdd.map(f => f.prop)
+        );
       }
     },
 
@@ -1294,7 +1383,7 @@ export default {
       const form = this.$refs.searchForm;
       if (form && this.searchRules && Object.keys(this.searchRules).length) {
         return new Promise((resolve, reject) => {
-          form.validate((valid) => {
+          form.validate(valid => {
             if (!valid) return reject(new Error("表单验证未通过"));
             resolve(this.emitSearch());
           });
@@ -1312,7 +1401,7 @@ export default {
 
       // 普通模式：拆分日期范围字段（xxxTime → xxxBegin / xxxEnd）
       if (!this.$cfg("showCustomSearch")) {
-        (this.searchFields || []).forEach((field) => {
+        (this.searchFields || []).forEach(field => {
           if (
             (field.type === "daterange" || field.type === "datetimerange") &&
             field.originalFields &&
@@ -1334,7 +1423,7 @@ export default {
 
       // 清理空值
       const cleanParams = {};
-      Object.keys(model).forEach((key) => {
+      Object.keys(model).forEach(key => {
         const val = model[key];
         if (val !== null && val !== undefined && val !== "") {
           cleanParams[key] = val;
@@ -1350,8 +1439,8 @@ export default {
 
       // 构建 filterConditions（配置模式用）
       const filterConditions = [];
-      Object.keys(cleanParams).forEach((key) => {
-        const field = this.searchFields.find((f) => f.prop === key);
+      Object.keys(cleanParams).forEach(key => {
+        const field = this.searchFields.find(f => f.prop === key);
         filterConditions.push({
           key,
           values: Array.isArray(cleanParams[key]) ? cleanParams[key] : [cleanParams[key]],
@@ -1376,7 +1465,7 @@ export default {
      */
     async fetchList() {
       if (!this.shouldAutoFetch) return;
-      const { page: pageKey, limit: limitKey } = this.pageParams || {};
+      const { page: pageKey, limit: limitKey } = this.resolvedPageParams || {};
       const page = this.internalPagination.page;
       const limit = this.internalPagination.limit;
 
@@ -1399,8 +1488,8 @@ export default {
         let filterConditions;
         if (this.$cfg("showCustomSearch")) {
           filterConditions = [];
-          Object.keys(cleanParams).forEach((key) => {
-            const field = this.searchFields.find((f) => f.prop === key);
+          Object.keys(cleanParams).forEach(key => {
+            const field = this.searchFields.find(f => f.prop === key);
             filterConditions.push({
               key,
               values: Array.isArray(cleanParams[key]) ? cleanParams[key] : [cleanParams[key]],
@@ -1426,7 +1515,9 @@ export default {
           if (!apiUrl) return;
 
           if (typeof this.get !== "function" && typeof this.post !== "function") {
-            console.warn("[ol-crud] 未找到 this.get/this.post，无法自动拉取数据，请使用 fetchData 或手动传入 tableData");
+            console.warn(
+              "[ol-crud] 未找到 this.get/this.post，无法自动拉取数据，请使用 fetchData 或手动传入 tableData"
+            );
             return;
           }
 
@@ -1506,7 +1597,16 @@ export default {
 
       // 格式1: { result: { items/records/list: [], total/totalCount: N } }
       const rows = result.items || result.records || result.list || result.data || [];
-      const total = (result.total != null ? result.total : result.totalCount != null ? result.totalCount : result.count != null ? result.count : rows.length != null ? rows.length : 0);
+      const total =
+        result.total != null
+          ? result.total
+          : result.totalCount != null
+          ? result.totalCount
+          : result.count != null
+          ? result.count
+          : rows.length != null
+          ? rows.length
+          : 0;
 
       // 格式2: { result: [] } — 直接返回数组，无分页
       if (Array.isArray(result)) {
@@ -1520,7 +1620,7 @@ export default {
     handleReset() {
       // 重建搜索模型：优先取 defaultValue，否则 null
       const model = {};
-      (this.searchFields || []).forEach((field) => {
+      (this.searchFields || []).forEach(field => {
         model[field.prop] = field.defaultValue !== undefined ? field.defaultValue : null;
       });
       this.internalSearchModel = model;
@@ -1601,7 +1701,7 @@ export default {
         if (!menus || !this.$route) return "";
 
         // 递归匹配当前路由
-        const findMenu = (arr) => {
+        const findMenu = arr => {
           for (const item of arr) {
             if (item.path === this.$route.path) return item;
             if (item.child && item.child.length && item.type !== 1) {
@@ -1631,9 +1731,7 @@ export default {
         });
         if (res.code !== 200 || !res.result) return;
 
-        const configList = res.result.settingJson
-          ? JSON.parse(res.result.settingJson)
-          : [];
+        const configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
         if (!configList || !configList.length) return;
 
         // 旧格式转新格式，覆盖 searchFields
@@ -1667,8 +1765,8 @@ export default {
 
         // 收集用户手动列的非展示属性（render/sortable/enumName/width/children）
         const userColMap = {};
-        const walkUser = (cols) => {
-          (cols || []).forEach((c) => {
+        const walkUser = cols => {
+          (cols || []).forEach(c => {
             if (c.children && c.children.length) walkUser(c.children);
             else if (c.prop) userColMap[c.prop] = c;
           });
@@ -1676,19 +1774,37 @@ export default {
         walkUser(this.columns);
 
         // API order 排序 → 构建列
-        const sorted = [...fields].sort((a, b) => ((a.order != null ? a.order : 0)) - ((b.order != null ? b.order : 0)));
-        const apiColumns = sorted.map((f) => {
+        const sorted = [...fields].sort(
+          (a, b) => (a.order != null ? a.order : 0) - (b.order != null ? b.order : 0)
+        );
+        const apiColumns = sorted.map(f => {
           const user = userColMap[f.fieldName];
-          const base = { prop: f.fieldName, label: f.displayName || f.fieldName, show: f.isVisible !== false, fixed: f.isFixed || false, sortable: false };
+          const base = {
+            prop: f.fieldName,
+            label: f.displayName || f.fieldName,
+            show: f.isVisible !== false,
+            fixed: f.isFixed || false,
+            sortable: false,
+          };
           if (user) {
-            return { ...base, render: user.render, renderSlot: user.renderSlot, sortable: user.sortable, attrs: user.attrs, width: user.width, minWidth: user.minWidth, children: user.children, enumName: f.enumName || user.enumName };
+            return {
+              ...base,
+              render: user.render,
+              renderSlot: user.renderSlot,
+              sortable: user.sortable,
+              attrs: user.attrs,
+              width: user.width,
+              minWidth: user.minWidth,
+              children: user.children,
+              enumName: f.enumName || user.enumName,
+            };
           }
           return { ...base, enumName: f.enumName || undefined };
         });
 
         // 用户手动列不在 API 中的 → 追加末尾
-        Object.values(userColMap).forEach((c) => {
-          if (!apiColumns.find((a) => a.prop === c.prop)) apiColumns.push({ ...c });
+        Object.values(userColMap).forEach(c => {
+          if (!apiColumns.find(a => a.prop === c.prop)) apiColumns.push({ ...c });
         });
 
         this.columns.splice(0, this.columns.length, ...apiColumns);
@@ -1717,11 +1833,13 @@ export default {
     /** 列配置保存：更新 show/fixed/label，按弹窗顺序重排 */
     onColumnConfigSave(result) {
       const resultMap = {};
-      result.forEach((r) => { resultMap[r.prop] = r; });
+      result.forEach(r => {
+        resultMap[r.prop] = r;
+      });
 
       // 更新现有列属性（$set 保证 Vue 2 响应式）
-      const walk = (cols) => {
-        (cols || []).forEach((col) => {
+      const walk = cols => {
+        (cols || []).forEach(col => {
           if (col.children && col.children.length) {
             walk(col.children);
           } else {
@@ -1739,8 +1857,8 @@ export default {
 
       // 按 result 顺序重排叶子列
       const leaves = [];
-      const collect = (cols) => {
-        (cols || []).forEach((c) => {
+      const collect = cols => {
+        (cols || []).forEach(c => {
           if (c.children && c.children.length) collect(c.children);
           else leaves.push(c);
         });
@@ -1748,12 +1866,12 @@ export default {
       collect(this.columns);
 
       const ordered = [];
-      result.forEach((r) => {
-        const col = leaves.find((c) => c.prop === r.prop);
+      result.forEach(r => {
+        const col = leaves.find(c => c.prop === r.prop);
         if (col) ordered.push(col);
       });
-      leaves.forEach((c) => {
-        if (!ordered.find((x) => x.prop === c.prop)) ordered.push(c);
+      leaves.forEach(c => {
+        if (!ordered.find(x => x.prop === c.prop)) ordered.push(c);
       });
 
       this.columns.splice(0, this.columns.length, ...ordered);
@@ -1779,7 +1897,7 @@ export default {
       if (id && typeof this.post === "function") {
         try {
           // 保存时转回旧格式（SearchConfigDialog 输出的就是旧格式）
-          const saveData = (configList || []).map((item) => ({
+          const saveData = (configList || []).map(item => ({
             ...item,
             value: item.value,
             inputType: item.inputType,
@@ -1844,14 +1962,20 @@ export default {
       if (!this.displayTableData || this.displayTableData.length === 0) return;
 
       // 组装打印数据
-      const current = (this.$router && this.$router.history && this.$router.history.current) || this.$route;
-      this.printListObj.title = (current && current.name) || (this.$route && this.$route.meta && this.$route.meta.title) || document.title;
+      const current =
+        (this.$router && this.$router.history && this.$router.history.current) || this.$route;
+      this.printListObj.title =
+        (current && current.name) ||
+        (this.$route && this.$route.meta && this.$route.meta.title) ||
+        document.title;
       this.printListObj.tableHeader = this.visibleColumns;
       this.printListObj.tableData = this.displayTableData;
 
       this.$nextTick(() => {
         setTimeout(() => {
-          const printRoot = (this.$refs.printTemplate && this.$refs.printTemplate.$el) || this.$el.querySelector(".crud-print-template");
+          const printRoot =
+            (this.$refs.printTemplate && this.$refs.printTemplate.$el) ||
+            this.$el.querySelector(".crud-print-template");
           if (!printRoot) {
             console.error("[ol-crud] 未找到打印区域");
             return;
@@ -1897,7 +2021,7 @@ export default {
 
     /** 设置搜索参数 */
     setSearchParams(params) {
-      Object.keys(params).forEach((key) => {
+      Object.keys(params).forEach(key => {
         if (key in this.internalSearchModel) {
           this.internalSearchModel[key] = params[key];
         }
@@ -1925,7 +2049,6 @@ export default {
     reset() {
       return this.handleReset();
     },
-
   },
 };
 </script>
@@ -2171,3 +2294,4 @@ export default {
   }
 }
 </style>
+
