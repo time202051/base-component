@@ -608,7 +608,7 @@ export default {
     /** 列配置持久化的页面标识（默认取 $route.path） */
     pageKey: { type: String, default: "" },
     /** 是否显示列过滤入口。未传时回退到 $olBaseConfig */
-    showColumnFilterBtn: { type: Boolean, default: false },
+    showColumnFilterBtn: { type: Boolean, default: true },
     /** 是否显示刷新按钮。未传时回退到 $olBaseConfig */
     showRefreshBtn: { type: Boolean, default: true },
     /** 是否显示打印按钮。未传时回退到 $olBaseConfig */

@@ -834,7 +834,7 @@ Vue.use(OlBaseComponents, {
 | `showRefreshBtn` | `Boolean` | `true` | 显示刷新按钮 |
 | `showPrintBtn` | `Boolean` | `true` | 显示打印按钮 |
 | `showCustomSearch` | `Boolean` | `false` | 显示搜索配置按钮 |
-| `showColumnFilterBtn` | `Boolean` | `false` | 显示列过滤入口 |
+| `showColumnFilterBtn` | `Boolean` | `true` | 显示列过滤入口 |
 | `showSmartPrintBtn` | `Boolean` | `false` | 显示智能打印按钮 |
 | `showEntityChangeBtn` | `Boolean` | `false` | 显示实体变更记录按钮 |
 
@@ -872,7 +872,7 @@ Vue.use(OlBaseComponents, {
 | `showSmartPrintBtn` | `Boolean` | `false` | 显示智能打印，支持全局配置 |
 | `smartPrintMenuId` | `String` | `''` | 智能打印菜单 ID |
 | `printData` | `Array` | `[]` | 智能打印数据，为空时用当前表格数据 |
-| `showColumnFilterBtn` | `Boolean` | `false` | 显示列配置入口，支持全局配置 |
+| `showColumnFilterBtn` | `Boolean` | `true` | 显示列配置入口，支持全局配置 |
 | `columnConfigMode` | `String` | `'simple'` | 列配置模式 `'simple'` / `'persisted'` |
 | `pageKey` | `String` | `''` | persisted 模式页面标识，默认 `$route.path` |
 | `showEntityChangeBtn` | `Boolean` | `false` | 显示实体变更记录，支持全局配置 |
