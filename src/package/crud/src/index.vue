@@ -1214,6 +1214,11 @@ export default {
 
     /** 将 Swagger parameter 映射为 searchField（组件格式） */
     mapParameterToSearchField(param) {
+      // 只展示有中文描述的字段（description 为空或全英文 → 跳过）
+      if (!param.description || !/[一-鿿]/.test(param.description)) {
+        return null;
+      }
+
       const field = {
         prop: param.name,
         label: param.description || param.name,
@@ -1323,6 +1328,13 @@ export default {
           },
           originalFields: { begin: "BeginTime", end: "EndTime" },
         });
+        // 移除原始的 BeginTime / EndTime 独立字段，避免与合成字段重复
+        const rmBi = searchFields.findIndex(f => f.prop === "BeginTime");
+        const rmEi = searchFields.findIndex(f => f.prop === "EndTime");
+        if (rmBi >= 0) searchFields.splice(rmBi, 1);
+        if (rmEi >= 0) searchFields.splice(rmEi, 1);
+        delete this.internalSearchModel["BeginTime"];
+        delete this.internalSearchModel["EndTime"];
       }
 
       // 规则2：自动识别 xxxBegin + xxxEnd 成对字段 → xxxTime
