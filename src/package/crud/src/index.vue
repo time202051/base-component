@@ -628,7 +628,7 @@ export default {
     /** 分页配置 { page, limit, total, show } */
     pagination: {
       type: Object,
-      default: () => ({ page: 1, limit: 30, total: 0, show: true }),
+      default: () => ({ page: 1, limit: 20, total: 0, show: true }),
     },
     /** 每页条数选项 */
     pageSizes: { type: Array, default: () => [20, 30, 40, 60, 100, 200] },
@@ -694,7 +694,7 @@ export default {
       internalTableData: [],
       internalPagination: {
         page: 1,
-        limit: (this.$olBaseConfig && this.$olBaseConfig.pagination && this.$olBaseConfig.pagination.limit) || 30,
+        limit: (this.$olBaseConfig && this.$olBaseConfig.pagination && this.$olBaseConfig.pagination.limit) || 20,
         total: 0,
       },
 
@@ -1142,6 +1142,8 @@ export default {
             swaggerColumns.forEach(col => {
               if (!existingColumnProps.has(col.prop)) {
                 this.columns.push(col);
+                // 即时更新集合，防止后续同 prop 列重复添加
+                existingColumnProps.add(col.prop);
               }
             });
 
@@ -2192,6 +2194,8 @@ export default {
 
 .crud-column-filter {
   padding: 5px;
+  max-height: 60vh;
+  overflow-y: auto;
 
   .crud-column-checkbox {
     display: block;
@@ -2271,6 +2275,9 @@ export default {
 
 ::v-deep .crud-number-input .el-input__inner {
   line-height: 1px !important;
+}
+.crud-toolbar-left {
+  gap: 0px !important; 
 }
 </style>
 
