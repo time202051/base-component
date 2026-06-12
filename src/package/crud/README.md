@@ -115,7 +115,6 @@ methods: {
 
 </details>
 
----
 
 ## 搜索栏
 
@@ -826,7 +825,7 @@ Vue.use(OlBaseComponents, {
 | `method` | `String` | `'get'` | 请求方式 `'get'` / `'post'` |
 | `pageParams` | `Object` | `{ page:'Page', limit:'MaxResultCount' }` | 分页参数名映射 |
 | `pageSizes` | `Array` | `[20,30,40,60,100,200]` | 每页条数选项 |
-| `pagination` | `Object` | `{ page:1, limit:30, total:0, show:true }` | 分页初始值，主要 `limit` 和 `show` 有用 |
+| `pagination` | `Object` | `{ page:1, limit:20, total:0, show:true }` | 分页初始值，主要 `limit` 和 `show` 有用 |
 | `columnConfigMode` | `String` | `'simple'` | 列配置模式 `'simple'` / `'persisted'` |
 | `showSearch` | `Boolean` | `true` | 显示搜索栏 |
 | `showSelection` | `Boolean` | `true` | 显示多选列 |
@@ -865,7 +864,7 @@ Vue.use(OlBaseComponents, {
 | `operates` | `Array` | `[]` | 操作列按钮 `Operate[]`，见[操作列](#操作列) |
 | `operatesAttrs` | `Object` | `{}` | 操作列属性，透传 `el-table-column` |
 | `tableAttrs` | `Object` | `{}` | 透传 `el-table`，如 `{ 'row-key': 'id' }` |
-| `pagination` | `Object` | `{ page:1, limit:30, total:0, show:true }` | 分页，支持 `.sync` |
+| `pagination` | `Object` | `{ page:1, limit:20, total:0, show:true }` | 分页，支持 `.sync` |
 | `pageSizes` | `Array` | `[20,30,40,60,100,200]` | 每页条数选项 |
 | `showRefreshBtn` | `Boolean` | `true` | 显示刷新，支持全局配置 |
 | `showPrintBtn` | `Boolean` | `true` | 显示打印，支持全局配置 |
@@ -985,7 +984,7 @@ Vue.use(OlBaseComponents, {
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `page` | `Number` | `1` | 当前页码 |
-| `limit` | `Number` | `30` | 每页条数 |
+| `limit` | `Number` | `20` | 每页条数 |
 | `total` | `Number` | `0` | 总条数 |
 | `show` | `Boolean` | `true` | 是否显示分页组件 |
 
@@ -1205,5 +1204,221 @@ export default {
 }
 </script>
 ```
+
+</details>
+
+---
+
+## 附录：后端对接指南
+
+本章列出 `ol-crud` 组件内部写死的接口地址和数据结构，后端按相同规范实现即可对接。
+
+<details>
+<summary>1. 分页接口返回 customs</summary>
+
+开启 `showCustomSearch` 时，分页列表接口需额外返回 `customs` 字段，告诉前端有哪些可选搜索字段。
+
+```json
+{
+  "result": {
+    "items": [ ... ],
+    "totalCount": 100,
+    "customs": [
+      { "key": "Name",       "name": "名称",     "keyType": 1 },
+      { "key": "Status",     "name": "状态",     "keyType": 3, "enumName": "StatusEnum" },
+      { "key": "Quantity",   "name": "数量",     "keyType": 2 },
+      { "key": "CreateTime", "name": "创建时间",  "keyType": 4 }
+    ]
+  }
+}
+```
+
+`customs` 数组每项的字段：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `key` | string | 参数名 |
+| `name` | string | 中文显示名 |
+| `keyType` | number | `1`=字符串 `2`=数字 `3`=枚举 `4`=日期 |
+| `enumName` | string | keyType=3 时必填，枚举名称 |
+
+</details>
+
+<details>
+<summary>2. 搜索配置的加载与保存</summary>
+
+`showCustomSearch` 模式下，用户在页面上勾选搜索字段、设置比较方式后保存，组件调以下接口持久化。
+
+#### 加载
+
+```http
+GET /api/app/menu-search-setting/by-menu?sysMenuId={菜单ID}
+```
+
+```json
+// response
+{
+  "code": 200,
+  "result": {
+    "settingJson": "[{\"label\":\"名称\",\"value\":\"Name\",\"inputType\":\"text\",\"compare\":\"contains\",\"show\":false}]"
+  }
+}
+```
+
+`settingJson` 是 `JSON.stringify()` 后的数组字符串，每项字段：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `label` | string | 显示名 |
+| `value` | string | 参数名 |
+| `inputType` | string | `text` / `number` / `select` / `picker` |
+| `compare` | string | `contains` / `eq` / `gt` / `lt` / `in` / `range` 等 |
+| `show` | boolean | `false`=在搜索栏显示 |
+| `children` | array | 下拉选项 `[{ key, value }]`，仅 select 类型 |
+| `dateType` | string | `date` / `datetime` / `daterange` / `datetimerange`，仅 picker 类型 |
+
+#### 保存
+
+```http
+POST /api/app/menu-search-setting
+Content-Type: application/json
+
+{
+  "sysMenuId": 123,
+  "settingJson": "[...]"
+}
+```
+
+#### 查询时的参数格式
+
+开启 `showCustomSearch` 后，查询请求不再平铺参数，改用 `FilterConditions` 数组：
+
+```json
+{
+  "FilterConditions": [
+    { "key": "Name",    "values": ["关键词"], "compare": "contains" },
+    { "key": "Status",  "values": [1],        "compare": "eq" },
+    { "key": "Quantity","values": [10, 100],  "compare": "range" }
+  ],
+  "Page": 1,
+  "MaxResultCount": 20
+}
+```
+
+> `values` 始终是数组，即使单值查询也包一层。
+
+</details>
+
+<details>
+<summary>3. 列配置的加载与保存</summary>
+
+`columnConfigMode="persisted"` 时用到。用户在弹窗中拖拽排序列、设置显隐和别名后保存。
+
+#### 加载
+
+```http
+GET /api/app/user-field-config/config?pageKey={页面路径}&sysMenuId={菜单ID}
+```
+
+```json
+// response
+{
+  "code": 200,
+  "result": {
+    "fields": [
+      {
+        "fieldName": "name",
+        "displayName": "名称",
+        "isVisible": true,
+        "isFixed": false,
+        "order": 0,
+        "roleIds": [],
+        "enumName": null
+      }
+    ]
+  }
+}
+```
+
+`fields` 每项字段：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `fieldName` | string | 字段名 |
+| `displayName` | string | 列标题 |
+| `isVisible` | boolean | 是否显示 |
+| `isFixed` | boolean | 是否固定列 |
+| `order` | number | 排序（升序） |
+| `roleIds` | number[] | 可见角色 ID 列表 |
+| `enumName` | string | 枚举名（枚举列用） |
+
+#### 保存
+
+```http
+POST /api/app/user-field-config/save-config
+Content-Type: application/json
+
+{
+  "pageKey": "/product/list",
+  "sysMenuId": 123,
+  "fields": [ ... ]
+}
+```
+
+#### 角色列表
+
+列配置弹窗中"可用角色"下拉框的数据来源：
+
+```http
+GET /api/app/identity-role/list
+```
+
+```json
+// response
+{
+  "code": 200,
+  "result": [
+    { "id": 1, "name": "管理员", "description": "系统管理员" },
+    { "id": 2, "name": "操作员", "description": "仓库操作员" }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary>4. 实体变更记录</summary>
+
+`showEntityChangeBtn` 开启后，勾选数据行，点击工具栏图标查看字段级变更历史。
+
+```http
+POST /api/app/audit-logging/entity-change-pages
+Content-Type: application/json
+
+{
+  "FilterConditions": [
+    { "key": "EntityId", "values": ["id1","id2"], "compare": "in" }
+  ],
+  "Page": 1,
+  "MaxResultCount": 20
+}
+```
+
+返回标准分页格式即可。
+
+</details>
+
+<details>
+<summary>5. 接口汇总</summary>
+
+| 接口 | 方法 | 触发条件 |
+|------|------|----------|
+| 业务分页接口 | GET/POST | 每次查询/翻页 |
+| `/api/app/menu-search-setting/by-menu` | GET | `showCustomSearch` |
+| `/api/app/menu-search-setting` | POST | 用户保存搜索配置 |
+| `/api/app/user-field-config/config` | GET | `columnConfigMode="persisted"` |
+| `/api/app/user-field-config/save-config` | POST | 用户保存列配置 |
+| `/api/app/identity-role/list` | GET | 打开列配置弹窗 |
+| `/api/app/audit-logging/entity-change-pages` | POST | 点击实体变更记录 |
 
 </details>

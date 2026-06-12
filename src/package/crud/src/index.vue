@@ -694,7 +694,11 @@ export default {
       internalTableData: [],
       internalPagination: {
         page: 1,
-        limit: (this.$olBaseConfig && this.$olBaseConfig.pagination && this.$olBaseConfig.pagination.limit) || 20,
+        limit:
+          (this.$olBaseConfig &&
+            this.$olBaseConfig.pagination &&
+            this.$olBaseConfig.pagination.limit) ||
+          20,
         total: 0,
       },
 
@@ -2277,7 +2281,7 @@ export default {
   line-height: 1px !important;
 }
 .crud-toolbar-left {
-  gap: 0px !important; 
+  gap: 0px !important;
 }
 </style>
 
@@ -2313,4 +2317,3 @@ export default {
   }
 }
 </style>
-
