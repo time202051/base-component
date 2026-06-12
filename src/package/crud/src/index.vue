@@ -801,6 +801,7 @@ export default {
 
     /** 可见的搜索字段（visible !== false） */
     visibleSearchFields() {
+      console.log(111, this.searchFields);
       const all = this.searchFields.filter(f => f.visible !== false);
       if (!this.searchExpanded && all.length > this.columnsPerRow) {
         return all.slice(0, this.columnsPerRow);
@@ -1054,22 +1055,31 @@ export default {
         if (!this.$cfg("showCustomSearch")) {
           const parameters = methodData.parameters || [];
 
-          // Step 1: Swagger params → 组件格式的 searchField 列表
+          // Step 1: Swagger params → 组件格式的 searchField 列表（全部映射，不做中文过滤）
           let swaggerSearchFields = parameters
             .map(p => this.mapParameterToSearchField(p))
             .filter(Boolean);
 
-          // Step 2: onSearchSwagger 钩子 ({ columns })
+          // Step 2: onSearchSwagger 钩子 ({ columns }) — 拿到全部字段，可在此补中文描述
+          let searchHookResult = null; // null 表示钩子未调用，后续 autoDetectRangeTimeFields 据此判断
           if (typeof this.onSearchSwagger === "function") {
             try {
               const res = await this.onSearchSwagger({ columns: [...swaggerSearchFields] });
-              if (res && Array.isArray(res.columns)) swaggerSearchFields = res.columns;
+              if (res && Array.isArray(res)) {
+                swaggerSearchFields = res;
+                searchHookResult = res;
+              }
             } catch (err) {
               /* ignore */
             }
           }
 
-          // Step 3: 合并 Swagger 字段到手动配置的 searchFields
+          // Step 3: 过滤掉没有中文描述的字段（钩子之后执行，给用户机会补中文）
+          swaggerSearchFields = swaggerSearchFields.filter(f => {
+            return f.label && /[一-鿿]/.test(f.label);
+          });
+
+          // Step 4: 合并 Swagger 字段到手动配置的 searchFields
           // 策略：Object.assign(swagger, user) — Swagger 打底，用户覆盖；prop 不修改
           const manualByProp = {};
           this.searchFields.forEach(f => {
@@ -1096,15 +1106,16 @@ export default {
             }
           });
 
-          // Step 4: 普通模式自动识别日期范围字段
-          this.autoDetectRangeTimeFields(parameters);
+          // Step 5: 普通模式自动识别日期范围字段
+          // 传入 parameters（用于配对检测，靠命名规则而非中文描述）和钩子结果（检测用户是否显式删除）
+          this.autoDetectRangeTimeFields(parameters, searchHookResult);
 
-          // Step 5: onSearchMerged 钩子 ({ columns })
+          // Step 6: onSearchMerged 钩子 ({ columns }) — 用户直接返回 columns 数组
           if (typeof this.onSearchMerged === "function") {
             try {
               const res = await this.onSearchMerged({ columns: this.searchFields.slice() });
-              if (res && Array.isArray(res.columns))
-                this.searchFields.splice(0, this.searchFields.length, ...res.columns);
+              if (res && Array.isArray(res))
+                this.searchFields.splice(0, this.searchFields.length, ...res);
             } catch (err) {
               /* ignore */
             }
@@ -1116,31 +1127,42 @@ export default {
         // --- 自动生成 columns（hasColumnConfig 为 true 时表示 API 列配置已加载，跳过 Swagger） ---
         if (!this.hasColumnConfig) {
           const { responseData } = this._extractSwaggerResponse(methodData);
-          let itemsProps = responseData ? this._extractItemsProps(responseData) : null;
+          const rawProps = responseData ? this._extractItemsProps(responseData) : null;
 
-          // onTableSwagger 钩子 ({ columns })
-          if (itemsProps && typeof this.onTableSwagger === "function") {
+          // Step 1: 对象 → 数组（保持 Object.keys 顺序），key 存原始属性名
+          let propsArray = rawProps
+            ? Object.keys(rawProps).map(key => ({ key, ...rawProps[key] }))
+            : [];
+
+          // Step 2: onTableSwagger 钩子 ({ columns }) — 拿到全部 response properties 数组，
+          // 用户可在钩子中调整数组顺序来控制表格列顺序，也可补 description
+          // 用户直接 return columns 数组本身，用这个数组决定最终渲染的表格列
+          if (typeof this.onTableSwagger === "function") {
             try {
-              const res = await this.onTableSwagger({ columns: { ...itemsProps } });
-              if (res && res.columns && typeof res.columns === "object") itemsProps = res.columns;
+              const res = await this.onTableSwagger({ columns: propsArray });
+              if (res && Array.isArray(res)) propsArray = res;
             } catch (err) {
               /* ignore */
             }
           }
 
-          if (itemsProps && Object.keys(itemsProps).length) {
+          // Step 3: 过滤 + 映射为 column 格式（钩子之后执行，给用户机会补 description）
+          if (propsArray.length) {
             let swaggerColumns = [];
             const existingColumnProps = new Set(
               this.columns.filter(c => !c.children).map(c => c.prop)
             );
-            Object.keys(itemsProps).forEach(key => {
+            // 构建快速 lookup：{ propName: description }，供后面 label 回填用
+            const propsLookup = {};
+            propsArray.forEach(item => {
+              const { key, ...prop } = item;
               if (!existingColumnProps.has(key)) {
-                const prop = itemsProps[key];
                 if (prop.description) {
                   const col = this.mapPropertyToColumn(key, prop);
                   if (col) swaggerColumns.push(col);
                 }
               }
+              propsLookup[key] = prop;
             });
 
             swaggerColumns.forEach(col => {
@@ -1151,28 +1173,29 @@ export default {
               }
             });
 
+            // 回填 label：用户手动写的列没有 label 时，从 swagger property description 补充
             this.columns.forEach(col => {
               if (col.children && col.children.length) {
                 col.children.forEach(child => {
-                  if (!child.label && child.prop && itemsProps[child.prop]) {
-                    this.$set(child, "label", itemsProps[child.prop].description);
+                  if (!child.label && child.prop && propsLookup[child.prop]) {
+                    this.$set(child, "label", propsLookup[child.prop].description);
                   }
                 });
               } else {
-                if (!col.label && col.prop && itemsProps[col.prop]) {
-                  this.$set(col, "label", itemsProps[col.prop].description);
+                if (!col.label && col.prop && propsLookup[col.prop]) {
+                  this.$set(col, "label", propsLookup[col.prop].description);
                 }
               }
             });
           }
         }
 
-        // onTableMerged 钩子 ({ columns })
+        // onTableMerged 钩子 ({ columns }) — 用户直接返回 columns 数组
         if (typeof this.onTableMerged === "function") {
           try {
             const res = await this.onTableMerged({ columns: this.columns.slice() });
-            if (res && Array.isArray(res.columns))
-              this.columns.splice(0, this.columns.length, ...res.columns);
+            if (res && Array.isArray(res))
+              this.columns.splice(0, this.columns.length, ...res);
           } catch (err) {
             /* ignore */
           }
@@ -1220,11 +1243,6 @@ export default {
 
     /** 将 Swagger parameter 映射为 searchField（组件格式） */
     mapParameterToSearchField(param) {
-      // 只展示有中文描述的字段（description 为空或全英文 → 跳过）
-      if (!param.description || !/[一-鿿]/.test(param.description)) {
-        return null;
-      }
-
       const field = {
         prop: param.name,
         label: param.description || param.name,
@@ -1309,18 +1327,34 @@ export default {
      * 普通模式下自动识别日期范围字段（xxxBegin + xxxEnd → xxxTime）
      * 因为 Element UI daterange 绑定数组，但后端需要两个独立字段
      * 只在非配置模式（!showCustomSearch）下执行
+     *
+     * @param {Array} parameters - 原始 Swagger 参数（用于配对检测，靠命名规则而非中文描述）
+     * @param {Array|null} searchHookResult - onSearchSwagger 钩子返回的字段列表；null 表示钩子未调用
      */
-    autoDetectRangeTimeFields(parameters) {
+    autoDetectRangeTimeFields(parameters, searchHookResult) {
       if (this.$cfg("showCustomSearch")) return;
 
       const searchFields = this.searchFields;
       const toAdd = [];
 
+      // 辅助函数：判断用户是否在钩子中显式删除了某个字段
+      // 钩子未调用 → false（不过滤）；钩子调用了但字段不在结果中 → true（用户删了）
+      const hookRemoved = propName => {
+        if (searchHookResult === null) return false;
+        return !searchHookResult.some(f => f.prop === propName);
+      };
+
       // 规则1：BeginTime + EndTime → createdTime（创单时间专用）
       const hasBeginTime = parameters.some(p => p.name === "BeginTime");
       const hasEndTime = parameters.some(p => p.name === "EndTime");
       const hasCreatedTime = searchFields.some(f => f.prop === "createdTime");
-      if (hasBeginTime && hasEndTime && !hasCreatedTime) {
+      if (
+        hasBeginTime &&
+        hasEndTime &&
+        !hasCreatedTime &&
+        !hookRemoved("BeginTime") &&
+        !hookRemoved("EndTime")
+      ) {
         toAdd.push({
           prop: "createdTime",
           label: "创建时间",
@@ -1344,16 +1378,18 @@ export default {
       }
 
       // 规则2：自动识别 xxxBegin + xxxEnd 成对字段 → xxxTime
-      const beginFields = parameters.filter(p => p.name.endsWith("Begin"));
-      const endFields = parameters.filter(p => p.name.endsWith("End"));
+      const beginParams = parameters.filter(p => p.name.endsWith("Begin"));
+      const endParams = parameters.filter(p => p.name.endsWith("End"));
 
-      beginFields.forEach(beginParam => {
+      beginParams.forEach(beginParam => {
         const prefix = beginParam.name.replace(/Begin$/, "");
         const endName = prefix + "End";
         const timeName = prefix + "Time";
-        const hasEnd = endFields.some(p => p.name === endName);
+        const hasEnd = endParams.some(p => p.name === endName);
         if (!hasEnd) return;
         if (searchFields.some(f => f.prop === timeName)) return;
+        // 如果用户在钩子里删掉了 Begin 或 End 字段，跳过
+        if (hookRemoved(beginParam.name) || hookRemoved(endName)) return;
 
         toAdd.push({
           prop: timeName,
