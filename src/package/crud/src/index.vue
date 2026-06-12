@@ -1146,16 +1146,33 @@ export default {
             }
           }
 
-          // Step 3: 过滤 + 映射为 column 格式（钩子之后执行，给用户机会补 description）
+          // Step 3: Desc/Text 优先级处理 + 过滤 + 映射为 column 格式
+          // 规则：xxxDesc > xxxText > xxx，如果 Swagger 中同时存在基础字段和 Desc/Text 变体，优先展示变体
           if (propsArray.length) {
+            // 3a: 标记被 Desc/Text 变体覆盖的基础字段
+            const allKeys = new Set(propsArray.map(f => f.key));
+            const replacedKeys = new Set();
+            propsArray.forEach(item => {
+              if (item.key.endsWith('Desc')) {
+                const base = item.key.replace(/Desc$/, '');
+                if (allKeys.has(base)) replacedKeys.add(base);
+              }
+              if (item.key.endsWith('Text')) {
+                const base = item.key.replace(/Text$/, '');
+                if (allKeys.has(base)) replacedKeys.add(base);
+              }
+            });
+
             let swaggerColumns = [];
             const existingColumnProps = new Set(
               this.columns.filter(c => !c.children).map(c => c.prop)
             );
-            // 构建快速 lookup：{ propName: description }，供后面 label 回填用
+            // 构建快速 lookup：{ propName: prop }，供后面 label 回填用
             const propsLookup = {};
             propsArray.forEach(item => {
               const { key, ...prop } = item;
+              // 跳过被 Desc/Text 变体覆盖的基础字段
+              if (replacedKeys.has(key)) return;
               if (!existingColumnProps.has(key)) {
                 if (prop.description) {
                   const col = this.mapPropertyToColumn(key, prop);
@@ -1309,15 +1326,16 @@ export default {
         sortable: false,
       };
 
-      // 枚举 -> 展示 Desc 后缀字段
+      // 枚举 / boolean → 优先展示 Desc 后缀字段
+      // 如果 Swagger 中已有 xxxDesc/xxxText，Step 3 的去重逻辑会跳过当前基础字段
+      // 这里处理 Swagger 中没有变体字段的情况，默认指向 xxxDesc
       if (prop.enum && Array.isArray(prop.enum)) {
         col.prop = `${key}Desc`;
         col.label = (prop.description || key).replace(/(枚举|枚举值)/g, "");
       }
 
-      // boolean -> 展示 Text 后缀字段
       if (prop.type === "boolean") {
-        col.prop = `${key}Text`;
+        col.prop = `${key}Desc`;
       }
 
       return col;
@@ -1502,8 +1520,10 @@ export default {
         });
       });
 
+      // search 事件 emit 拆分后的 model（Begin/End 格式，供父组件调接口）
       this.$emit("search", model, { filterConditions });
-      this.$emit("update:searchModel", model);
+      // update:searchModel emit 原始 internalSearchModel（保留日期范围数组，避免 .sync 回流清空）
+      this.$emit("update:searchModel", { ...this.internalSearchModel });
       console.log(`\x1b[36m\x1b[4mol-crud 查询`, model, { filterConditions });
 
       // 自动拉取数据
