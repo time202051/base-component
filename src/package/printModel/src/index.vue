@@ -136,12 +136,19 @@ export default {
       const wms = JSON.parse(localStorage.getItem("wms") || "{}");
       const menus = wms.SET_MENUS || [];
       this.menuTreeData = this.buildTreeData(menus);
-      const firstNode = this.findFirstMenuNode(this.menuTreeData);
-      if (firstNode) {
-        this.currentMenuId = firstNode.id;
-        this.currentMenuName = firstNode.title;
-        this.currentItem = firstNode;
-        this.loadTemplates(firstNode.id);
+      const routeMenuId = this.$route?.query?.menuId;
+      let targetNode = null;
+      if (routeMenuId) {
+        targetNode = this.findMenuNodeById(this.menuTreeData, routeMenuId);
+      }
+      if (!targetNode) {
+        targetNode = this.findFirstMenuNode(this.menuTreeData);
+      }
+      if (targetNode) {
+        this.currentMenuId = targetNode.id;
+        this.currentMenuName = targetNode.title;
+        this.currentItem = targetNode;
+        this.loadTemplates(targetNode.id);
       }
     },
     findFirstMenuNode(menus) {
@@ -152,6 +159,17 @@ export default {
           if (found) return found;
         }
         return menu;
+      }
+      return null;
+    },
+    findMenuNodeById(menus, id) {
+      if (!menus || menus.length === 0) return null;
+      for (const menu of menus) {
+        if (menu.id === id) return menu;
+        if (menu.child && menu.child.length > 0) {
+          const found = this.findMenuNodeById(menu.child, id);
+          if (found) return found;
+        }
       }
       return null;
     },
@@ -171,10 +189,12 @@ export default {
     },
     async loadTemplates(menuId) {
       try {
+        const routeMenuId = this.$route?.query?.menuId;
+        const finalMenuId = routeMenuId || menuId;
         const res = await this.get({
           url: "/api/app/print-templete/page-list",
           data: {
-            MenuId: menuId,
+            MenuId: finalMenuId,
             Page: 1,
             MaxResultCount: 1000,
           },

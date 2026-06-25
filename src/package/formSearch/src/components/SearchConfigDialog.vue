@@ -29,6 +29,7 @@
         :row-class-name="tableRowClassName"
         row-key="value"
         :tree-props="{ children: '' }"
+        height="400"
       >
         <el-table-column label="排序" width="80" align="center" v-if="dragable">
           <template slot-scope="scope">
@@ -136,17 +137,9 @@
       </el-table>
     </div>
 
-    <!-- <div class="dialog-footer">
-      <slot name="footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="handleSave">确定</el-button>
-      </slot>
-    </div> -->
     <div class="dialog-footer">
-      <div slot="footer" >
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="handleSave">确定</el-button>
-      </div>
+      <el-button @click="handleClose">取消</el-button>
+      <el-button type="primary" @click="handleSave">确定</el-button>
     </div>
 
     <el-dialog title="配置选项" :visible.sync="optionsDialogVisible" width="700px" append-to-body>
@@ -255,10 +248,8 @@
         </el-form-item>
       </el-form>
       <div class="dialog-footer">
-        <div slot="footer">
-          <el-button @click="optionsDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSaveOptions">确定</el-button>
-        </div>
+        <el-button @click="optionsDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveOptions">确定</el-button>
       </div>
     </el-dialog>
 
@@ -267,8 +258,17 @@
       :visible.sync="customsDialogVisible"
       width="600px"
       append-to-body
+      @open="customSearchKeyword = ''"
     >
-      <el-table :data="availableCustoms" border stripe style="width: 100%">
+      <el-input
+        v-model="customSearchKeyword"
+        placeholder="请输入关键字搜索"
+        size="small"
+        clearable
+        prefix-icon="el-icon-search"
+        style="margin-bottom: 10px"
+      />
+      <el-table :data="filteredAvailableCustoms" border stripe style="width: 100%" height="400">
         <el-table-column label="字段名称" prop="name" align="center" />
         <el-table-column label="字段值" prop="key" align="center" />
         <el-table-column label="数据类型" width="120" align="center">
@@ -373,7 +373,7 @@ export default {
     },
     dragable: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     isPreview: {
       type: Boolean,
@@ -384,8 +384,10 @@ export default {
     return {
       dialogVisible: false,
       configList: [],
+      frontAppendList: [], // 前端追加的搜索条件，不参与配置
       optionsDialogVisible: false,
       customsDialogVisible: false,
+      customSearchKeyword: "",
       currentEditIndex: -1,
       currentOptionConfig: {
         sourceType: "manual",
@@ -405,8 +407,22 @@ export default {
   },
   computed: {
     availableCustoms() {
-      const selectedKeys = this.configList.map(item => item.value);
+      // 前端追加的字段也要排除在预设可选列表之外，避免重复添加
+      const selectedKeys = [...this.configList, ...this.frontAppendList].map(item => item.value);
       return this.customs.filter(custom => !selectedKeys.includes(custom.key));
+    },
+    filteredAvailableCustoms() {
+      const keyword = this.customSearchKeyword.trim().toLowerCase();
+      if (!keyword) return this.availableCustoms;
+      return this.availableCustoms.filter(
+        item =>
+          String(item.name || "")
+            .toLowerCase()
+            .includes(keyword) ||
+          String(item.key || "")
+            .toLowerCase()
+            .includes(keyword)
+      );
     },
   },
   created() {
@@ -419,7 +435,12 @@ export default {
       handler(newVal) {
         this.dialogVisible = newVal;
         if (newVal) {
-          this.configList = JSON.parse(JSON.stringify(this.tableSearch));
+          const tableSearch = this.tableSearch || [];
+          // 前端追加的搜索条件不参与配置，但需要一直保留在搜索区域
+          this.frontAppendList = tableSearch.filter(item => item.isFrontAppend);
+          this.configList = JSON.parse(
+            JSON.stringify(tableSearch.filter(item => !item.isFrontAppend))
+          );
           this.$nextTick(() => {
             this.initSortable();
           });
@@ -899,8 +920,32 @@ export default {
         const { value: key, inputType } = item;
         if (!Object.keys(this.formSearch).includes(key)) return;
         if (!(inputType === "select" || inputType === "picker")) return; //只有下拉框和日期选择器会有 双向绑定数组
-        delete this.formSearchData.value[key];
-        delete this.formSearch[key];
+
+        const val = this.formSearch[key];
+        let needReset = false;
+
+        if (inputType === "select") {
+          // 多选（包含于）需要数组，单选不能是数组
+          const isMultiple = item.compare === "in" || (item.props && item.props.multiple);
+          if ((isMultiple && !Array.isArray(val)) || (!isMultiple && Array.isArray(val))) {
+            needReset = true;
+          }
+        } else if (inputType === "picker") {
+          // 范围类型需要数组，非范围不能是数组
+          const rangeTypes = ["daterange", "datetimerange", "monthrange"];
+          const isRange =
+            rangeTypes.includes(item.dateType) ||
+            (item.props && rangeTypes.includes(item.props.type));
+          if ((isRange && !Array.isArray(val)) || (!isRange && Array.isArray(val))) {
+            needReset = true;
+          }
+        }
+
+        // 只有当前值类型与组件要求的类型不匹配时才重置，避免误删前端写死的默认值
+        if (needReset) {
+          delete this.formSearchData.value[key];
+          delete this.formSearch[key];
+        }
       });
     },
   },

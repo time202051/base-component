@@ -41,6 +41,16 @@ export default {
     method: {
       type: String,
     },
+    // 前端写死的搜索字段配置，会与接口返回的配置合并（同名字段前端优先）
+    frontSearchData: {
+      type: Array,
+      default: () => [],
+    },
+    // 前端写死的默认搜索值，优先级高于接口返回的默认值
+    frontDefaultValue: {
+      type: Object,
+      default: () => ({}),
+    },
   },
   data() {
     return {
@@ -80,18 +90,69 @@ export default {
       const menus = SET_MENUS;
       this.currentPageItem = handleMenu(menus, this);
 
-      const targetMenuId = this.menuId || (this.currentPageItem && this.currentPageItem.id);
+      const targetMenuId = this.menuId || this.$route.query.menuId || (this.currentPageItem && this.currentPageItem.id);
 
       this.get({
         url: `/api/app/menu-search-setting/by-menu`,
         data: {
           sysMenuId: targetMenuId,
         },
-      }).then(res => {
+      }).then(async res => {
         if (res.code !== 200) return;
         const configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
-        this.$set(this.formSearchData, "tableSearch", configList);
-        this.$refs.customSearchRef.init();
+
+        // 合并搜索字段配置：formSearchData.tableSearch + frontSearchData 优先，接口返回的补充
+        // 前端追加的搜索条件标记为 isFrontAppend，不参与配置弹框编辑
+        const localTableSearch = [
+          ...(this.formSearchData.tableSearch || []),
+          ...this.frontSearchData.map(item => ({ ...item, isFrontAppend: true })),
+        ];
+        const tableSearchMap = new Map();
+        localTableSearch.forEach(item => {
+          if (item.value) tableSearchMap.set(item.value, item);
+        });
+        configList.forEach(item => {
+          if (item.value && !tableSearchMap.has(item.value)) {
+            tableSearchMap.set(item.value, item);
+          }
+        });
+        const mergedTableSearch = Array.from(tableSearchMap.values());
+        this.$set(this.formSearchData, "tableSearch", mergedTableSearch);
+
+        // 合并默认搜索值：formSearchData.value / frontDefaultValue 优先级最高，接口默认值不覆盖
+        let hasDefaultFilter = false;
+        const defaultValue = { ...(this.formSearchData.value || {}), ...this.frontDefaultValue };
+
+        // 解析并回显默认搜索条件
+        if (res.result.defaultFilterJson) {
+          try {
+            const defaultFilters = JSON.parse(res.result.defaultFilterJson);
+            this.$set(this.formSearchData, "filterConditions", defaultFilters);
+            defaultFilters.forEach(item => {
+              if (item.values && item.values.length > 0) {
+                // 接口默认值不覆盖前端写死的默认值
+                if (!(item.key in defaultValue)) {
+                  defaultValue[item.key] = item.values.length === 1 ? item.values[0] : item.values;
+                }
+              }
+            });
+          } catch (e) {
+            console.error("defaultFilterJson 解析失败:", e);
+          }
+        }
+
+        this.$set(this.formSearchData, "value", defaultValue);
+        hasDefaultFilter = Object.keys(defaultValue).length > 0;
+
+        await this.$refs.customSearchRef.init();
+
+        // 如果有默认搜索条件，自动触发一次查询
+        if (hasDefaultFilter) {
+          this.$nextTick(() => {
+            this.$refs.customSearchRef.handleSearch("formSearch");
+          });
+        }
+
         // this.$nextTick(() => {
         //   this.key++;
         // });
@@ -99,7 +160,7 @@ export default {
     },
     //保存
     onSave(configList) {
-      const targetMenuId = this.menuId || (this.currentPageItem && this.currentPageItem.id);
+      const targetMenuId = this.menuId || this.$route.query.menuId || (this.currentPageItem && this.currentPageItem.id);
       this.post({
         url: `/api/app/menu-search-setting`,
         data: {

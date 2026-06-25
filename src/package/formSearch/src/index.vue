@@ -19,7 +19,7 @@
         <!-- 'label-width': '100px', -->
         <div
           class="transitionGroup"
-          :class="[formSearchData.expendShow ? 'formSearchBtnArrowDowns' : 'formSearchBtnArrowUps']"
+          :class="[showExpendBtn ? 'formSearchBtnArrowDowns' : 'formSearchBtnArrowUps']"
         >
           <el-form-item
             v-for="item in findTableSearch"
@@ -27,7 +27,7 @@
             :key="item.value"
             class="table-header-item"
             :label="item.label"
-            :prop="item.value"
+            :prop="item.value && !String(item.value).includes('.') ? item.value : undefined"
             v-bind="item.labelProps || {}"
             :class="{
               picker: item.props && item.props.type === 'datetimerange',
@@ -52,7 +52,9 @@
               v-el-select-all="item.loadmores"
               :clearable="item.clearable === undefined || item.clearable"
               v-bind="item.props || {}"
-              :placeholder="`请选择${item.placeholder || item.label}`"
+              :placeholder="`${getCompareLabel(item.compare)}请选择${
+                item.placeholder || item.label
+              }`"
               :popper-append-to-body="false"
               @change="item.change && item.change(formSearch[item.value])"
               @keyup.enter.native="handleSearch('formSearch')"
@@ -70,7 +72,9 @@
               v-model="formSearch[item.value]"
               v-el-select-all="item.loadmores"
               v-bind="{ clearable: true, ...(item.props || {}) }"
-              :placeholder="`请选择${item.placeholder || item.label}`"
+              :placeholder="`${getCompareLabel(item.compare)}请选择${
+                item.placeholder || item.label
+              }`"
               :popper-append-to-body="false"
               @change="item.change && item.change(formSearch[item.value])"
               @keyup.enter.native="handleSearch('formSearch')"
@@ -126,7 +130,9 @@
               clearable
               v-bind="item.props || {}"
               :type="item.inputType || 'text'"
-              :placeholder="`请输入${item.placeholder || item.label}`"
+              :placeholder="`${getCompareLabel(item.compare)}请输入${
+                item.placeholder || item.label
+              }`"
               :maxlength="item.maxlength"
               :oninput="handleChangeInput(item)"
               :class="item.inputType == 'number' ? 'numrule' : ''"
@@ -139,7 +145,7 @@
         <el-form-item
           style="word-break: keep-all; white-space: nowrap; margin-left: 10px"
           class="fromBtn"
-          :class="[formSearchData.expendShow ? 'formSearchBtnArrowDown' : 'formSearchBtnArrowUp']"
+          :class="[showExpendBtn ? 'formSearchBtnArrowDown' : 'formSearchBtnArrowUp']"
         >
           <el-button
             v-if="formSearchData.reset"
@@ -156,7 +162,7 @@
             >重置</el-button
           >
           <el-button
-            v-if="formSearchData.expendShow"
+            v-if="showExpendBtn"
             plain
             size="small"
             :icon="expend ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"
@@ -164,15 +170,17 @@
           >
             {{ expend ? "收起" : "展开" }}</el-button
           >
-          <el-button
-            v-if="isCustomSearch"
-            plain
-            size="small"
-            icon="el-icon-setting"
-            @click="handleOpenConfig"
-          >
-            配置
-          </el-button>
+          <el-dropdown v-if="isCustomSearch" size="small" trigger="click" style="margin-left: 8px">
+            <el-button plain size="small" icon="el-icon-more" />
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item @click.native="handleOpenConfig">
+                <i class="el-icon-setting" /> 配置
+              </el-dropdown-item>
+              <el-dropdown-item @click.native="handleSave">
+                <i class="el-icon-document-checked" /> 保存搜索条件
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </el-form-item>
       </el-form>
     </div>
@@ -296,7 +304,10 @@ export default {
   data() {
     return {
       findTableSearch: {},
-      expend: !this.formSearchData.expendShow,
+      expend: !(
+        this.formSearchData.tableSearch &&
+        this.formSearchData.tableSearch.length > this.tableSearchSlice
+      ),
       formSearch: {
         ...this.formSearchData.value,
       },
@@ -321,6 +332,13 @@ export default {
     });
   },
   computed: {
+    // 搜索框展开折叠按钮是否显示
+    showExpendBtn() {
+      return (
+        this.formSearchData.tableSearch &&
+        this.formSearchData.tableSearch.length > this.tableSearchSlice
+      );
+    },
     // 优先级：props > 全局配置 > 默认值
     finalMethod() {
       return this.method || (this.$olBaseConfig && this.$olBaseConfig.method) || "get";
@@ -340,6 +358,30 @@ export default {
     },
   },
   methods: {
+    getCompareLabel(compare) {
+      if (!this.isCustomSearch) return '';
+      const map = {
+        eq: "[等于] ",
+        equals: "[等于] ",
+        "=": "[等于] ",
+        ne: "[不等于] ",
+        "!=": "[不等于] ",
+        gt: "[大于] ",
+        ">": "[大于] ",
+        gte: "[大于等于] ",
+        ">=": "[大于等于] ",
+        lt: "[小于] ",
+        "<": "[小于] ",
+        lte: "[小于等于] ",
+        "<=": "[小于等于] ",
+        contains: "[包含] ",
+        like: "[包含] ",
+        startwith: "[开头是] ",
+        endwith: "[结尾是] ",
+        in: "[在列表] ",
+      };
+      return map[compare] || "[包含] ";
+    },
     async init() {
       if (!this.isCustomSearch && this.url) {
         const swaggerData = await getData();
@@ -394,10 +436,12 @@ export default {
         this.formSearchData.tableSearch = [...this.formSearchData.tableSearch, ...rangeTimeCloumns];
       }
 
-      this.findTableSearch =
-        this.formSearchData.tableSearch.length > this.tableSearchSlice
-          ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
-          : this.formSearchData.tableSearch;
+      const isMoreThanSlice = this.formSearchData.tableSearch.length > this.tableSearchSlice;
+      this.findTableSearch = isMoreThanSlice
+        ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
+        : this.formSearchData.tableSearch;
+      // 超过4个默认收起，按钮显示"展开"
+      if (this.isCustomSearch) this.expend = !isMoreThanSlice;
       console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch);
     },
     // 统一的自动识别范围时间字段方法
@@ -510,6 +554,8 @@ export default {
       const filterConditions = [];
       Object.keys(formSearch).forEach(key => {
         const tempItem = this.formSearchData.tableSearch.find(item => item.value === key);
+        // 只处理 tableSearch 中配置的字段；前端写死的直接传参字段（isDirect）不加入 FilterConditions
+        if (!tempItem || tempItem.isDirect) return;
         if (formSearch[key] !== undefined && formSearch[key] !== null && formSearch[key] !== "") {
           filterConditions.push({
             key: key,
@@ -558,9 +604,21 @@ export default {
         // 转成接口需要的结构filterConditions
         const filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
 
+        // 提取需要直接作为请求参数的字段（前端写死且 isDirect 为 true 的字段）
+        const directParams = {};
+        Object.keys(this.formSearch).forEach(key => {
+          const tempItem = this.formSearchData.tableSearch.find(item => item.value === key);
+          if (tempItem && tempItem.isDirect) {
+            directParams[key] = this.formSearch[key];
+          }
+        });
+
         // 动态模式
-        this.$emit("handleSearch", this.formSearch, { filterConditions });
-        console.log(`\x1b[36m\x1b[4mol插件-动态搜索框查询`, this.formSearch, { filterConditions });
+        this.$emit("handleSearch", this.formSearch, { filterConditions, directParams });
+        console.log(`\x1b[36m\x1b[4mol插件-动态搜索框查询`, this.formSearch, {
+          filterConditions,
+          directParams,
+        });
       }
     },
     loadmore(obj) {
@@ -601,6 +659,69 @@ export default {
 
       this.$emit("btnHandleExpend", this.expend);
     },
+    getTargetMenuId() {
+      const handleMenu = (arr, _this) => {
+        for (const item of arr) {
+          if (item.path === _this.$route.path) {
+            return item;
+          }
+          if (item.child && item.child.length > 0 && item.type !== 1) {
+            const found = handleMenu(item.child, _this);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      let wms = JSON.parse(localStorage.getItem("wms"));
+      let SET_MENUS = null;
+      if (wms) SET_MENUS = wms.SET_MENUS;
+      const menus = SET_MENUS;
+      const currentPageItem = handleMenu(menus, this);
+      return (
+        this.$attrs.menuId || this.$route.query.menuId || (currentPageItem && currentPageItem.id)
+      );
+    },
+    handleSave() {
+      if (!this.isCustomSearch) {
+        if (this.formSearch.createdTime) {
+          this.formSearch.BeginTime = this.formSearch.createdTime[0];
+          this.formSearch.EndTime = this.formSearch.createdTime[1];
+        } else {
+          this.formSearch.BeginTime = null;
+          this.formSearch.EndTime = null;
+        }
+        Object.keys(this.formSearch).forEach(key => {
+          const fieldConfig = this.formSearchData.tableSearch.find(item => item.value === key);
+          if (fieldConfig && fieldConfig.originalFields) {
+            const { begin, end } = fieldConfig.originalFields;
+            if (this.formSearch[key] && Array.isArray(this.formSearch[key])) {
+              this.formSearch[begin] = this.formSearch[key][0];
+              this.formSearch[end] = this.formSearch[key][1];
+            } else {
+              this.formSearch[begin] = null;
+              this.formSearch[end] = null;
+            }
+          }
+        });
+        const tempFormSearch = Object.assign({}, this.formSearch);
+        this.$emit("handleSave", tempFormSearch);
+        console.log(`\x1b[36m\x1b[4mol插件-搜索框保存`, tempFormSearch);
+      } else {
+        const filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
+        const targetMenuId = this.getTargetMenuId();
+        console.log(`\x1b[36m\x1b[4mol插件-动态搜索框保存`, this.formSearch, filterConditions);
+        this.post({
+          url: `/api/app/menu-search-setting/set-default-filter`,
+          data: {
+            sysMenuId: targetMenuId,
+            defaultFilterJson: JSON.stringify(filterConditions),
+          },
+        }).then(res => {
+          if (res.code !== 200) return;
+          this.$message.success("保存成功");
+        });
+      }
+    },
     handleOpenConfig() {
       this.configDialogVisible = true;
     },
@@ -608,11 +729,29 @@ export default {
       if (this.isCustomSearch) {
         this.key++; // 下拉框多选时候高度被撑开，改成单选时候高度无法重置。所以重写渲染。这里不管直接全都重写渲染
       }
-      this.formSearchData.tableSearch = configList;
-      this.findTableSearch =
-        this.formSearchData.tableSearch.length > this.tableSearchSlice
-          ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
-          : this.formSearchData.tableSearch;
+      // 记录保存前收展按钮是否可见
+      const wasExpendBtnVisible = this.showExpendBtn;
+      // 前端追加的搜索条件不参与配置，但需要一直保留在搜索区域
+      const frontAppendList = (this.formSearchData.tableSearch || []).filter(
+        item => item.isFrontAppend
+      );
+      this.formSearchData.tableSearch = [...frontAppendList, ...configList];
+      const isMoreThanSlice = this.formSearchData.tableSearch.length > this.tableSearchSlice;
+
+      if (isMoreThanSlice) {
+        // 如果之前没有收展按钮（≤4个），现在有了（>4个），默认收起
+        if (!wasExpendBtnVisible) {
+          this.expend = false;
+        }
+        // 保持当前 expend 状态决定显示全部还是前4个
+        this.findTableSearch = this.expend
+          ? this.formSearchData.tableSearch
+          : this.formSearchData.tableSearch.slice(0, this.tableSearchSlice);
+      } else {
+        // 不超过4个，全部显示
+        this.expend = true;
+        this.findTableSearch = this.formSearchData.tableSearch;
+      }
 
       this.$emit("onSave", configList);
     },
@@ -831,21 +970,21 @@ export default {
     width: calc(100% / 5);
   }
 
-  // .picker {
-  //   width: 25%;
+  .picker {
+    width: 25%;
 
-  //   ::v-deep .el-form-item__label {
-  //     width: 27% !important;
-  //     padding: 0 5px 0 0;
-  //     word-break: break-all;
-  //     white-space: nowrap;
-  //   }
+    ::v-deep .el-form-item__label {
+      width: 27% !important;
+      padding: 0 5px 0 0;
+      word-break: break-all;
+      white-space: nowrap;
+    }
 
-  //   ::v-deep .el-form-item__content {
-  //     width: 73% !important;
-  //     height: 28px;
-  //   }
-  // }
+    ::v-deep .el-form-item__content {
+      width: 73% !important;
+      height: 28px;
+    }
+  }
 }
 
 .formSearchBtnArrowDowns {
@@ -926,3 +1065,4 @@ export default {
   line-height: 1px !important;
 }
 </style>
+
