@@ -35,6 +35,11 @@ export default {
       type: Function,
       default: null,
     },
+    // 打印前钩子函数，用户可在此处理options，返回处理后的options
+    beforePrint: {
+      type: Function,
+      default: null,
+    },
     multipleSelection: {
       type: Array,
       default: () => [],
@@ -137,7 +142,7 @@ export default {
           isCustomHandled = true;
           if (data) {
             options.printData = data;
-            this.$hiprint.print(options);
+            this.doPrint(options);
           } else {
             this.$message.error("打印数据不能为空");
           }
@@ -151,9 +156,8 @@ export default {
           if (tempItem.sourceUrl) {
             this.printByApi(options, tempItem);
           } else {
-            // 没有自定义回调，走默认逻辑
             options.printData = this.printData || {};
-            this.$hiprint.print(options);
+            this.doPrint(options);
           }
         }
       } else if (tempItem.sourceUrl) {
@@ -177,11 +181,19 @@ export default {
       if (!isValidData) {
         return this.$message.error("打印数据不能为空");
       }
-      this.$hiprint.print(options);
+      this.doPrint(options);
     },
     printDefault(options) {
-      // 默认接口数据
       options.printData = this.printData || {};
+      this.doPrint(options);
+    },
+    doPrint(options) {
+      if (this.beforePrint && typeof this.beforePrint === "function") {
+        const result = this.beforePrint(options);
+        if (result !== undefined) {
+          options = result;
+        }
+      }
       this.$hiprint.print(options);
     },
     // 默认接口获取数据
