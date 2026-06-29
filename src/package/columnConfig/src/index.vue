@@ -27,8 +27,24 @@
       </el-table-column>
 
       <!-- 序号 -->
-      <el-table-column label="序号" width="60" align="center">
-        <template #default="{ $index }">{{ $index + 1 }}</template>
+      <el-table-column label="序号" width="70" align="center">
+        <template #default="{ $index }">
+          <span
+            v-if="editIndex !== $index"
+            class="index-text"
+            @dblclick="startEditIndex($index)"
+          >{{ $index + 1 }}</span>
+          <el-input
+            v-else
+            ref="indexInput"
+            v-model="editValue"
+            size="mini"
+            class="index-input"
+            @blur="endEditIndex"
+            @keyup.enter="endEditIndex"
+            @keyup.esc="cancelEditIndex"
+          />
+        </template>
       </el-table-column>
 
       <!-- 字段名 -->
@@ -104,6 +120,9 @@ export default {
       tableData: [],
       sortable: null,
       roleList: [],
+      editIndex: -1,
+      editingIndex: -1,
+      editValue: "",
     };
   },
 
@@ -268,6 +287,47 @@ export default {
 
     handleClose() {
       this.dialogVisible = false;
+    },
+
+    startEditIndex(index) {
+      this.editingIndex = index;
+      this.editIndex = index;
+      this.editValue = String(index + 1);
+      this.$nextTick(() => {
+        const input = this.$refs.indexInput;
+        if (input) {
+          const el = Array.isArray(input) ? input[0] : input;
+          el && el.$el && el.$el.querySelector("input") && el.$el.querySelector("input").select();
+        }
+      });
+    },
+
+    endEditIndex() {
+      if (this.editingIndex < 0) return;
+
+      const newIndex = parseInt(this.editValue, 10);
+      if (isNaN(newIndex) || newIndex < 1 || newIndex > this.tableData.length) {
+        this.cancelEditIndex();
+        return;
+      }
+
+      this.moveRow(this.editingIndex, newIndex - 1);
+      this.editIndex = -1;
+      this.editingIndex = -1;
+      this.editValue = "";
+    },
+
+    cancelEditIndex() {
+      this.editIndex = -1;
+      this.editingIndex = -1;
+      this.editValue = "";
+    },
+
+    moveRow(fromIndex, toIndex) {
+      if (fromIndex === toIndex) return;
+
+      const moved = this.tableData.splice(fromIndex, 1)[0];
+      this.tableData.splice(toIndex, 0, moved);
     },
 
     initSortable() {
