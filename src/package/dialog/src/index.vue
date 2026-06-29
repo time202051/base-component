@@ -364,19 +364,35 @@ export default {
 };
 </script>
 <style lang="scss">
-.el-dialog__header {
+::v-deep .el-dialog__header {
   background-color: #008cff !important;
-  padding: 10px 15px;
-  text-align: left;
-  .el-dialog__title,
-  .el-dialog__headerbtn i {
-    color: white;
-  }
+  // padding: 10px 15px;
+  // text-align: left;
+
+  // .el-dialog__title,
+  // .el-dialog__headerbtn i {
+  //   color: white;
+  // }
 }
-.el-dialog__body {
+
+</style>
+<style lang="scss" scoped>
+// ::v-deep .el-dialog__header {
+//   background-color: #008cff !important;
+//   padding: 10px 15px;
+//   text-align: left;
+
+//   .el-dialog__title,
+//   .el-dialog__headerbtn i {
+//     color: white;
+//   }
+// }
+
+::v-deep .el-dialog__body {
   padding: 25px 20px;
 }
-.el-dialog__close {
+
+::v-deep .el-dialog__close {
   cursor: pointer !important;
   font-size: 20px !important;
   position: relative !important;
@@ -390,30 +406,43 @@ export default {
   vertical-align: middle !important;
   right: -13px !important;
 }
-.el-select,
-.el-input-number {
-  width: 100% !important;
-}
+
+// .el-select,
+// .el-input-number {
+//   width: 100% !important;
+// }
+
+// ::v-deep .el-input-group__prepend .el-select {
+//   width: auto !important;
+// }
+
 .activeWidth {
   width: 50% !important;
 }
-.switchStyle .el-switch__label {
-  position: absolute;
-  display: none;
-  color: #fff;
-}
-.switchStyle .el-switch__label--left {
-  z-index: 9;
-  left: 20px;
-}
-.switchStyle .el-switch__label--right {
-  z-index: 9;
-}
-.switchStyle .el-switch__label.is-active {
-  display: block;
-}
-.switchStyle.el-switch .el-switch__core,
-.el-switch .el-switch__label {
-  width: 60px !important;
+
+.switchStyle {
+  ::v-deep .el-switch__label {
+    position: absolute;
+    display: none;
+    color: #fff;
+  }
+
+  ::v-deep .el-switch__label--left {
+    z-index: 9;
+    left: 20px;
+  }
+
+  ::v-deep .el-switch__label--right {
+    z-index: 9;
+  }
+
+  ::v-deep .el-switch__label.is-active {
+    display: block;
+  }
+
+  &.el-switch ::v-deep .el-switch__core,
+  ::v-deep .el-switch__label {
+    width: 60px !important;
+  }
 }
 </style>

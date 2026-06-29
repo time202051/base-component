@@ -46,46 +46,68 @@
               @getValue="item.change && item.change(formSearch[item.value])"
             />
 
-            <el-select
+            <div
               v-else-if="item.inputType === 'select'"
-              v-model="formSearch[item.value]"
-              v-el-select-all="item.loadmores"
-              :clearable="item.clearable === undefined || item.clearable"
-              v-bind="item.props || {}"
-              :placeholder="`${getCompareLabel(item.compare)}请选择${
-                item.placeholder || item.label
-              }`"
-              :popper-append-to-body="false"
-              @change="item.change && item.change(formSearch[item.value])"
-              @keyup.enter.native="handleSearch('formSearch')"
+              :class="
+                isCustomSearch ? 'input-with-select el-input-group el-input-group--prepend' : ''
+              "
+              style="width: 100%"
             >
-              <el-option
-                v-for="option in item.children"
-                :key="option.key"
-                :label="option.value"
-                :value="option.key"
-              />
-            </el-select>
+              <div v-if="isCustomSearch" class="el-input-group__prepend">
+                <compare-prefix-select
+                  :value="compareMap[item.value] || item.compare || 'eq'"
+                  @change="handleCompareChange(item, $event)"
+                />
+              </div>
+              <el-select
+                v-model="formSearch[item.value]"
+                v-el-select-all="item.loadmores"
+                :clearable="item.clearable === undefined || item.clearable"
+                v-bind="item.props || {}"
+                :placeholder="getSearchPlaceholder(item, '请选择')"
+                :popper-append-to-body="false"
+                @change="item.change && item.change(formSearch[item.value])"
+                @keyup.enter.native="handleSearch('formSearch')"
+              >
+                <el-option
+                  v-for="option in item.children"
+                  :key="option.key"
+                  :label="option.value"
+                  :value="option.key"
+                />
+              </el-select>
+            </div>
             <!-- v-bind="item.props || {}" -->
-            <el-select
+            <div
               v-else-if="item.inputType === 'selectTEMP'"
-              v-model="formSearch[item.value]"
-              v-el-select-all="item.loadmores"
-              v-bind="{ clearable: true, ...(item.props || {}) }"
-              :placeholder="`${getCompareLabel(item.compare)}请选择${
-                item.placeholder || item.label
-              }`"
-              :popper-append-to-body="false"
-              @change="item.change && item.change(formSearch[item.value])"
-              @keyup.enter.native="handleSearch('formSearch')"
+              :class="
+                isCustomSearch ? 'input-with-select el-input-group el-input-group--prepend' : ''
+              "
+              style="width: 100%"
             >
-              <el-option
-                v-for="option in item.children"
-                :key="option.key"
-                :label="option.value"
-                :value="option.key"
-              />
-            </el-select>
+              <div v-if="isCustomSearch" class="el-input-group__prepend">
+                <compare-prefix-select
+                  :value="compareMap[item.value] || item.compare || 'eq'"
+                  @change="handleCompareChange(item, $event)"
+                />
+              </div>
+              <el-select
+                v-model="formSearch[item.value]"
+                v-el-select-all="item.loadmores"
+                v-bind="{ clearable: true, ...(item.props || {}) }"
+                :placeholder="getSearchPlaceholder(item, '请选择')"
+                :popper-append-to-body="false"
+                @change="item.change && item.change(formSearch[item.value])"
+                @keyup.enter.native="handleSearch('formSearch')"
+              >
+                <el-option
+                  v-for="option in item.children"
+                  :key="option.key"
+                  :label="option.value"
+                  :value="option.key"
+                />
+              </el-select>
+            </div>
             <el-select
               v-else-if="item.inputType === 'selectRemoteMethod'"
               v-model="formSearch[item.value]"
@@ -130,16 +152,24 @@
               clearable
               v-bind="item.props || {}"
               :type="item.inputType || 'text'"
-              :placeholder="`${getCompareLabel(item.compare)}请输入${
-                item.placeholder || item.label
-              }`"
+              :placeholder="getSearchPlaceholder(item, '请输入')"
               :maxlength="item.maxlength"
               :oninput="handleChangeInput(item)"
-              :class="item.inputType == 'number' ? 'numrule' : ''"
+              :class="[
+                item.inputType == 'number' ? 'numrule' : '',
+                isCustomSearch ? 'input-with-select' : '',
+              ]"
               @keyup.enter.native="handleSearch('formSearch')"
               @keydown.native="keyInput(item, $event)"
               @paste.native="onPaste(item, $event)"
-            />
+            >
+              <compare-prefix-select
+                v-if="isCustomSearch"
+                slot="prepend"
+                :value="compareMap[item.value] || item.compare || 'contains'"
+                @change="handleCompareChange(item, $event)"
+              />
+            </el-input>
           </el-form-item>
         </div>
         <el-form-item
@@ -202,12 +232,14 @@ import { getData } from "../../index.js";
 import { getEnum } from "../../../utils/getEnum.js";
 import OlNumberRange from "../../numberRange/index.js";
 import SearchConfigDialog from "./components/SearchConfigDialog.vue";
+import ComparePrefixSelect from "./components/ComparePrefixSelect.vue";
 
 export default {
   name: "search",
   components: {
     OlNumberRange,
     SearchConfigDialog,
+    ComparePrefixSelect,
   },
   directives: {
     "el-select-loadmore": {
@@ -312,7 +344,7 @@ export default {
         ...this.formSearchData.value,
       },
       configDialogVisible: false,
-      // 自定义指令
+      compareMap: {},
       loadmores: {
         fn: this.loadmoreGX,
         SELECTWRAP_DOM_index: 0,
@@ -358,29 +390,22 @@ export default {
     },
   },
   methods: {
-    getCompareLabel(compare) {
-      if (!this.isCustomSearch) return '';
-      const map = {
-        eq: "[等于] ",
-        equals: "[等于] ",
-        "=": "[等于] ",
-        ne: "[不等于] ",
-        "!=": "[不等于] ",
-        gt: "[大于] ",
-        ">": "[大于] ",
-        gte: "[大于等于] ",
-        ">=": "[大于等于] ",
-        lt: "[小于] ",
-        "<": "[小于] ",
-        lte: "[小于等于] ",
-        "<=": "[小于等于] ",
-        contains: "[包含] ",
-        like: "[包含] ",
-        startwith: "[开头是] ",
-        endwith: "[结尾是] ",
-        in: "[在列表] ",
-      };
-      return map[compare] || "[包含] ";
+    getSearchPlaceholder(item, prefix) {
+      const label = item.placeholder || item.label;
+      return `${prefix}${label}`;
+    },
+    handleCompareChange(item, compare) {
+      this.$set(this.compareMap, item.value, compare);
+      if (item.inputType === "select" || item.inputType === "selectTEMP") {
+        const key = item.value;
+        const val = this.formSearch[key];
+        const isMultiple = compare === "in" || compare === "not in";
+        if (isMultiple && !Array.isArray(val)) {
+          this.$set(this.formSearch, key, val != null && val !== "" ? [val] : []);
+        } else if (!isMultiple && Array.isArray(val)) {
+          this.$set(this.formSearch, key, val.length ? val[0] : null);
+        }
+      }
     },
     async init() {
       if (!this.isCustomSearch && this.url) {
@@ -554,13 +579,12 @@ export default {
       const filterConditions = [];
       Object.keys(formSearch).forEach(key => {
         const tempItem = this.formSearchData.tableSearch.find(item => item.value === key);
-        // 只处理 tableSearch 中配置的字段；前端写死的直接传参字段（isDirect）不加入 FilterConditions
         if (!tempItem || tempItem.isDirect) return;
         if (formSearch[key] !== undefined && formSearch[key] !== null && formSearch[key] !== "") {
           filterConditions.push({
             key: key,
-            values: Array.isArray(formSearch[key]) ? formSearch[key] : [formSearch[key]], //必须包数组，后端会统一处理
-            compare: tempItem && tempItem.compare ? tempItem.compare : "",
+            values: Array.isArray(formSearch[key]) ? formSearch[key] : [formSearch[key]],
+            compare: this.compareMap[key] || (tempItem && tempItem.compare ? tempItem.compare : ""),
           });
         }
       });
@@ -646,9 +670,23 @@ export default {
           ...this.formSearchData.value,
         };
       }
+      if (this.isCustomSearch) {
+        this.compareReset();
+      }
       this.$emit("handleReset", this.formSearch);
       if (this.formSearchData.reset) return false;
       this.handleSearch();
+    },
+    // 重置compare
+    compareReset() {
+      this.compareMap = {};
+      if (this.formSearchData.tableSearch && this.formSearchData.tableSearch.length) {
+        this.formSearchData.tableSearch.forEach(item => {
+          if (item.value && item.compare) {
+            this.$set(this.compareMap, item.value, item.compare);
+          }
+        });
+      }
     },
     // 展开和收起
     handleExpend() {
@@ -752,7 +790,9 @@ export default {
         this.expend = true;
         this.findTableSearch = this.formSearchData.tableSearch;
       }
-
+      if (this.isCustomSearch) {
+        this.compareReset();
+      }
       this.$emit("onSave", configList);
     },
     async loadOptionSources() {
@@ -903,6 +943,10 @@ export default {
     width: 100% !important;
   }
 
+  ::v-deep .el-input-group__prepend .el-select {
+    width: 98px !important;
+  }
+
   ::v-deep .picker {
   }
 
@@ -958,6 +1002,10 @@ export default {
     .el-form-item__content,
     .el-select {
       width: 100%;
+    }
+
+    .el-input-group__prepend .el-select {
+      width: 98px;
     }
   }
 }
