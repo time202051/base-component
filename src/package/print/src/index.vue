@@ -110,6 +110,8 @@ export default {
     });
   },
   mounted() {
+    // 监听 元素参数容器 变化, 并更新 字体大小 选项 （用MutationObserver监听）
+    this.startObserver();
     this.buildLeftElement();
     this.buildDesigner();
   },
@@ -134,6 +136,15 @@ export default {
           console.log(type); // 新增、移动、删除、修改(参数调整)、大小、旋转
           console.log(json); // 返回 template
         },
+        // fontList: [
+        //   { title: "微软雅黑", value: "Microsoft YaHei" },
+        //   { title: "黑体", value: "STHeitiSC-Light" },
+        //   { title: "思源黑体", value: "SourceHanSansCN-Normal" },
+        //   { title: "王羲之书法体", value: "王羲之书法体" },
+        //   { title: "宋体", value: "SimSun" },
+        //   { title: "华为楷体", value: "STKaiti" },
+        //   { title: "cursive", value: "cursive" },
+        // ],
       });
       // 使用 props 传入的纸张大小
       if (this.$refs.paperSelector) {
@@ -144,7 +155,61 @@ export default {
       this.hiprintTemplate.design("#hiprint-printTemplate", {
         grid: this.grid,
       });
-      // console.log(6666, this.hiprintTemplate);
+    },
+    startObserver() {
+      const container = document.getElementById("PrintElementOptionSetting");
+      if (!container) return;
+
+      if (this.observer) {
+        this.observer.disconnect();
+      }
+
+      this.observer = new MutationObserver(() => {
+        this.addFontSizeOptions();
+      });
+
+      this.observer.observe(container, {
+        childList: true,
+        subtree: true,
+      });
+
+      this.addFontSizeOptions();
+    },
+    addFontSizeOptions() {
+      const container = document.getElementById("PrintElementOptionSetting");
+      const fontSizeSelect = $(container)
+        .find('.hiprint-option-item-label:contains("字体大小")')
+        .next(".hiprint-option-item-field")
+        .find("select.auto-submit");
+      if (!fontSizeSelect.length) return;
+
+      const currentValue = fontSizeSelect.val();
+      const targetOptions = [
+        { value: "5", text: "5pt" },
+        { value: "4", text: "4pt" },
+        { value: "3", text: "3pt" },
+        { value: "2", text: "2pt" },
+      ];
+
+      let hasChanges = false;
+      const defaultOption = fontSizeSelect.find('option[value=""]');
+
+      targetOptions.forEach(opt => {
+        const existing = fontSizeSelect.find(`option[value="${opt.value}"]`);
+        if (existing.length) {
+          if (existing.text() !== opt.text) {
+            existing.text(opt.text);
+            hasChanges = true;
+          }
+        } else {
+          defaultOption.after(`<option value="${opt.value}">${opt.text}</option>`);
+          hasChanges = true;
+        }
+      });
+
+      if (hasChanges && currentValue) {
+        fontSizeSelect.val(currentValue);
+      }
     },
     async print() {
       // 使用外部传入的打印数据
@@ -198,6 +263,11 @@ export default {
       this.hiprintTemplate.clear();
     },
     close() {
+      console.log("关闭");
+      if (this.observer) {
+        this.observer.disconnect();
+        this.observer = null;
+      }
       this.$destroy();
       this.$el.remove();
       this.$emit("close");

@@ -239,7 +239,7 @@ export default {
         .then(async () => {
           try {
             await this.del({
-              url: `/api/app/print-templete/print-templete/${template.id}`,
+              url: `/api/app/print-template/print-template?Id=${template.id}`,
             });
             this.$message.success("删除成功");
             this.loadTemplates(this.currentMenuId);
