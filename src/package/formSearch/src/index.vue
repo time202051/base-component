@@ -48,17 +48,14 @@
 
             <div
               v-else-if="item.inputType === 'select'"
-              :class="
-                isCustomSearch ? 'input-with-select el-input-group el-input-group--prepend' : ''
-              "
+              :class="isCustomSearch ? 'select-with-prefix' : ''"
               style="width: 100%"
             >
-              <div v-if="isCustomSearch" class="el-input-group__prepend">
-                <compare-prefix-select
-                  :value="compareMap[item.value] || item.compare || 'eq'"
-                  @change="handleCompareChange(item, $event)"
-                />
-              </div>
+              <compare-prefix-select
+                v-if="isCustomSearch"
+                :value="compareMap[item.value] || item.compare || 'eq'"
+                @change="handleCompareChange(item, $event)"
+              />
               <el-select
                 v-model="formSearch[item.value]"
                 v-el-select-all="item.loadmores"
@@ -80,17 +77,14 @@
             <!-- v-bind="item.props || {}" -->
             <div
               v-else-if="item.inputType === 'selectTEMP'"
-              :class="
-                isCustomSearch ? 'input-with-select el-input-group el-input-group--prepend' : ''
-              "
+              :class="isCustomSearch ? 'select-with-prefix' : ''"
               style="width: 100%"
             >
-              <div v-if="isCustomSearch" class="el-input-group__prepend">
-                <compare-prefix-select
-                  :value="compareMap[item.value] || item.compare || 'eq'"
-                  @change="handleCompareChange(item, $event)"
-                />
-              </div>
+              <compare-prefix-select
+                v-if="isCustomSearch"
+                :value="compareMap[item.value] || item.compare || 'eq'"
+                @change="handleCompareChange(item, $event)"
+              />
               <el-select
                 v-model="formSearch[item.value]"
                 v-el-select-all="item.loadmores"
@@ -146,30 +140,26 @@
                   item.listeners && item.listeners.change && item.listeners.change({ item, val }),
               }"
             ></ol-number-range>
-            <el-input
-              v-else
-              v-model="formSearch[item.value]"
-              clearable
-              v-bind="item.props || {}"
-              :type="item.inputType || 'text'"
-              :placeholder="getSearchPlaceholder(item, '请输入')"
-              :maxlength="item.maxlength"
-              :oninput="handleChangeInput(item)"
-              :class="[
-                item.inputType == 'number' ? 'numrule' : '',
-                isCustomSearch ? 'input-with-select' : '',
-              ]"
-              @keyup.enter.native="handleSearch('formSearch')"
-              @keydown.native="keyInput(item, $event)"
-              @paste.native="onPaste(item, $event)"
-            >
+            <div v-else :class="isCustomSearch ? 'input-with-prefix' : ''" style="width: 100%">
               <compare-prefix-select
                 v-if="isCustomSearch"
-                slot="prepend"
                 :value="compareMap[item.value] || item.compare || 'contains'"
                 @change="handleCompareChange(item, $event)"
               />
-            </el-input>
+              <el-input
+                v-model="formSearch[item.value]"
+                clearable
+                v-bind="item.props || {}"
+                :type="item.inputType || 'text'"
+                :placeholder="getSearchPlaceholder(item, '请输入')"
+                :maxlength="item.maxlength"
+                :oninput="handleChangeInput(item)"
+                :class="item.inputType == 'number' ? 'numrule' : ''"
+                @keyup.enter.native="handleSearch('formSearch')"
+                @keydown.native="keyInput(item, $event)"
+                @paste.native="onPaste(item, $event)"
+              />
+            </div>
           </el-form-item>
         </div>
         <el-form-item
@@ -359,9 +349,13 @@ export default {
     this.init();
   },
   mounted() {
-    this.$nextTick(() => {
-      this.loadOptionSources();
-    });
+    // this.$nextTick(() => {
+    //   this.loadOptionSources();
+    // });
+    // setTimeout(() => {
+    //   console.log(1111111990, this.formSearchData.tableSearch);
+    //   this.loadOptionSources();
+    // }, 5000);
   },
   computed: {
     // 搜索框展开折叠按钮是否显示
@@ -467,6 +461,7 @@ export default {
         : this.formSearchData.tableSearch;
       // 超过4个默认收起，按钮显示"展开"
       if (this.isCustomSearch) this.expend = !isMoreThanSlice;
+      await this.loadOptionSources();
       console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch);
     },
     // 统一的自动识别范围时间字段方法
@@ -943,8 +938,50 @@ export default {
     width: 100% !important;
   }
 
-  ::v-deep .el-input-group__prepend .el-select {
-    width: 98px !important;
+  .select-with-prefix,
+  .input-with-prefix {
+    display: flex;
+    align-items: center;
+
+    ::v-deep .compare-prefix-select {
+      flex-shrink: 0;
+
+      .el-select {
+        width: 45px !important;
+
+        .el-select__input {
+          padding: 0 4px !important;
+          font-size: 12px !important;
+        }
+      }
+
+      .el-input__inner {
+        border-radius: 4px 0 0 4px !important;
+        border-right: none !important;
+      }
+    }
+
+    .el-select,
+    .el-input {
+      flex: 1;
+
+      .el-input__inner {
+        border-radius: 0 4px 4px 0 !important;
+        border-left: none !important;
+      }
+    }
+  }
+
+  ::v-deep .el-select__tags {
+    max-width: 100% !important;
+    overflow: hidden;
+  }
+
+  ::v-deep .el-select__tags-text {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   ::v-deep .picker {
@@ -1003,9 +1040,11 @@ export default {
     .el-select {
       width: 100%;
     }
-
+    .el-input-group__prepend {
+      padding: 0;
+    }
     .el-input-group__prepend .el-select {
-      width: 98px;
+      width: 60px;
     }
   }
 }

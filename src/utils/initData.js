@@ -136,3 +136,54 @@ export const initForm = options => {
     }
   });
 };
+
+// 基类 字段顺序调整
+export const basePropsOrderChange = swaggerColumns => {
+  const JLWhiteList = [
+    "creationTime",
+    "creatorId",
+    "lastModificationTime",
+    "lastModifierId",
+    "enabled",
+    "enabledDesc",
+    "createdUser",
+    "createTime",
+    "remark",
+  ];
+  const newColumns = []; // 这些数据按照顺序挪到数组后面
+  swaggerColumns.forEach(item => {
+    if (!JLWhiteList.includes(item.prop)) {
+      newColumns.push(item);
+    }
+  });
+  JLWhiteList.forEach(item => {
+    const temp = swaggerColumns.find(item2 => item2.prop === item);
+    if (temp) {
+      newColumns.push(temp);
+    }
+  });
+  return newColumns;
+};
+
+// 获取swagger所有以"-select"结尾的接口，返回的一定是列表数组，并返回
+export const getSelectSwaggerData = async () => {
+  const swaggerData = await getData();
+  const swaggerDataSelectOptions = [];
+  Object.keys(swaggerData.paths).forEach(key => {
+    if (key.endsWith("-select")) {
+      // 一定是get接口
+      let label = swaggerData.paths[key]["get"].summary || key;
+      if (label.startsWith("获取")) {
+        label = label.substring(2);
+      }
+      if (label.endsWith("下拉框数据")) {
+        label = label.substring(0, label.length - 5);
+      }
+      swaggerDataSelectOptions.push({
+        label,
+        value: key,
+      });
+    }
+  });
+  return swaggerDataSelectOptions;
+};

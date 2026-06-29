@@ -175,10 +175,29 @@
         </el-form-item>
 
         <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="接口地址">
-          <el-input
+          <el-select
+            v-model="currentOptionConfig.apiUrl"
+            filterable
+            allow-create
+            default-first-option
+            placeholder="请选择或输入接口地址，如：/api/dict/list"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="option in selectOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            >
+              <span style="float: left">{{ option.label }}</span>
+              <span style="float: right; color: #8492a6; font-size: 13px">{{ option.value }}</span>
+            </el-option>
+          </el-select>
+
+          <!-- <el-input
             v-model="currentOptionConfig.apiUrl"
             placeholder="请输入接口地址，如：/api/dict/list"
-          />
+          /> -->
         </el-form-item>
 
         <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="请求方式">
@@ -296,6 +315,7 @@
 
 <script>
 import Sortable from "sortablejs";
+import { getSelectSwaggerData } from "../../../../utils/initData.js";
 
 // interface OptionItem {
 //   key: string;
@@ -403,6 +423,7 @@ export default {
       allDictListBackup: [],
       sortable: null,
       currentConfig: {}, // 配置选项
+      selectOptions: [],
     };
   },
   computed: {
@@ -426,6 +447,7 @@ export default {
     },
   },
   created() {
+    this.loadSelectOptions();
     this.loadAllDictList();
     // 重置数据
     this.setArrVModelReset();
@@ -713,6 +735,15 @@ export default {
       } catch (error) {
         console.error("加载接口数据失败:", error);
         return [];
+      }
+    },
+    async loadSelectOptions() {
+      try {
+        const options = await getSelectSwaggerData();
+        this.selectOptions = options || [];
+      } catch (error) {
+        console.error("加载select接口列表失败:", error);
+        this.selectOptions = [];
       }
     },
     needSetChildren(oldConfig, newConfig) {

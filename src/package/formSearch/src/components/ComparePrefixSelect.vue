@@ -1,17 +1,19 @@
 <template>
-  <el-select
-    :value="value"
-    :popper-append-to-body="false"
-    @change="$emit('change', $event)"
-    @click.native.stop
-  >
-    <el-option
-      v-for="opt in compareOptions"
-      :key="opt.value"
-      :label="opt.label"
-      :value="opt.value"
-    />
-  </el-select>
+  <div style="width: 75px">
+    <el-select
+      :value="value"
+      :popper-append-to-body="false"
+      @change="$emit('change', $event)"
+      @click.native.stop
+    >
+      <el-option
+        v-for="opt in compareOptions"
+        :key="opt.value"
+        :label="opt.label"
+        :value="opt.value"
+      />
+    </el-select>
+  </div>
 </template>
 
 <script>
