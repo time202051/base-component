@@ -6,7 +6,7 @@
     >
       <el-form
         ref="formSearch"
-        size="small"
+        size="mini"
         :rules="formSearchData.rules"
         :model="formSearch"
         :inline="true"
@@ -17,16 +17,12 @@
         :key="key"
       >
         <!-- 'label-width': '100px', -->
-        <div
-          class="transitionGroup"
-          :class="[showExpendBtn ? 'formSearchBtnArrowDowns' : 'formSearchBtnArrowUps']"
-        >
+        <div class="transitionGroup">
           <el-form-item
             v-for="item in findTableSearch"
             v-show="!item.show"
             :key="item.value"
             class="table-header-item"
-            :label="item.label"
             :prop="item.value && !String(item.value).includes('.') ? item.value : undefined"
             v-bind="item.labelProps || {}"
             :class="{
@@ -34,6 +30,15 @@
               date: item.props && item.props.type === 'date',
             }"
           >
+            <template slot="label">
+              <el-tooltip
+                :content="item.label"
+                :disabled="!item.label || item.label.length <= 5"
+                placement="top"
+              >
+                <span>{{ item.label }}</span>
+              </el-tooltip>
+            </template>
             <!--    <template v-if="item.inputType === 'treeSelect'">
                 <slot name="treeSlot"></slot>
               </template> -->
@@ -57,10 +62,12 @@
                 @change="handleCompareChange(item, $event)"
               />
               <el-select
+                class="custom-select"
                 v-model="formSearch[item.value]"
+                :key="`sel_${item.value}_${(item.props && item.props.multiple) ? 'multi' : 'single'}`"
                 v-el-select-all="item.loadmores"
                 :clearable="item.clearable === undefined || item.clearable"
-                v-bind="item.props || {}"
+                v-bind="{ collapseTags: true, ...(item.props || {}) }"
                 :placeholder="getSearchPlaceholder(item, '请选择')"
                 :popper-append-to-body="false"
                 @change="item.change && item.change(formSearch[item.value])"
@@ -87,8 +94,9 @@
               />
               <el-select
                 v-model="formSearch[item.value]"
+                :key="`selT_${item.value}_${(item.props && item.props.multiple) ? 'multi' : 'single'}`"
                 v-el-select-all="item.loadmores"
-                v-bind="{ clearable: true, ...(item.props || {}) }"
+                v-bind="{ clearable: true, collapseTags: true, ...(item.props || {}) }"
                 :placeholder="getSearchPlaceholder(item, '请选择')"
                 :popper-append-to-body="false"
                 @change="item.change && item.change(formSearch[item.value])"
@@ -165,33 +173,23 @@
         <el-form-item
           style="word-break: keep-all; white-space: nowrap; margin-left: 10px"
           class="fromBtn"
-          :class="[showExpendBtn ? 'formSearchBtnArrowDown' : 'formSearchBtnArrowUp']"
         >
-          <el-button
-            v-if="formSearchData.reset"
-            size="small"
-            type="primary"
-            @click="handleSearch('formSearch')"
+          <el-button v-if="formSearchData.reset" type="primary" @click="handleSearch('formSearch')"
             >查询
           </el-button>
-          <el-button
-            v-if="formSearchData.reset"
-            plain
-            size="small"
-            @click="handleReset('formSearch')"
+          <el-button v-if="formSearchData.reset" plain @click="handleReset('formSearch')"
             >重置</el-button
           >
           <el-button
             v-if="showExpendBtn"
             plain
-            size="small"
             :icon="expend ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"
             @click="handleExpend('formSearch')"
           >
             {{ expend ? "收起" : "展开" }}</el-button
           >
-          <el-dropdown v-if="isCustomSearch" size="small" trigger="click" style="margin-left: 8px">
-            <el-button plain size="small" icon="el-icon-more" />
+          <el-dropdown v-if="isCustomSearch" trigger="click">
+            <el-button plain icon="el-icon-more" />
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item @click.native="handleOpenConfig">
                 <i class="el-icon-setting" /> 配置
@@ -348,15 +346,7 @@ export default {
   async created() {
     this.init();
   },
-  mounted() {
-    // this.$nextTick(() => {
-    //   this.loadOptionSources();
-    // });
-    // setTimeout(() => {
-    //   console.log(1111111990, this.formSearchData.tableSearch);
-    //   this.loadOptionSources();
-    // }, 5000);
-  },
+  mounted() {},
   computed: {
     // 搜索框展开折叠按钮是否显示
     showExpendBtn() {
@@ -390,15 +380,19 @@ export default {
     },
     handleCompareChange(item, compare) {
       this.$set(this.compareMap, item.value, compare);
+      const key = item.value;
       if (item.inputType === "select" || item.inputType === "selectTEMP") {
-        const key = item.value;
-        const val = this.formSearch[key];
         const isMultiple = compare === "in" || compare === "not in";
-        if (isMultiple && !Array.isArray(val)) {
-          this.$set(this.formSearch, key, val != null && val !== "" ? [val] : []);
-        } else if (!isMultiple && Array.isArray(val)) {
-          this.$set(this.formSearch, key, val.length ? val[0] : null);
+        // 同步 el-select 的 multiple 属性，否则单选模式收到数组会报错
+        if (!item.props) {
+          this.$set(item, "props", {});
         }
+        this.$set(item.props, "multiple", isMultiple);
+        // 切换比较符时清空右侧输入框的值
+        this.$set(this.formSearch, key, isMultiple ? [] : null);
+      } else {
+        // 非下拉类型：切换比较符时清空右侧输入框的值
+        this.$set(this.formSearch, key, null);
       }
     },
     async init() {
@@ -915,241 +909,251 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.formSearch {
-  .el-form-item {
-    // width: 21%;
-    margin-right: 2px;
-    margin-bottom: 5px;
+// ============================================================
+//  搜索框布局（只做布局，不修改 Element UI 组件样式）
+//    1. 一行 4 个搜索字段，gap 统一控制间距
+//    2. 右侧按钮始终一行，不换行
+//    3. label 固定 6em + 右对齐，输入框跨行对齐
+//    4. 输入框 flex:1 占据剩余空间
+// ============================================================
 
-    ::v-deep .el-form-item__label {
-      width: 37% !important;
-      padding: 0 5px 0 0;
-      word-break: keep-all;
-      white-space: nowrap;
-      font-size: 13px;
-    }
+$fields-per-row: 4;
+$row-gap: 8px;
+$col-gap: 8px;
+$field-width: calc((100% - (#{$fields-per-row} - 1) * #{$col-gap}) / #{$fields-per-row});
+$label-width: 6em;
 
-    ::v-deep .el-form-item__content {
-      width: 63% !important;
-    }
-  }
-
-  ::v-deep .el-select {
-    width: 100% !important;
-  }
-
-  .select-with-prefix,
-  .input-with-prefix {
-    display: flex;
-    align-items: center;
-
-    ::v-deep .compare-prefix-select {
-      flex-shrink: 0;
-
-      .el-select {
-        width: 45px !important;
-
-        .el-select__input {
-          padding: 0 4px !important;
-          font-size: 12px !important;
-        }
-      }
-
-      .el-input__inner {
-        border-radius: 4px 0 0 4px !important;
-        border-right: none !important;
-      }
-    }
-
-    .el-select,
-    .el-input {
-      flex: 1;
-
-      .el-input__inner {
-        border-radius: 0 4px 4px 0 !important;
-        border-left: none !important;
-      }
-    }
-  }
-
-  ::v-deep .el-select__tags {
-    max-width: 100% !important;
-    overflow: hidden;
-  }
-
-  ::v-deep .el-select__tags-text {
-    max-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  ::v-deep .picker {
-  }
-
-  .formSearchBtnArrowUp {
-    // width: 12%;
-    ::v-deep .el-form-item__content {
-      width: 130px !important;
-    }
-  }
-}
-
-.formSearchArrowUp {
-  // height: auto;
-  // overflow: hidden;
-
-  .el-form {
-    position: relative;
-  }
-
-  .formSearchBtnArrowDown {
-    position: absolute;
-    top: 0px;
-    width: 15%;
-    left: 81.5%;
-
-    ::v-deep .el-form-item__content {
-      width: 100% !important;
-
-      ::v-deep .el-button {
-        // width: 30.3%;
-        padding: 7px;
-        margin-left: 0px;
-        font-size: 13px;
-        padding: 5px 10px;
-      }
-    }
-  }
-}
-
+// ==================== 顶栏 ====================
 .table-header {
-  padding-top: 10px;
-  border-bottom: 1px #ccc solid;
+  padding: 10px 0;
+  border-bottom: 1px solid #e4e7ed;
   min-height: 49px;
 
-  ::v-deep .table-header-item {
+  .el-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    width: 100%;
   }
 
-  .table-header-item .el-form-item {
-    width: 100%;
+  // 覆盖 el-form--inline 的 inline-block，改为 flex 以便输入框撑满
+  ::v-deep .el-form-item {
     display: flex;
-    margin-bottom: 12px;
-
-    .el-form-item__content,
-    .el-select {
-      width: 100%;
-    }
-    .el-input-group__prepend {
-      padding: 0;
-    }
-    .el-input-group__prepend .el-select {
-      width: 60px;
-    }
+    margin-right: 0;
+    margin-bottom: 0;
   }
 }
 
+// ==================== 搜索字段网格 ====================
 .transitionGroup {
   display: flex;
   flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+  gap: $row-gap $col-gap;
 
   .el-form-item {
-    width: calc(100% / 5);
-  }
+    width: $field-width;
+    display: flex;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
 
-  .picker {
-    width: 25%;
-
+    // 标签：固定宽度 + 右对齐，保证跨行输入框左对齐
     ::v-deep .el-form-item__label {
-      width: 27% !important;
-      padding: 0 5px 0 0;
-      word-break: break-all;
+      width: $label-width;
+      flex-shrink: 0;
+      text-align: right;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 6px;
     }
 
+    // 内容区：占据剩余空间
     ::v-deep .el-form-item__content {
-      width: 73% !important;
-      height: 28px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    // 输入组件撑满内容区
+    .el-select,
+    .el-input,
+    .el-date-picker {
+      width: 100%;
     }
   }
-}
 
-.formSearchBtnArrowDowns {
-  .el-form-item {
-    width: 20%;
+  // 日期范围稍宽
+  .picker {
+    width: calc(#{$field-width} * 1.3);
   }
 }
 
-.formSearchBtnArrowUps {
-  display: inline;
-}
+// ==================== 比较符前缀 + 输入框组合 ====================
+.select-with-prefix,
+.input-with-prefix {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 
-.list-enter-active,
-.list-leave-active {
-  transition: all 1s;
-}
-
-.list-enter {
-  opacity: 0;
-  transform: translateX(-30px);
-}
-
-.list-leave-to {
-  opacity: 0;
-  transform: translateX(30px);
-}
-
-::v-deep .el-select-dropdown__item.hover {
-  background-color: #eff7ff !important;
-}
-
-::v-deep .el-select-dropdown__item:hover {
-  background-color: #eff7ff !important;
-}
-
-::v-deep .el-input.is-disabled {
-  ::v-deep .el-input__inner {
-    background-color: #eceff8;
-    border-color: #eceff8;
+  .el-select,
+  .el-input {
+    flex: 1;
   }
 }
 
-::v-deep .el-input--small {
-  ::v-deep .el-input__inner {
-    height: 28px;
-    line-height: 28px;
-  }
-}
-
+// ==================== 右侧按钮组 ====================
 .fromBtn {
-  ::v-deep .el-button {
-    // padding: 7px;
-    font-size: 12px;
-  }
-}
+  flex-shrink: 0;
+  margin-left: auto !important;
 
-.btnbox {
-  .upload-demo {
-    display: -webkit-inline-box;
-    margin-left: 10px;
+  ::v-deep .el-form-item__content {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: nowrap;
   }
 
-  padding: 10px;
-}
+  .el-button {
+    margin-left: 0 !important;
+  }
 
-//解决type=number的上下箭头
-::v-deep .numrule input::-webkit-outer-spin-button,
-::v-deep .numrule input::-webkit-inner-spin-button {
-  -webkit-appearance: none !important;
-}
-
-::v-deep .numrule input[type="number"] {
-  -moz-appearance: textfield !important;
-}
-
-// 解决type=number输入中文后光标上移的问题
-::v-deep .numrule .el-input__inner {
-  line-height: 1px !important;
+  // ==================== 多选标签：不换行 + 超长截断 ====================
+  ::v-deep .el-select .el-select__tags {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    flex-wrap: nowrap !important;
+  }
+  ::v-deep .el-select .el-select__tags-text {
+    display: inline-block;
+    max-width: 64px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    vertical-align: middle;
+  }
 }
 </style>
+<style scoped>
+.custom-select ::v-deep .el-select__tags {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+}
 
+.custom-select ::v-deep .el-select__tags > span:first-child {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  padding-left: 3px;
+}
+.custom-select ::v-deep .el-select__tags > span:first-child > span:first-child {
+  display: flex;
+  flex-wrap: nowrap;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  width: calc(100% - 42px);
+}
+
+/* ----- 每个标签（普通标签） ----- */
+.custom-select ::v-deep .el-tag.el-tag--info {
+  background: #f0f2f5;
+  border: none;
+  padding: 0 8px;
+  /* max-width: 70%; */
+  flex-shrink: 1; /* 空间不足时收缩 */
+  /* min-width: 30px; */
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.2s;
+  margin: 1px 0;
+}
+
+/* ----- 标签内文字（强制一行显示） ----- */
+.custom-select ::v-deep .el-tag .el-select__tags-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* ★ 强制单行，绝不换行 */
+  vertical-align: middle;
+  margin-top: 2px;
+}
+.custom-select ::v-deep .el-tag .el-icon-close {
+  margin-top: 2px;
+}
+
+
+
+/* ----- 标签关闭按钮 ----- */
+.custom-select ::v-deep .el-tag .el-tag__close {
+  font-size: 12px;
+  color: #86909c;
+  background: transparent;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.custom-select ::v-deep .el-tag .el-tag__close:hover {
+  background: #e5e6eb;
+  color: #1d2129;
+}
+
+/* ----- 折叠 "+N" 标签（.is-hit） ----- */
+.custom-select ::v-deep .el-tag.is-hit {
+  background: #e8f3ff;
+  color: #3370ff;
+  border: none;
+  font-weight: 500;
+  padding: 0 12px;
+  max-width: 100px; /* +N 不宜过宽 */
+}
+.custom-select ::v-deep .el-tag.is-hit .el-tag__close {
+  display: none; /* +N 无关闭按钮 */
+}
+
+/* ----- 输入框样式 ----- */
+.custom-select ::v-deep .el-input__inner {
+  border-color: #d9dde4;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.custom-select ::v-deep .el-input__inner:hover {
+  border-color: #b3bcc6;
+}
+.custom-select ::v-deep .el-input__inner:focus {
+  border-color: #3370ff;
+  box-shadow: 0 0 0 3px rgba(51, 112, 255, 0.12);
+}
+
+/* ----- 输入框后缀（箭头）位置修复 ----- */
+.custom-select ::v-deep .el-input .el-input__suffix {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ----- 下拉菜单选项 ----- */
+.custom-select ::v-deep .el-select-dropdown__item {
+  font-size: 13px;
+  padding: 0 16px;
+  /* height: 34px;
+  line-height: 34px; */
+}
+.custom-select ::v-deep .el-select-dropdown__item.selected {
+  font-weight: 500;
+  color: #3370ff;
+}
+
+/* ----- 禁用状态保留样式 ----- */
+.custom-select ::v-deep .el-input.is-disabled .el-input__inner {
+  background-color: #f5f7fa;
+  border-color: #e4e7ed;
+}
+</style>

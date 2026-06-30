@@ -25,11 +25,18 @@
           <el-form-item
             v-for="field in visibleSearchFields"
             :key="field.prop"
-            :label="field.label"
             :prop="field.prop"
-            :style="{ width: searchItemWidth }"
             class="crud-search-item"
           >
+            <template slot="label">
+              <el-tooltip
+                :content="field.label"
+                :disabled="!field.label || field.label.length <= 5"
+                placement="top"
+              >
+                <span>{{ field.label }}</span>
+              </el-tooltip>
+            </template>
             <!-- 文本输入 -->
             <div
               v-if="field.type === 'input'"
@@ -86,11 +93,11 @@
                 @change="handleCompareChange(field, $event)"
               />
               <el-select
+                class="custom-select"
                 v-model="internalSearchModel[field.prop]"
+                :key="`sel_${field.prop}_${(field.props && field.props.multiple) ? 'multi' : 'single'}`"
                 :placeholder="field.placeholder || `请选择${field.label}`"
-                clearable
-                :multiple="field.props && field.props.multiple"
-                v-bind="field.props || {}"
+                v-bind="{ clearable: true, collapseTags: true, ...(field.props || {}) }"
                 :popper-append-to-body="false"
                 @change="onFieldChange(field)"
                 @keyup.enter.native="handleSearch"
@@ -116,17 +123,17 @@
                 @change="handleCompareChange(field, $event)"
               />
               <el-select
+                class="custom-select"
                 v-model="internalSearchModel[field.prop]"
+                :key="`rsel_${field.prop}_${(field.props && field.props.multiple) ? 'multi' : 'single'}`"
                 v-el-select-loadmore="() => handleSelectLoadMore(field)"
                 filterable
                 remote
                 reserve-keyword
-                clearable
                 :placeholder="field.placeholder || `请输入关键字搜索`"
+                v-bind="{ clearable: true, collapseTags: true, ...(field.props || {}) }"
                 :remote-method="query => handleRemoteSearch(field, query)"
                 :loading="field.loading"
-                :multiple="field.props && field.props.multiple"
-                v-bind="field.props || {}"
                 :popper-append-to-body="false"
                 @change="onFieldChange(field)"
                 @keyup.enter.native="handleSearch"
@@ -1512,28 +1519,37 @@ export default {
       }
     },
 
-    /** 切换比较符：更新 compareMap，select 类型自动切换单选/多选模式 */
+    /** 切换比较符：更新 compareMap，select 类型自动切换单选/多选模式，并清空右侧输入框的值 */
     handleCompareChange(field, compare) {
       this.$set(this.compareMap, field.prop, compare);
+      this.syncFieldMultiple(field, compare);
+      const key = field.prop;
       if (field.type === "select" || field.type === "remoteSelect") {
-        const key = field.prop;
-        const val = this.internalSearchModel[key];
         const isMultiple = compare === "in" || compare === "not in";
-        if (isMultiple && !Array.isArray(val)) {
-          this.$set(this.internalSearchModel, key, val != null && val !== "" ? [val] : []);
-        } else if (!isMultiple && Array.isArray(val)) {
-          this.$set(this.internalSearchModel, key, val.length ? val[0] : null);
-        }
+        this.$set(this.internalSearchModel, key, isMultiple ? [] : null);
+      } else {
+        this.$set(this.internalSearchModel, key, null);
       }
     },
 
-    /** 重置 compareMap 为 searchFields 中配置的默认 compare 值 */
+    /** 根据 compare 值同步 field.props.multiple，确保下拉框单选/多选模式正确 */
+    syncFieldMultiple(field, compare) {
+      if (!field || (field.type !== "select" && field.type !== "remoteSelect")) return;
+      const isMultiple = compare === "in" || compare === "not in";
+      if (!field.props) {
+        this.$set(field, "props", {});
+      }
+      this.$set(field.props, "multiple", isMultiple);
+    },
+
+    /** 重置 compareMap 为 searchFields 中配置的默认 compare 值，并同步 multiple 状态 */
     compareReset() {
       this.compareMap = {};
       if (this.searchFields && this.searchFields.length) {
         this.searchFields.forEach(field => {
           if (field.prop && field.compare) {
             this.$set(this.compareMap, field.prop, field.compare);
+            this.syncFieldMultiple(field, field.compare);
           }
         });
       }
@@ -1902,18 +1918,22 @@ export default {
 
         const configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
 
-        // 旧格式转新格式，覆盖 searchFields
+        // Step 1: 加载字段配置（如果存在），覆盖本地 searchFields
         if (configList && configList.length) {
           const newFields = configList.map(oldFieldToNew);
           this.searchFields.splice(0, this.searchFields.length, ...newFields);
           // 不在此处调 initSearchDefaults()：splice 会触发 searchFields watcher
           // 异步执行 initSearchDefaults()，在此处同步调用会被后续 watcher 覆写
-          this.compareReset();
           this.loadOptionSources();
           console.log(`\x1b[36m\x1b[4mol-crud 已加载搜索配置`, newFields);
         }
 
-        // 回显已保存的默认搜索条件（独立于字段配置，可能单独存在）
+        // Step 2: 始终根据当前 searchFields 初始化 compareMap + field.props.multiple
+        // （无论 searchFields 来自 props 还是后端配置，都需要同步 multiple 状态）
+        this.compareReset();
+
+        // Step 3: 回显已保存的默认搜索条件（独立于字段配置，可能单独存在）
+        // 此步骤的 compare 会覆盖 compareReset 设置的默认值，确保"保存的搜索条件 > 配置弹框默认值"
         if (res.result.defaultFilterJson) {
           try {
             const defaultFilters = JSON.parse(res.result.defaultFilterJson);
@@ -1932,6 +1952,9 @@ export default {
                 }
                 if (item.compare) {
                   this.$set(this.compareMap, item.key, item.compare);
+                  // 同步 field.props.multiple，确保下拉框单选/多选模式与回显数据一致
+                  const field = this.searchFields.find(f => f.prop === item.key);
+                  this.syncFieldMultiple(field, item.compare);
                 }
               }
             });
@@ -2409,6 +2432,9 @@ export default {
 
 /* ==================== 搜索栏 ==================== */
 .crud-search {
+  $col-gap: 8px;
+  $row-gap: 6px;
+
   border-bottom: 1px solid #e4e7ed;
   padding-bottom: 8px;
 
@@ -2427,101 +2453,86 @@ export default {
 
   .crud-search-form {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: flex-start;
-    position: relative;
+    width: 100%;
+  }
+
+  // 覆盖 el-form--inline 的 inline-block，改为 flex
+  ::v-deep .el-form-item {
+    display: flex;
+    margin-right: 0;
+    margin-bottom: 0;
   }
 
   .crud-search-fields {
     display: flex;
     flex-wrap: wrap;
     flex: 1;
+    min-width: 0;
+    gap: $row-gap $col-gap;
   }
 
   .crud-search-item {
-    margin-right: 2px;
-    margin-bottom: 5px;
+    width: calc((100% - 3 * #{$col-gap}) / 4);
+    display: flex;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
 
+    // 标签：固定宽度 + 右对齐，跨行输入框对齐
     ::v-deep .el-form-item__label {
-      width: 37% !important;
-      padding: 0 5px 0 0;
-      font-size: 13px;
-      word-break: keep-all;
+      width: 6em;
+      flex-shrink: 0;
+      text-align: right;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 6px;
     }
 
+    // 内容区：占据剩余空间
     ::v-deep .el-form-item__content {
-      width: 63% !important;
+      flex: 1;
+      min-width: 0;
     }
 
-    ::v-deep .el-select {
+    // 输入组件撑满内容区
+    .el-select,
+    .el-input,
+    .el-date-picker {
       width: 100%;
-    }
-
-    ::v-deep .el-input__inner {
-      height: 28px;
-      line-height: 28px;
     }
   }
 
-  /* 自定义搜索模式的比较符前缀 + 输入框 flex 布局 */
+  // 比较符前缀 + 输入框组合
   .select-with-prefix,
   .input-with-prefix {
     display: flex;
     align-items: center;
+    gap: 4px;
 
     ::v-deep .compare-prefix-select {
-      flex-shrink: 0;
-
-      .el-select {
-        width: 45px !important;
-
-        .el-select__input {
-          padding: 0 4px !important;
-          font-size: 12px !important;
-        }
-      }
-
-      .el-input__inner {
-        border-radius: 4px 0 0 4px !important;
-        border-right: none !important;
-      }
+      flex: 0 0 auto;
     }
 
-    .el-select,
-    .el-input {
-      flex: 1;
-
-      .el-input__inner {
-        border-radius: 0 4px 4px 0 !important;
-        border-left: none !important;
-      }
+    > .el-select,
+    > .el-input {
+      flex: 1 1 0;
+      min-width: 0;
     }
   }
 
-  ::v-deep .el-select__tags {
-    max-width: 100% !important;
-    overflow: hidden;
-  }
-
-  ::v-deep .el-select__tags-text {
-    max-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
+  // 按钮组：始终一行靠右
   .crud-search-actions {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
-    gap: 4px;
-    margin-left: 10px;
+    gap: 2px;
+    margin-left: auto;
     white-space: nowrap;
-    padding-top: 0;
 
     .el-button {
-      font-size: 12px;
-      padding: 7px 10px;
+      margin-left: 0 !important;
     }
   }
 }
@@ -2682,5 +2693,129 @@ export default {
     overflow: visible !important;
     width: 100% !important;
   }
+}
+</style>
+
+<style scoped>
+.custom-select ::v-deep .el-select__tags {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.custom-select ::v-deep .el-select__tags > span:first-child {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  padding-left: 3px;
+}
+.custom-select ::v-deep .el-select__tags > span:first-child > span:first-child {
+  display: flex;
+  flex-wrap: nowrap;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  width: calc(100% - 42px);
+}
+
+/* ----- 每个标签（普通标签） ----- */
+.custom-select ::v-deep .el-tag.el-tag--info {
+  background: #f0f2f5;
+  border: none;
+  padding: 0 8px;
+  /* max-width: 70%; */
+  flex-shrink: 1; /* 空间不足时收缩 */
+  /* min-width: 30px; */
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.2s;
+  margin: 1px 0;
+}
+
+/* ----- 标签内文字（强制一行显示） ----- */
+.custom-select ::v-deep .el-tag .el-select__tags-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* ★ 强制单行，绝不换行 */
+  vertical-align: middle;
+  margin-top: 2px;
+}
+.custom-select ::v-deep .el-tag .el-icon-close {
+  margin-top: 2px;
+}
+
+
+
+/* ----- 标签关闭按钮 ----- */
+.custom-select ::v-deep .el-tag .el-tag__close {
+  font-size: 12px;
+  color: #86909c;
+  background: transparent;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.custom-select ::v-deep .el-tag .el-tag__close:hover {
+  background: #e5e6eb;
+  color: #1d2129;
+}
+
+/* ----- 折叠 "+N" 标签（.is-hit） ----- */
+.custom-select ::v-deep .el-tag.is-hit {
+  background: #e8f3ff;
+  color: #3370ff;
+  border: none;
+  font-weight: 500;
+  padding: 0 12px;
+  max-width: 100px; /* +N 不宜过宽 */
+}
+.custom-select ::v-deep .el-tag.is-hit .el-tag__close {
+  display: none; /* +N 无关闭按钮 */
+}
+
+/* ----- 输入框样式 ----- */
+.custom-select ::v-deep .el-input__inner {
+  border-color: #d9dde4;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.custom-select ::v-deep .el-input__inner:hover {
+  border-color: #b3bcc6;
+}
+.custom-select ::v-deep .el-input__inner:focus {
+  border-color: #3370ff;
+  box-shadow: 0 0 0 3px rgba(51, 112, 255, 0.12);
+}
+
+/* ----- 输入框后缀（箭头）位置修复 ----- */
+.custom-select ::v-deep .el-input .el-input__suffix {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ----- 下拉菜单选项 ----- */
+.custom-select ::v-deep .el-select-dropdown__item {
+  font-size: 13px;
+  padding: 0 16px;
+  /* height: 34px;
+  line-height: 34px; */
+}
+.custom-select ::v-deep .el-select-dropdown__item.selected {
+  font-weight: 500;
+  color: #3370ff;
+}
+
+/* ----- 禁用状态保留样式 ----- */
+.custom-select ::v-deep .el-input.is-disabled .el-input__inner {
+  background-color: #f5f7fa;
+  border-color: #e4e7ed;
 }
 </style>

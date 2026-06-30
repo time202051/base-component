@@ -1,19 +1,19 @@
 <template>
-  <div style="width: 75px">
-    <el-select
-      :value="value"
-      :popper-append-to-body="false"
-      @change="$emit('change', $event)"
-      @click.native.stop
-    >
-      <el-option
-        v-for="opt in compareOptions"
-        :key="opt.value"
-        :label="opt.label"
-        :value="opt.value"
-      />
-    </el-select>
-  </div>
+  <el-select
+    :value="value"
+    size="mini"
+    :popper-append-to-body="false"
+    class="compare-prefix-select"
+    @change="$emit('change', $event)"
+    @click.native.stop
+  >
+    <el-option
+      v-for="opt in compareOptions"
+      :key="opt.value"
+      :label="opt.label"
+      :value="opt.value"
+    />
+  </el-select>
 </template>
 
 <script>
@@ -47,3 +47,24 @@ export default {
   },
 };
 </script>
+
+<style lang="scss" scoped>
+.compare-prefix-select {
+  width: 44px !important;
+  flex: none !important;
+
+  ::v-deep .el-input__inner {
+    padding: 0 2px;
+    min-width: 36px;
+    text-align: center;
+    color: #909399;
+    background: #f5f7fa;
+    border-color: #e4e7ed;
+    font-size: 12px;
+  }
+
+  ::v-deep .el-select__caret {
+    display: none;
+  }
+}
+</style>
