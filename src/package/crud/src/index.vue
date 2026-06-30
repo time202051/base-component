@@ -31,74 +31,114 @@
             class="crud-search-item"
           >
             <!-- 文本输入 -->
-            <el-input
+            <div
               v-if="field.type === 'input'"
-              v-model="internalSearchModel[field.prop]"
-              :placeholder="field.placeholder || `请输入${field.label}`"
-              clearable
-              v-bind="field.props || {}"
-              @keyup.enter.native="handleSearch"
-            />
+              :class="$cfg('showCustomSearch') ? 'input-with-prefix' : ''"
+              style="width: 100%"
+            >
+              <compare-prefix-select
+                v-if="$cfg('showCustomSearch')"
+                :value="compareMap[field.prop] || field.compare || 'contains'"
+                @change="handleCompareChange(field, $event)"
+              />
+              <el-input
+                v-model="internalSearchModel[field.prop]"
+                :placeholder="field.placeholder || `请输入${field.label}`"
+                clearable
+                v-bind="field.props || {}"
+                @keyup.enter.native="handleSearch"
+              />
+            </div>
 
             <!-- 数字输入 -->
-            <el-input
+            <div
               v-else-if="field.type === 'number'"
-              v-model="internalSearchModel[field.prop]"
-              :placeholder="field.placeholder || `请输入${field.label}`"
-              clearable
-              v-bind="field.props || {}"
-              class="crud-number-input"
-              @keyup.enter.native="handleSearch"
-              @keydown.native="onNumberKeydown"
-              @paste.native="onNumberPaste"
-              @input.native="onNumberInput($event, field)"
-            />
+              :class="$cfg('showCustomSearch') ? 'input-with-prefix' : ''"
+              style="width: 100%"
+            >
+              <compare-prefix-select
+                v-if="$cfg('showCustomSearch')"
+                :value="compareMap[field.prop] || field.compare || 'contains'"
+                @change="handleCompareChange(field, $event)"
+              />
+              <el-input
+                v-model="internalSearchModel[field.prop]"
+                :placeholder="field.placeholder || `请输入${field.label}`"
+                clearable
+                v-bind="field.props || {}"
+                class="crud-number-input"
+                @keyup.enter.native="handleSearch"
+                @keydown.native="onNumberKeydown"
+                @paste.native="onNumberPaste"
+                @input.native="onNumberInput($event, field)"
+              />
+            </div>
 
             <!-- 下拉选择 -->
-            <el-select
+            <div
               v-else-if="field.type === 'select'"
-              v-model="internalSearchModel[field.prop]"
-              :placeholder="field.placeholder || `请选择${field.label}`"
-              clearable
-              :multiple="field.props && field.props.multiple"
-              v-bind="field.props || {}"
-              :popper-append-to-body="false"
-              @change="onFieldChange(field)"
-              @keyup.enter.native="handleSearch"
+              :class="$cfg('showCustomSearch') ? 'select-with-prefix' : ''"
+              style="width: 100%"
             >
-              <el-option
-                v-for="opt in field.options || []"
-                :key="opt.key !== undefined ? opt.key : opt.value"
-                :label="opt.label || opt.value || opt.key"
-                :value="opt.key !== undefined ? opt.key : opt.value"
+              <compare-prefix-select
+                v-if="$cfg('showCustomSearch')"
+                :value="compareMap[field.prop] || field.compare || 'eq'"
+                @change="handleCompareChange(field, $event)"
               />
-            </el-select>
+              <el-select
+                v-model="internalSearchModel[field.prop]"
+                :placeholder="field.placeholder || `请选择${field.label}`"
+                clearable
+                :multiple="field.props && field.props.multiple"
+                v-bind="field.props || {}"
+                :popper-append-to-body="false"
+                @change="onFieldChange(field)"
+                @keyup.enter.native="handleSearch"
+              >
+                <el-option
+                  v-for="opt in field.options || []"
+                  :key="opt.key !== undefined ? opt.key : opt.value"
+                  :label="opt.label || opt.value || opt.key"
+                  :value="opt.key !== undefined ? opt.key : opt.value"
+                />
+              </el-select>
+            </div>
 
             <!-- 远程搜索下拉（滚动加载更多） -->
-            <el-select
+            <div
               v-else-if="field.type === 'remoteSelect'"
-              v-model="internalSearchModel[field.prop]"
-              v-el-select-loadmore="() => handleSelectLoadMore(field)"
-              filterable
-              remote
-              reserve-keyword
-              clearable
-              :placeholder="field.placeholder || `请输入关键字搜索`"
-              :remote-method="query => handleRemoteSearch(field, query)"
-              :loading="field.loading"
-              :multiple="field.props && field.props.multiple"
-              v-bind="field.props || {}"
-              :popper-append-to-body="false"
-              @change="onFieldChange(field)"
-              @keyup.enter.native="handleSearch"
+              :class="$cfg('showCustomSearch') ? 'select-with-prefix' : ''"
+              style="width: 100%"
             >
-              <el-option
-                v-for="opt in field.options || []"
-                :key="opt.key !== undefined ? opt.key : opt.value"
-                :label="opt.label || opt.value || opt.key"
-                :value="opt.key !== undefined ? opt.key : opt.value"
+              <compare-prefix-select
+                v-if="$cfg('showCustomSearch')"
+                :value="compareMap[field.prop] || field.compare || 'eq'"
+                @change="handleCompareChange(field, $event)"
               />
-            </el-select>
+              <el-select
+                v-model="internalSearchModel[field.prop]"
+                v-el-select-loadmore="() => handleSelectLoadMore(field)"
+                filterable
+                remote
+                reserve-keyword
+                clearable
+                :placeholder="field.placeholder || `请输入关键字搜索`"
+                :remote-method="query => handleRemoteSearch(field, query)"
+                :loading="field.loading"
+                :multiple="field.props && field.props.multiple"
+                v-bind="field.props || {}"
+                :popper-append-to-body="false"
+                @change="onFieldChange(field)"
+                @keyup.enter.native="handleSearch"
+              >
+                <el-option
+                  v-for="opt in field.options || []"
+                  :key="opt.key !== undefined ? opt.key : opt.value"
+                  :label="opt.label || opt.value || opt.key"
+                  :value="opt.key !== undefined ? opt.key : opt.value"
+                />
+              </el-select>
+            </div>
 
             <!-- 日期选择（含旧格式 picker 兜底） -->
             <el-date-picker
@@ -157,14 +197,24 @@
             />
 
             <!-- 默认：文本输入 -->
-            <el-input
+            <div
               v-else
-              v-model="internalSearchModel[field.prop]"
-              :placeholder="field.placeholder || `请输入${field.label}`"
-              clearable
-              v-bind="field.props || {}"
-              @keyup.enter.native="handleSearch"
-            />
+              :class="$cfg('showCustomSearch') ? 'input-with-prefix' : ''"
+              style="width: 100%"
+            >
+              <compare-prefix-select
+                v-if="$cfg('showCustomSearch')"
+                :value="compareMap[field.prop] || field.compare || 'contains'"
+                @change="handleCompareChange(field, $event)"
+              />
+              <el-input
+                v-model="internalSearchModel[field.prop]"
+                :placeholder="field.placeholder || `请输入${field.label}`"
+                clearable
+                v-bind="field.props || {}"
+                @keyup.enter.native="handleSearch"
+              />
+            </div>
           </el-form-item>
         </div>
 
@@ -183,15 +233,22 @@
           >
             {{ searchExpanded ? "收起" : "展开" }}
           </el-button>
-          <el-button
+          <el-dropdown
             v-if="$cfg('showCustomSearch')"
-            plain
             size="small"
-            icon="el-icon-setting"
-            @click="openConfigDialog"
+            trigger="click"
+            style="margin-left: 8px"
           >
-            配置
-          </el-button>
+            <el-button plain size="small" icon="el-icon-more" />
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item @click.native="openConfigDialog">
+                <i class="el-icon-setting" /> 配置
+              </el-dropdown-item>
+              <el-dropdown-item @click.native="handleSaveSearch">
+                <i class="el-icon-document-checked" /> 保存搜索条件
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </div>
       </el-form>
 
@@ -441,6 +498,8 @@ import PrintTemplate from "../../table/src/printTable.vue";
 import { printTableElement } from "../../table/src/tablePrint.js";
 import OlColumnConfig from "../../columnConfig/src/index.vue";
 import { getEnum } from "../../../utils/getEnum.js";
+import { basePropsOrderChange } from "../../../utils/initData.js";
+import ComparePrefixSelect from "../../formSearch/src/components/ComparePrefixSelect.vue";
 
 /**
  * ol-crud — 增删改查一体化组件
@@ -522,6 +581,7 @@ export default {
   components: {
     OlNumberRange,
     SearchConfigDialog,
+    ComparePrefixSelect,
     TableColumn,
     PrintTemplateSelector,
     PrintTemplate,
@@ -674,6 +734,9 @@ export default {
 
       // 配置弹窗
       configDialogVisible: false,
+
+      // 自定义搜索模式下的比较符映射 { prop: compareType }
+      compareMap: {},
 
       // autoFetch 模式下从接口返回中自动捕获的 customs
       fetchedCustoms: [],
@@ -1133,6 +1196,9 @@ export default {
           let propsArray = rawProps
             ? Object.keys(rawProps).map(key => ({ key, ...rawProps[key] }))
             : [];
+          console.log("99990", propsArray);
+          // 调整顺序函数
+          propsArray = basePropsOrderChange(propsArray);
 
           // Step 2: onTableSwagger 钩子 ({ columns }) — 拿到全部 response properties 数组，
           // 用户可在钩子中调整数组顺序来控制表格列顺序，也可补 description
@@ -1153,12 +1219,12 @@ export default {
             const allKeys = new Set(propsArray.map(f => f.key));
             const replacedKeys = new Set();
             propsArray.forEach(item => {
-              if (item.key.endsWith('Desc')) {
-                const base = item.key.replace(/Desc$/, '');
+              if (item.key.endsWith("Desc")) {
+                const base = item.key.replace(/Desc$/, "");
                 if (allKeys.has(base)) replacedKeys.add(base);
               }
-              if (item.key.endsWith('Text')) {
-                const base = item.key.replace(/Text$/, '');
+              if (item.key.endsWith("Text")) {
+                const base = item.key.replace(/Text$/, "");
                 if (allKeys.has(base)) replacedKeys.add(base);
               }
             });
@@ -1211,8 +1277,7 @@ export default {
         if (typeof this.onTableMerged === "function") {
           try {
             const res = await this.onTableMerged({ columns: this.columns.slice() });
-            if (res && Array.isArray(res))
-              this.columns.splice(0, this.columns.length, ...res);
+            if (res && Array.isArray(res)) this.columns.splice(0, this.columns.length, ...res);
           } catch (err) {
             /* ignore */
           }
@@ -1447,6 +1512,33 @@ export default {
       }
     },
 
+    /** 切换比较符：更新 compareMap，select 类型自动切换单选/多选模式 */
+    handleCompareChange(field, compare) {
+      this.$set(this.compareMap, field.prop, compare);
+      if (field.type === "select" || field.type === "remoteSelect") {
+        const key = field.prop;
+        const val = this.internalSearchModel[key];
+        const isMultiple = compare === "in" || compare === "not in";
+        if (isMultiple && !Array.isArray(val)) {
+          this.$set(this.internalSearchModel, key, val != null && val !== "" ? [val] : []);
+        } else if (!isMultiple && Array.isArray(val)) {
+          this.$set(this.internalSearchModel, key, val.length ? val[0] : null);
+        }
+      }
+    },
+
+    /** 重置 compareMap 为 searchFields 中配置的默认 compare 值 */
+    compareReset() {
+      this.compareMap = {};
+      if (this.searchFields && this.searchFields.length) {
+        this.searchFields.forEach(field => {
+          if (field.prop && field.compare) {
+            this.$set(this.compareMap, field.prop, field.compare);
+          }
+        });
+      }
+    },
+
     // ===================== 搜索 =====================
 
     /** 查询 */
@@ -1516,7 +1608,7 @@ export default {
         filterConditions.push({
           key,
           values: Array.isArray(cleanParams[key]) ? cleanParams[key] : [cleanParams[key]],
-          compare: (field && field.compare) || "",
+          compare: this.compareMap[key] || (field && field.compare) || "",
         });
       });
 
@@ -1567,7 +1659,7 @@ export default {
             filterConditions.push({
               key,
               values: Array.isArray(cleanParams[key]) ? cleanParams[key] : [cleanParams[key]],
-              compare: (field && field.compare) || "",
+              compare: this.compareMap[key] || (field && field.compare) || "",
             });
           });
         }
@@ -1692,6 +1784,9 @@ export default {
 
     /** 重置：用 defaultValue 或 null 重建搜索模型，不走 resetFields（兼容动态字段） */
     handleReset() {
+      // 重置 compareMap
+      this.compareReset();
+
       // 重建搜索模型：优先取 defaultValue，否则 null
       const model = {};
       (this.searchFields || []).forEach(field => {
@@ -1806,16 +1901,143 @@ export default {
         if (res.code !== 200 || !res.result) return;
 
         const configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
-        if (!configList || !configList.length) return;
 
         // 旧格式转新格式，覆盖 searchFields
-        const newFields = configList.map(oldFieldToNew);
-        this.searchFields.splice(0, this.searchFields.length, ...newFields);
-        this.initSearchDefaults();
-        console.log(`\x1b[36m\x1b[4mol-crud 已加载搜索配置`, newFields);
+        if (configList && configList.length) {
+          const newFields = configList.map(oldFieldToNew);
+          this.searchFields.splice(0, this.searchFields.length, ...newFields);
+          // 不在此处调 initSearchDefaults()：splice 会触发 searchFields watcher
+          // 异步执行 initSearchDefaults()，在此处同步调用会被后续 watcher 覆写
+          this.compareReset();
+          this.loadOptionSources();
+          console.log(`\x1b[36m\x1b[4mol-crud 已加载搜索配置`, newFields);
+        }
+
+        // 回显已保存的默认搜索条件（独立于字段配置，可能单独存在）
+        if (res.result.defaultFilterJson) {
+          try {
+            const defaultFilters = JSON.parse(res.result.defaultFilterJson);
+            // 等待 searchFields watcher 异步触发的 initSearchDefaults() 执行完毕，
+            // 否则 watcher 会在回显之后把 internalSearchModel 重置为 null，导致回显失效
+            await this.$nextTick();
+            defaultFilters.forEach(item => {
+              if (item.values && item.values.length > 0) {
+                // 接口默认值不覆盖前端已有的非空值
+                if (!(item.key in this.internalSearchModel) || this.internalSearchModel[item.key] == null) {
+                  this.$set(
+                    this.internalSearchModel,
+                    item.key,
+                    item.values.length === 1 ? item.values[0] : item.values
+                  );
+                }
+                if (item.compare) {
+                  this.$set(this.compareMap, item.key, item.compare);
+                }
+              }
+            });
+            console.log(`\x1b[36m\x1b[4mol-crud 已回显默认搜索条件`, defaultFilters);
+          } catch (e) {
+            console.error("[ol-crud] defaultFilterJson 解析失败:", e);
+          }
+        }
       } catch (err) {
         console.warn("[ol-crud] 加载搜索配置失败:", err);
       }
+    },
+
+    /** 加载搜索字段中 optionSource 指定的下拉选项（select 类型） */
+    loadOptionSources() {
+      (this.searchFields || []).forEach(field => {
+        if (field.type === "select" && field.optionSource) {
+          this.loadItemOptions(field);
+        }
+      });
+    },
+
+    /** 加载单个字段的下拉选项 */
+    async loadItemOptions(field) {
+      if (!field.optionSource) return;
+
+      const { sourceType } = field.optionSource;
+
+      if (sourceType === "dict") {
+        await this.loadDictOptions(field);
+      } else if (sourceType === "api") {
+        await this.loadApiOptions(field);
+      }
+    },
+
+    /** 从字典加载下拉选项 */
+    async loadDictOptions(field) {
+      try {
+        const dictKey = field.optionSource.dictKey;
+        if (!dictKey) return;
+
+        const dictData = await this.getDictData(dictKey);
+        if (dictData && Array.isArray(dictData)) {
+          const options = dictData.map(d => ({
+            key: d.key,
+            value: d.value,
+          }));
+          this.$set(field, "options", options);
+        }
+      } catch (error) {
+        console.error("[ol-crud] 加载字典数据失败:", error);
+      }
+    },
+
+    /** 从 API 加载下拉选项（如 -select 结尾的接口） */
+    async loadApiOptions(field) {
+      try {
+        const apiUrl = field.optionSource.apiUrl;
+        const method = field.optionSource.method || "get";
+        if (!apiUrl) return;
+        if (typeof this.get !== "function") return;
+
+        let response;
+        if (method === "post" && typeof this.post === "function") {
+          response = await this.post({ url: apiUrl });
+        } else {
+          response = await this.get({ url: apiUrl });
+        }
+        if (!response || response.code !== 200) return;
+        if (response.result && Array.isArray(response.result)) {
+          const { valueField, labelField } = field.optionSource;
+          const options = response.result.map(d => ({
+            key: d[valueField],
+            value: d[labelField],
+          }));
+          this.$set(field, "options", options);
+        }
+      } catch (error) {
+        console.error("[ol-crud] 加载接口数据失败:", error);
+      }
+    },
+
+    /** 从 localStorage 读取字典数据 */
+    getDictData(dictKey) {
+      return new Promise(resolve => {
+        try {
+          const wmsStr = localStorage.getItem("wms") || "{}";
+          const wmsData = JSON.parse(wmsStr);
+          const dictData = wmsData.SET_enumsSelect || {};
+          const dictItem = dictData[dictKey];
+          const result = [];
+
+          if (dictItem && dictItem.enums && Array.isArray(dictItem.enums)) {
+            dictItem.enums.forEach(item => {
+              result.push({
+                key: item.key,
+                value: item.value,
+              });
+            });
+          }
+
+          resolve(result);
+        } catch (error) {
+          resolve([]);
+        }
+      });
     },
 
     /**
@@ -1959,11 +2181,53 @@ export default {
       this.configDialogVisible = true;
     },
 
+    /** 保存当前搜索条件为默认筛选 */
+    async handleSaveSearch() {
+      if (!this.$cfg("showCustomSearch")) {
+        // 非配置模式：emit 保存事件，由父组件处理
+        this.$emit("handleSave", { ...this.internalSearchModel });
+        return;
+      }
+
+      // 配置模式：构建 filterConditions 并持久化到后端
+      const { cleanParams } = this.buildSearchParams();
+      const filterConditions = [];
+      Object.keys(cleanParams).forEach(key => {
+        const field = this.searchFields.find(f => f.prop === key);
+        filterConditions.push({
+          key,
+          values: Array.isArray(cleanParams[key]) ? cleanParams[key] : [cleanParams[key]],
+          compare: this.compareMap[key] || (field && field.compare) || "",
+        });
+      });
+
+      const menuId = this.resolveMenuId();
+      if (!menuId || typeof this.post !== "function") return;
+
+      try {
+        const res = await this.post({
+          url: "/api/app/menu-search-setting/set-default-filter",
+          data: {
+            sysMenuId: menuId,
+            defaultFilterJson: JSON.stringify(filterConditions),
+          },
+        });
+        if (res.code === 200) {
+          this.$message && this.$message.success("保存成功");
+        }
+      } catch (err) {
+        console.warn("[ol-crud] 保存搜索条件失败:", err);
+      }
+    },
+
     /** 保存配置：更新本地 searchFields 并持久化到后端 */
     async handleSaveConfig(configList) {
       const newFields = (configList || []).map(oldFieldToNew);
       this.searchFields.splice(0, this.searchFields.length, ...newFields);
       this.initSearchDefaults();
+      // 重置 compareMap 以同步新的 compare 默认值
+      this.compareReset();
+      this.loadOptionSources();
       this.$emit("config-save", newFields);
 
       // 持久化到后端
@@ -2198,6 +2462,53 @@ export default {
       height: 28px;
       line-height: 28px;
     }
+  }
+
+  /* 自定义搜索模式的比较符前缀 + 输入框 flex 布局 */
+  .select-with-prefix,
+  .input-with-prefix {
+    display: flex;
+    align-items: center;
+
+    ::v-deep .compare-prefix-select {
+      flex-shrink: 0;
+
+      .el-select {
+        width: 45px !important;
+
+        .el-select__input {
+          padding: 0 4px !important;
+          font-size: 12px !important;
+        }
+      }
+
+      .el-input__inner {
+        border-radius: 4px 0 0 4px !important;
+        border-right: none !important;
+      }
+    }
+
+    .el-select,
+    .el-input {
+      flex: 1;
+
+      .el-input__inner {
+        border-radius: 0 4px 4px 0 !important;
+        border-left: none !important;
+      }
+    }
+  }
+
+  ::v-deep .el-select__tags {
+    max-width: 100% !important;
+    overflow: hidden;
+  }
+
+  ::v-deep .el-select__tags-text {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .crud-search-actions {

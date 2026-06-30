@@ -15,6 +15,8 @@
       row-key="prop"
       max-height="500"
       style="width: 100%"
+      size="mini"
+      border
     >
       <!-- 拖拽排序 -->
       <el-table-column width="50" align="center">
@@ -58,28 +60,28 @@
       <!-- 显示 -->
       <el-table-column label="显示" width="70" align="center">
         <template #default="{ row }">
-          <el-checkbox v-model="row.show" />
+          <el-checkbox v-model="row.show" size="mini" />
         </template>
       </el-table-column>
 
       <!-- 固定列 -->
       <el-table-column label="固定" width="70" align="center">
         <template #default="{ row }">
-          <el-checkbox v-model="row._fixed" @change="(v) => { row.fixed = v ? 'left' : false; }" />
+          <el-checkbox v-model="row._fixed" size="mini" @change="(v) => { row.fixed = v ? 'left' : false; }" />
         </template>
       </el-table-column>
 
       <!-- 别名 -->
       <el-table-column label="别名" min-width="130">
         <template #default="{ row }">
-          <el-input v-model="row._alias" clearable size="small" placeholder="留空使用原标签" />
+          <el-input v-model="row._alias" clearable size="mini" placeholder="留空使用原标签" />
         </template>
       </el-table-column>
 
       <!-- 可用角色 -->
       <el-table-column v-if="effectiveShowRoleConfig" label="可用角色" min-width="180">
         <template #default="{ row }">
-          <el-select v-model="row._roleIds" multiple clearable size="small" style="width: 100%">
+          <el-select v-model="row._roleIds" multiple clearable size="mini" style="width: 100%">
             <el-option
               v-for="role in roleList"
               :key="role.id"
@@ -338,13 +340,27 @@ export default {
       if (!tbody) return;
 
       this.sortable = Sortable.create(tbody, {
-        animation: 150,
-        handle: ".drag-handle:not(.drag-disabled)",
+        animation: 200,
         ghostClass: "sortable-ghost",
-        onEnd: ({ oldIndex, newIndex }) => {
-          if (oldIndex !== newIndex) {
-            const moved = this.tableData.splice(oldIndex, 1)[0];
-            this.tableData.splice(newIndex, 0, moved);
+        chosenClass: "sortable-chosen",
+        dragClass: "sortable-drag",
+        handle: ".drag-handle:not(.drag-disabled)",
+        forceFallback: true,
+        fallbackClass: "sortable-fallback",
+        onStart: (evt) => {
+          document.body.style.cursor = "grabbing";
+          document.body.style.userSelect = "none";
+          evt.item.style.transform = "scale(1.02)";
+          evt.item.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+        },
+        onEnd: (evt) => {
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+          evt.item.style.transform = "";
+          evt.item.style.boxShadow = "";
+          if (evt.oldIndex !== evt.newIndex) {
+            const moved = this.tableData.splice(evt.oldIndex, 1)[0];
+            this.tableData.splice(evt.newIndex, 0, moved);
           }
         },
       });
@@ -375,11 +391,33 @@ export default {
   color: #909399;
 }
 
+.index-text {
+  cursor: pointer;
+}
+.index-text:hover {
+  color: #409eff;
+}
+.index-input {
+  width: 60px;
+  text-align: center;
+}
+
 .drag-handle {
   cursor: grab;
   color: #909399;
   font-size: 16px;
-  &:hover { color: #409eff; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: all 0.25s;
+  &:hover {
+    color: #409eff;
+    background-color: #f0f9ff;
+    transform: scale(1.1);
+  }
 }
 .drag-disabled {
   opacity: 0.3;
@@ -387,8 +425,28 @@ export default {
 }
 
 .sortable-ghost {
-  opacity: 0.4;
+  opacity: 0.6;
+  background: #e6f7ff !important;
+  box-shadow: 0 0 12px rgba(64, 158, 255, 0.3) !important;
+}
+.sortable-chosen {
   background: #f0f9ff !important;
+  box-shadow: 0 4px 16px rgba(0, 120, 255, 0.2) !important;
+}
+.sortable-drag {
+  opacity: 0.9;
+  z-index: 1999 !important;
+  transform: scale(1.02) !important;
+}
+.sortable-fallback {
+  display: table-row !important;
+}
+
+/* 防止拖拽时触发内部元素事件 */
+.sortable-chosen .el-checkbox,
+.sortable-chosen .el-input,
+.sortable-chosen .el-select {
+  pointer-events: none;
 }
 
 .dialog-footer {
