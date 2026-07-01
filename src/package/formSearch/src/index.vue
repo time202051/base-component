@@ -64,7 +64,7 @@
               <el-select
                 class="custom-select"
                 v-model="formSearch[item.value]"
-                :key="`sel_${item.value}_${(item.props && item.props.multiple) ? 'multi' : 'single'}`"
+                :key="`sel_${item.value}_${item.props && item.props.multiple ? 'multi' : 'single'}`"
                 v-el-select-all="item.loadmores"
                 :clearable="item.clearable === undefined || item.clearable"
                 v-bind="{ collapseTags: true, ...(item.props || {}) }"
@@ -94,7 +94,9 @@
               />
               <el-select
                 v-model="formSearch[item.value]"
-                :key="`selT_${item.value}_${(item.props && item.props.multiple) ? 'multi' : 'single'}`"
+                :key="`selT_${item.value}_${
+                  item.props && item.props.multiple ? 'multi' : 'single'
+                }`"
                 v-el-select-all="item.loadmores"
                 v-bind="{ clearable: true, collapseTags: true, ...(item.props || {}) }"
                 :placeholder="getSearchPlaceholder(item, '请选择')"
@@ -320,6 +322,11 @@ export default {
     method: {
       type: String,
     },
+    // customSearch接口保存的所有数据
+    byMenuData: {
+      type: Object,
+      default: () => ({}),
+    },
   },
   data() {
     return {
@@ -395,6 +402,17 @@ export default {
         this.$set(this.formSearch, key, null);
       }
     },
+
+    /** 根据 compare 值同步 item.props.multiple，确保下拉框单选/多选模式正确 */
+    syncFieldMultiple(item, compare) {
+      if (!item || (item.inputType !== "select" && item.inputType !== "selectTEMP")) return;
+      const isMultiple = compare === "in" || compare === "not in";
+      if (!item.props) {
+        this.$set(item, "props", {});
+      }
+      this.$set(item.props, "multiple", isMultiple);
+    },
+
     async init() {
       if (!this.isCustomSearch && this.url) {
         const swaggerData = await getData();
@@ -564,6 +582,20 @@ export default {
     getValue(val) {
       this.$emit("getTreeSelectValue", val);
     },
+    /** 根据字段类型返回默认比较符（与 compare-prefix-select 的默认值一致） */
+    getDefaultCompare(item) {
+      if (!item) return "contains";
+      if (item.inputType === "select" || item.inputType === "selectTEMP") return "eq";
+      if (item.inputType === "picker") {
+        const rangeTypes = ["daterange", "datetimerange", "monthrange"];
+        const isRange =
+          (item.props && rangeTypes.includes(item.props.type)) ||
+          (item.dateType && rangeTypes.includes(item.dateType));
+        return isRange ? "range" : "eq";
+      }
+      return "contains";
+    },
+
     setFilterConditionsByFormSearch(formSearch) {
       const filterConditions = [];
       Object.keys(formSearch).forEach(key => {
@@ -573,7 +605,7 @@ export default {
           filterConditions.push({
             key: key,
             values: Array.isArray(formSearch[key]) ? formSearch[key] : [formSearch[key]],
-            compare: this.compareMap[key] || (tempItem && tempItem.compare ? tempItem.compare : ""),
+            compare: this.compareMap[key] || this.getDefaultCompare(tempItem),
           });
         }
       });
@@ -659,23 +691,9 @@ export default {
           ...this.formSearchData.value,
         };
       }
-      if (this.isCustomSearch) {
-        this.compareReset();
-      }
       this.$emit("handleReset", this.formSearch);
       if (this.formSearchData.reset) return false;
       this.handleSearch();
-    },
-    // 重置compare
-    compareReset() {
-      this.compareMap = {};
-      if (this.formSearchData.tableSearch && this.formSearchData.tableSearch.length) {
-        this.formSearchData.tableSearch.forEach(item => {
-          if (item.value && item.compare) {
-            this.$set(this.compareMap, item.value, item.compare);
-          }
-        });
-      }
     },
     // 展开和收起
     handleExpend() {
@@ -737,13 +755,21 @@ export default {
         const filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
         const targetMenuId = this.getTargetMenuId();
         console.log(`\x1b[36m\x1b[4mol插件-动态搜索框保存`, this.formSearch, filterConditions);
-        this.post({
-          url: `/api/app/menu-search-setting/set-default-filter`,
+        console.log(
+          112233,
+          this.formSearchData,
+          this.formSearch,
+          filterConditions,
+          this.compareMap,
+          this.findTableSearch
+        );
+        this.put({
+          url: `/api/app/menu-search-setting/${targetMenuId}?sysMenuId=${targetMenuId}`,
           data: {
-            sysMenuId: targetMenuId,
-            defaultFilterJson: JSON.stringify(filterConditions),
+            settingJson: JSON.stringify(this.formSearchData.tableSearch),
+            defaultFilterJson: JSON.stringify({ filterConditions, compareMap: this.compareMap }),
           },
-        }).then(res => {
+        }).then(() => {
           if (res.code !== 200) return;
           this.$message.success("保存成功");
         });
@@ -778,9 +804,6 @@ export default {
         // 不超过4个，全部显示
         this.expend = true;
         this.findTableSearch = this.formSearchData.tableSearch;
-      }
-      if (this.isCustomSearch) {
-        this.compareReset();
       }
       this.$emit("onSave", configList);
     },
@@ -978,14 +1001,14 @@ $label-width: 6em;
     // 输入组件撑满内容区
     .el-select,
     .el-input,
-    .el-date-picker {
+    .el-date-editor {
       width: 100%;
     }
   }
 
-  // 日期范围稍宽
+  // 日期范围与输入框宽度一致
   .picker {
-    width: calc(#{$field-width} * 1.3);
+    width: $field-width;
   }
 }
 
@@ -1086,8 +1109,6 @@ $label-width: 6em;
 .custom-select ::v-deep .el-tag .el-icon-close {
   margin-top: 2px;
 }
-
-
 
 /* ----- 标签关闭按钮 ----- */
 .custom-select ::v-deep .el-tag .el-tag__close {

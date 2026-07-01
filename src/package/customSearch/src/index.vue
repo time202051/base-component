@@ -8,6 +8,7 @@
     :method="finalMethod"
     v-on="$listeners"
     ref="customSearchRef"
+    :byMenuData="byMenuData"
   />
 </template>
 
@@ -56,6 +57,7 @@ export default {
     return {
       currentPageItem: {},
       key: 0,
+      byMenuData: null,
     };
   },
 
@@ -90,7 +92,10 @@ export default {
       const menus = SET_MENUS;
       this.currentPageItem = handleMenu(menus, this);
 
-      const targetMenuId = this.menuId || this.$route.query.menuId || (this.currentPageItem && this.currentPageItem.id);
+      const targetMenuId =
+        this.menuId ||
+        this.$route.query.menuId ||
+        (this.currentPageItem && this.currentPageItem.id);
 
       this.get({
         url: `/api/app/menu-search-setting/by-menu`,
@@ -99,8 +104,8 @@ export default {
         },
       }).then(async res => {
         if (res.code !== 200) return;
+        this.byMenuData = res.result;
         const configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
-
         // 合并搜索字段配置：formSearchData.tableSearch + frontSearchData 优先，接口返回的补充
         // 前端追加的搜索条件标记为 isFrontAppend，不参与配置弹框编辑
         const localTableSearch = [
@@ -126,16 +131,23 @@ export default {
         // 解析并回显默认搜索条件
         if (res.result.defaultFilterJson) {
           try {
-            const defaultFilters = JSON.parse(res.result.defaultFilterJson);
-            this.$set(this.formSearchData, "filterConditions", defaultFilters);
-            defaultFilters.forEach(item => {
-              if (item.values && item.values.length > 0) {
-                // 接口默认值不覆盖前端写死的默认值
-                if (!(item.key in defaultValue)) {
-                  defaultValue[item.key] = item.values.length === 1 ? item.values[0] : item.values;
+            const { filterConditions: defaultFilters, compareMap } = JSON.parse(
+              res.result.defaultFilterJson
+            );
+            if (defaultFilters) {
+              this.$set(this.formSearchData, "filterConditions", defaultFilters);
+              defaultFilters.forEach(item => {
+                if (item.values && item.values.length > 0) {
+                  // 接口默认值不覆盖前端写死的默认值
+                  if (!(item.key in defaultValue)) {
+                    defaultValue[item.key] =
+                      item.values.length === 1 ? item.values[0] : item.values;
+                  }
                 }
-              }
-            });
+              });
+            }
+
+            if (compareMap) this.$refs.customSearchRef.compareMap = compareMap;
           } catch (e) {
             console.error("defaultFilterJson 解析失败:", e);
           }
@@ -160,7 +172,13 @@ export default {
     },
     //保存
     onSave(configList) {
-      const targetMenuId = this.menuId || this.$route.query.menuId || (this.currentPageItem && this.currentPageItem.id);
+      const targetMenuId =
+        this.menuId ||
+        this.$route.query.menuId ||
+        (this.currentPageItem && this.currentPageItem.id);
+      let defaultFilter = {};
+      // configList.forEach(item => {
+      // });
       this.post({
         url: `/api/app/menu-search-setting`,
         data: {
@@ -171,7 +189,7 @@ export default {
         if (res.code !== 200) return;
         this.$message.success("保存成功");
       });
-
+      this.init();
       console.log("保存配置数据", configList);
     },
   },

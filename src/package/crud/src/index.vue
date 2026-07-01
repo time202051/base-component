@@ -871,7 +871,6 @@ export default {
 
     /** 可见的搜索字段（visible !== false） */
     visibleSearchFields() {
-      console.log(111, this.searchFields);
       const all = this.searchFields.filter(f => f.visible !== false);
       if (!this.searchExpanded && all.length > this.columnsPerRow) {
         return all.slice(0, this.columnsPerRow);
@@ -1203,7 +1202,6 @@ export default {
           let propsArray = rawProps
             ? Object.keys(rawProps).map(key => ({ key, ...rawProps[key] }))
             : [];
-          console.log("99990", propsArray);
           // 调整顺序函数
           propsArray = basePropsOrderChange(propsArray);
 
@@ -2499,7 +2497,7 @@ export default {
     // 输入组件撑满内容区
     .el-select,
     .el-input,
-    .el-date-picker {
+    .el-date-editor {
       width: 100%;
     }
   }

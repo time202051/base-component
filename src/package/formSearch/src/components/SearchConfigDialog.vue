@@ -92,25 +92,6 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="比较方式" width="130" align="center">
-          <template slot-scope="scope">
-            <el-select v-model="scope.row.compare" size="small" placeholder="请选择比较方式">
-              <el-option label="范围" value="range" />
-              <el-option label="包含于" value="in" />
-              <el-option label="不包含于" value="not in" />
-              <el-option label="等于" value="eq" />
-              <el-option label="不等于" value="ne" />
-              <el-option label="大于" value="gt" />
-              <el-option label="大于等于" value="ge" />
-              <el-option label="小于" value="lt" />
-              <el-option label="小于等于" value="le" />
-              <el-option label="包含" value="contains" />
-              <el-option label="以...开始" value="startswith" />
-              <el-option label="以...结束" value="endswith" />
-            </el-select>
-          </template>
-        </el-table-column>
-
         <el-table-column label="配置" width="150" align="center">
           <template slot-scope="scope">
             <div v-if="scope.row.inputType === 'select'">
@@ -201,7 +182,7 @@
         </el-form-item>
 
         <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="请求方式">
-          <el-select v-model="currentOptionConfig.method" placeholder="请选择请求方式">
+          <el-select v-model="currentOptionConfig.method" placeholder="请选择请求方式" style="width: 100%">
             <el-option label="GET" value="get" />
             <el-option label="POST" value="post" />
           </el-select>
@@ -516,12 +497,6 @@ export default {
       for (const item of this.configList) {
         if (item.inputType === "select" && item.optionSource) {
           await this.loadItemOptionsForSave(item);
-          // 如果是“包含于”则，下拉框多选
-          if (item.compare === "in") {
-            item.props.multiple = true;
-          } else {
-            delete item.props.multiple;
-          }
         }
       }
       this.$emit("save", this.configList);
