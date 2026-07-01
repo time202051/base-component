@@ -287,6 +287,7 @@ import printTemplate from "./printTable.vue";
 import TableColumn from "./TableColumn.vue";
 import PrintTemplateSelector from "./components/PrintTemplateSelector.vue";
 import { printTableElement } from "./tablePrint.js";
+import { basePropsOrderChange } from "../../../utils/initData.js";
 
 export default {
   name: "table",
@@ -301,7 +302,7 @@ export default {
         render: Function,
       },
       render(createElement, renDom) {
-        return createElement('div', [renDom.props.render()]);
+        return createElement("div", [renDom.props.render()]);
       },
     },
     // myTableColumn: {
@@ -554,6 +555,8 @@ export default {
             swaggerData.paths[this.url][this.finalMethod].responses["200"].content[
               "application/json"
             ].schema.properties.items.items.properties;
+
+          swaggerColumns = basePropsOrderChange(swaggerColumns);
           if (typeof this.onSwagger === "function") {
             try {
               const res = await this.onSwagger({ columns: swaggerColumns });
@@ -689,8 +692,7 @@ export default {
       if (this.tableData.rows.length <= 0) return;
 
       const current =
-        (this.$router && this.$router.history && this.$router.history.current) ||
-        this.$route;
+        (this.$router && this.$router.history && this.$router.history.current) || this.$route;
       this.printListObj.title = (current && current.name) || document.title;
       this.printListObj.tableHeader = this.tableData.columns;
       this.printListObj.tableData = this.tableData.rows;

@@ -150,19 +150,17 @@ export const basePropsOrderChange = swaggerColumns => {
     "createTime",
     "remark",
   ];
-  const newColumns = []; // 这些数据按照顺序挪到数组后面
+  const columnList = []; // 这些数据按照顺序挪到数组后面
+  const baseList = [];
   swaggerColumns.forEach(item => {
-    if (!JLWhiteList.includes(item.prop)) {
-      newColumns.push(item);
+    if (!JLWhiteList.includes(item.key)) {
+      columnList.push(item);
+    } else {
+      baseList.push(item);
     }
   });
-  JLWhiteList.forEach(item => {
-    const temp = swaggerColumns.find(item2 => item2.prop === item);
-    if (temp) {
-      newColumns.push(temp);
-    }
-  });
-  return newColumns;
+
+  return [...columnList, ...baseList];
 };
 
 // 获取swagger所有以"-select"结尾的接口，返回的一定是列表数组，并返回
