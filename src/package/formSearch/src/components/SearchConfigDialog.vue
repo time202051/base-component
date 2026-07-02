@@ -282,7 +282,7 @@
         height="400"
         @selection-change="handleCustomsSelectionChange"
       >
-        <el-table-column type="selection" width="45" :reserve-selection="true" />
+        <el-table-column type="selection" width="40" :reserve-selection="true" align="center" />
         <el-table-column type="index" label="序号" width="50" align="center" />
         <el-table-column label="字段名称" prop="name" align="center" />
         <el-table-column label="字段值" prop="key" align="center" />

@@ -156,7 +156,33 @@
                 :value="compareMap[item.value] || item.compare || 'contains'"
                 @change="handleCompareChange(item, $event)"
               />
+              <template v-if="isCustomSearch && (compareMap[item.value] || item.compare) === 'range' && Array.isArray(formSearch[item.value])">
+                <el-input
+                  v-model="formSearch[item.value][0]"
+                  clearable
+                  :type="item.inputType || 'text'"
+                  :placeholder="'最小值'"
+                  :maxlength="item.maxlength"
+                  :class="item.inputType == 'number' ? 'numrule' : ''"
+                  @keyup.enter.native="handleSearch('formSearch')"
+                  @keydown.native="keyInput(item, $event)"
+                  @paste.native="onPaste(item, $event)"
+                />
+                <span class="range-separator">~</span>
+                <el-input
+                  v-model="formSearch[item.value][1]"
+                  clearable
+                  :type="item.inputType || 'text'"
+                  :placeholder="'最大值'"
+                  :maxlength="item.maxlength"
+                  :class="item.inputType == 'number' ? 'numrule' : ''"
+                  @keyup.enter.native="handleSearch('formSearch')"
+                  @keydown.native="keyInput(item, $event)"
+                  @paste.native="onPaste(item, $event)"
+                />
+              </template>
               <el-input
+                v-else
                 v-model="formSearch[item.value]"
                 clearable
                 v-bind="item.props || {}"
@@ -399,7 +425,12 @@ export default {
         this.$set(this.formSearch, key, isMultiple ? [] : null);
       } else {
         // 非下拉类型：切换比较符时清空右侧输入框的值
-        this.$set(this.formSearch, key, null);
+        // 范围比较符需要双输入框，初始化为长度为2的数组
+        if (compare === 'range') {
+          this.$set(this.formSearch, key, ['', '']);
+        } else {
+          this.$set(this.formSearch, key, null);
+        }
       }
     },
 
@@ -601,10 +632,17 @@ export default {
       Object.keys(formSearch).forEach(key => {
         const tempItem = this.formSearchData.tableSearch.find(item => item.value === key);
         if (!tempItem || tempItem.isDirect) return;
-        if (formSearch[key] !== undefined && formSearch[key] !== null && formSearch[key] !== "") {
+        const val = formSearch[key];
+        if (val !== undefined && val !== null) {
+          // 数组值（如范围输入）：全部为空则跳过
+          if (Array.isArray(val)) {
+            if (val.every(v => v === '' || v === null || v === undefined)) return;
+          } else if (val === '') {
+            return;
+          }
           filterConditions.push({
             key: key,
-            values: Array.isArray(formSearch[key]) ? formSearch[key] : [formSearch[key]],
+            values: Array.isArray(val) ? val : [val],
             compare: this.compareMap[key] || this.getDefaultCompare(tempItem),
           });
         }
@@ -1022,6 +1060,14 @@ $label-width: 6em;
   .el-select,
   .el-input {
     flex: 1;
+  }
+
+  .range-separator {
+    flex: none;
+    width: 20px;
+    text-align: center;
+    color: #909399;
+    font-size: 14px;
   }
 }
 
