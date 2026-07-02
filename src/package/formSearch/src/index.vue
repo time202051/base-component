@@ -161,9 +161,10 @@
                   v-model="formSearch[item.value][0]"
                   clearable
                   :type="item.inputType || 'text'"
-                  :placeholder="'最小值'"
+                  :placeholder="item.inputType === 'number' ? '最小值' : '起始值'"
                   :maxlength="item.maxlength"
                   :class="item.inputType == 'number' ? 'numrule' : ''"
+                  @change="handleRangeValidate(item)"
                   @keyup.enter.native="handleSearch('formSearch')"
                   @keydown.native="keyInput(item, $event)"
                   @paste.native="onPaste(item, $event)"
@@ -173,9 +174,10 @@
                   v-model="formSearch[item.value][1]"
                   clearable
                   :type="item.inputType || 'text'"
-                  :placeholder="'最大值'"
+                  :placeholder="item.inputType === 'number' ? '最大值' : '结束值'"
                   :maxlength="item.maxlength"
                   :class="item.inputType == 'number' ? 'numrule' : ''"
+                  @change="handleRangeValidate(item)"
                   @keyup.enter.native="handleSearch('formSearch')"
                   @keydown.native="keyInput(item, $event)"
                   @paste.native="onPaste(item, $event)"
@@ -431,6 +433,20 @@ export default {
         } else {
           this.$set(this.formSearch, key, null);
         }
+      }
+    },
+    /** 范围输入框校验：数字类型时确保起始值 ≤ 结束值，否则自动交换 */
+    handleRangeValidate(item) {
+      if (item.inputType !== 'number') return;
+      const key = item.value;
+      const val = this.formSearch[key];
+      if (!Array.isArray(val)) return;
+      const a = val[0];
+      const b = val[1];
+      // 两个值都存在且起始大于结束，自动交换
+      if (a !== '' && a != null && b !== '' && b != null && Number(a) > Number(b)) {
+        this.$set(this.formSearch[key], 0, b);
+        this.$set(this.formSearch[key], 1, a);
       }
     },
 
@@ -703,6 +719,12 @@ export default {
         this.$emit("handleSearch", tempFormSearch, item);
         console.log(`\x1b[36m\x1b[4mol插件-搜索框查询`, tempFormSearch);
       } else {
+        // 查询前兜底校验范围字段，防止用户未触发 blur 直接点查询
+        this.formSearchData.tableSearch.forEach(item => {
+          if (item.inputType === 'number') {
+            this.handleRangeValidate(item);
+          }
+        });
         // 转成接口需要的结构filterConditions
         const filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
 
