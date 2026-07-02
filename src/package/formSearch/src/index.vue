@@ -505,7 +505,26 @@ export default {
       // 超过4个默认收起，按钮显示"展开"
       if (this.isCustomSearch) this.expend = !isMoreThanSlice;
       await this.loadOptionSources();
+      // 初始化时，比较运算符为"范围"的文本/数字输入框需要将值转为长度为2的数组
+      if (this.isCustomSearch) {
+        this.initRangeFields();
+      }
       console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch);
+    },
+    /** 初始化范围比较字段：确保值为 [开始值, 结束值] 格式的数组 */
+    initRangeFields() {
+      this.formSearchData.tableSearch.forEach(item => {
+        if (!item.value) return;
+        const compare = this.compareMap[item.value] || item.compare;
+        if (compare !== 'range') return;
+        // 只处理文本/数字输入框，下拉框和日期选择器有自己的处理逻辑
+        if (item.inputType === 'select' || item.inputType === 'selectTEMP' || item.inputType === 'picker') return;
+        const key = item.value;
+        if (!Array.isArray(this.formSearch[key])) {
+          const existingVal = this.formSearch[key];
+          this.$set(this.formSearch, key, existingVal != null ? [String(existingVal), ''] : ['', '']);
+        }
+      });
     },
     // 统一的自动识别范围时间字段方法
     async autoDetectRangeTimeFields(swaggersearchColumns) {
@@ -729,6 +748,10 @@ export default {
           ...this.formSearchData.value,
         };
       }
+      // 重置后恢复范围字段的数组格式
+      if (this.isCustomSearch) {
+        this.initRangeFields();
+      }
       this.$emit("handleReset", this.formSearch);
       if (this.formSearchData.reset) return false;
       this.handleSearch();
@@ -807,7 +830,7 @@ export default {
             settingJson: JSON.stringify(this.formSearchData.tableSearch),
             defaultFilterJson: JSON.stringify({ filterConditions, compareMap: this.compareMap }),
           },
-        }).then(() => {
+        }).then((res) => {
           if (res.code !== 200) return;
           this.$message.success("保存成功");
         });
@@ -827,6 +850,10 @@ export default {
         item => item.isFrontAppend
       );
       this.formSearchData.tableSearch = [...frontAppendList, ...configList];
+      // 保存配置后初始化范围字段为数组格式
+      if (this.isCustomSearch) {
+        this.initRangeFields();
+      }
       const isMoreThanSlice = this.formSearchData.tableSearch.length > this.tableSearchSlice;
 
       if (isMoreThanSlice) {

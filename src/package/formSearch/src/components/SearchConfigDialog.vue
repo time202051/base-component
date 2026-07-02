@@ -6,6 +6,7 @@
     :close-on-click-modal="false"
     @close="handleClose"
     append-to-body
+    border
   >
     <div class="search-config-container">
       <div class="config-header">
@@ -31,7 +32,6 @@
       <el-table
         ref="configTable"
         :data="filteredConfigList"
-        border
         stripe
         size="mini"
         class="config-table--dense"
@@ -447,8 +447,11 @@ export default {
   computed: {
     availableCustoms() {
       // 前端追加的字段也要排除在预设可选列表之外，避免重复添加
-      const selectedKeys = [...this.configList, ...this.frontAppendList].map(item => item.value);
-      return this.customs.filter(custom => !selectedKeys.includes(custom.key));
+      // 大小写不敏感比对，兼容后端首字母大写、前端配置全小写的情况
+      const selectedKeysLower = [...this.configList, ...this.frontAppendList].map(item =>
+        String(item.value || "").toLowerCase()
+      );
+      return this.customs.filter(custom => !selectedKeysLower.includes(String(custom.key || "").toLowerCase()));
     },
     filteredConfigList() {
       const keyword = this.searchKeyword.trim().toLowerCase();
@@ -571,7 +574,7 @@ export default {
         const dictKey = item.optionSource.dictKey;
         if (!dictKey) return;
 
-        const dictData = await this.getDictData(dictKey);
+        const dictData = await this.getDictData(dictKey, { fixCase: true, item });
         if (dictData && Array.isArray(dictData)) {
           item.children = dictData.map(d => ({
             key: d.key,
@@ -848,7 +851,11 @@ export default {
         const dictKey = this.currentOptionConfig.dictKey;
         if (!dictKey) return;
 
-        const dictData = await this.getDictData(dictKey);
+        // 预览时也修正大小写，确保用户点确定时保存的是正确的 dictKey
+        const dictData = await this.getDictData(dictKey, {
+          fixCase: true,
+          item: { optionSource: this.currentOptionConfig },
+        });
         if (dictData && Array.isArray(dictData)) {
           this.previewOptions = dictData.map(item => ({
             key: item.key,
@@ -860,13 +867,29 @@ export default {
         this.$message.error("加载字典数据失败");
       }
     },
-    getDictData(dictKey) {
+    getDictData(dictKey, { fixCase = false, item = null } = {}) {
       return new Promise(resolve => {
         try {
+          if (!dictKey) {
+            resolve([]);
+            return;
+          }
           const wmsStr = localStorage.getItem("wms") || "{}";
           const wmsData = JSON.parse(wmsStr);
           const dictData = wmsData.SET_enumsSelect || {};
-          const dictItem = dictData[dictKey];
+          // 先精确匹配，匹配不到再做大小写不敏感查找（兼容后端首字母大写、字典全小写的情况）
+          let dictItem = dictData[dictKey];
+          if (!dictItem) {
+            const lowerKey = dictKey.toLowerCase();
+            const matchedKey = Object.keys(dictData).find(k => k.toLowerCase() === lowerKey);
+            if (matchedKey) {
+              dictItem = dictData[matchedKey];
+              // 找到匹配后修正 dictKey，保存/下次加载直接用正确的 key
+              if (fixCase && item && item.optionSource) {
+                item.optionSource.dictKey = matchedKey;
+              }
+            }
+          }
           const result = [];
 
           if (dictItem && dictItem.enums && Array.isArray(dictItem.enums)) {
@@ -962,9 +985,11 @@ export default {
           format: "yyyy/MM/dd",
         };
       } else if (custom.keyType === 3) {
+        // 优先用 enumName，没有则用 key 作为字典键（兼容后端不返回 enumName 的情况）
+        const dictKey = custom.enumName || custom.key;
         newItem.optionSource = {
           sourceType: "dict",
-          dictKey: custom.enumName,
+          dictKey: dictKey,
         };
       }
 
