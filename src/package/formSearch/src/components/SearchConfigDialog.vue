@@ -18,65 +18,64 @@
           <i class="el-icon-plus" />
           从预设添加
         </el-button>
+        <el-input
+          v-model="searchKeyword"
+          placeholder="输入关键字过滤字段"
+          size="small"
+          clearable
+          prefix-icon="el-icon-search"
+          style="width: 260px"
+        />
       </div>
 
       <el-table
         ref="configTable"
-        :data="configList"
+        :data="filteredConfigList"
         border
         stripe
+        size="mini"
+        class="config-table--dense"
         style="width: 100%; margin-top: 10px"
         :row-class-name="tableRowClassName"
         row-key="value"
         :tree-props="{ children: '' }"
         height="400"
       >
-        <el-table-column label="排序" width="80" align="center" v-if="dragable">
+        <el-table-column label="排序" width="60" align="center" v-if="dragable">
           <template slot-scope="scope">
-            <i class="el-icon-rank sort-handle" style="cursor: move; font-size: 18px" />
+            <i class="el-icon-rank sort-handle" style="cursor: move; font-size: 16px" />
           </template>
         </el-table-column>
 
-        <el-table-column label="字段名称" prop="label" align="center">
-          <template slot-scope="scope">
-            <el-input
-              v-model="scope.row.label"
-              size="small"
-              placeholder="请输入字段名称"
-              disabled
-            />
-          </template>
-        </el-table-column>
+        <el-table-column type="index" label="序号" width="50" align="center" />
 
-        <el-table-column label="字段值" prop="value" align="center">
-          <template slot-scope="scope">
-            <el-input v-model="scope.row.value" size="small" placeholder="请输入字段值" disabled />
-          </template>
-        </el-table-column>
+        <el-table-column label="字段名称" prop="label" align="center" />
 
-        <el-table-column label="输入类型" prop="inputType" width="130" align="center">
+        <el-table-column label="字段值" prop="value" align="center" />
+
+        <el-table-column label="输入类型" prop="inputType" width="120" align="center">
           <template slot-scope="scope">
             <el-select
               v-model="scope.row.inputType"
-              size="small"
+              size="mini"
               placeholder="请选择类型"
               @change="handleTypeChange(scope.row)"
               :disabled="['number', 'picker'].includes(scope.row.inputType)"
             >
-              <el-option label="文本输入" value="text" />
-              <el-option label="数字输入" value="number" disabled />
-              <el-option label="下拉选择" value="select" />
-              <el-option label="日期选择" value="picker" disabled />
+              <el-option label="文本" value="text" />
+              <el-option label="数字" value="number" disabled />
+              <el-option label="下拉" value="select" />
+              <el-option label="日期" value="picker" disabled />
             </el-select>
           </template>
         </el-table-column>
 
-        <el-table-column label="日期类型" width="150" align="center">
+        <el-table-column label="日期类型" width="140" align="center">
           <template slot-scope="scope">
             <el-select
               v-if="scope.row.inputType === 'picker'"
               v-model="scope.row.dateType"
-              size="small"
+              size="mini"
               placeholder="请选择日期类型"
               @change="handleDateTypeChange(scope.row)"
             >
@@ -92,27 +91,26 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="配置" width="150" align="center">
+        <el-table-column label="配置" width="80" align="center">
           <template slot-scope="scope">
             <div v-if="scope.row.inputType === 'select'">
-              <el-button type="text" size="small" @click="handleConfigOptions(scope.$index)">
+              <el-button type="text" size="mini" @click="handleConfigOptions(scope.$index)">
                 配置选项
               </el-button>
             </div>
-            <div v-else class="gray-text">无需配置</div>
+            <div v-else class="gray-text">-</div>
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="100" align="center">
+        <el-table-column label="操作" width="70" align="center">
           <template slot-scope="scope">
             <el-button
               type="text"
+              size="mini"
               icon="el-icon-delete"
               style="color: #f56c6c"
               @click="handleDelete(scope.$index)"
-            >
-              删除
-            </el-button>
+            />
           </template>
         </el-table-column>
       </el-table>
@@ -182,7 +180,11 @@
         </el-form-item>
 
         <el-form-item v-if="currentOptionConfig.sourceType === 'api'" label="请求方式">
-          <el-select v-model="currentOptionConfig.method" placeholder="请选择请求方式" style="width: 100%">
+          <el-select
+            v-model="currentOptionConfig.method"
+            placeholder="请选择请求方式"
+            style="width: 100%"
+          >
             <el-option label="GET" value="get" />
             <el-option label="POST" value="post" />
           </el-select>
@@ -258,7 +260,7 @@
       :visible.sync="customsDialogVisible"
       width="600px"
       append-to-body
-      @open="customSearchKeyword = ''"
+      @open="handleCustomsDialogOpen"
     >
       <el-input
         v-model="customSearchKeyword"
@@ -268,27 +270,60 @@
         prefix-icon="el-icon-search"
         style="margin-bottom: 10px"
       />
-      <el-table :data="filteredAvailableCustoms" border stripe style="width: 100%" height="400">
+      <el-table
+        ref="customsTable"
+        :data="filteredAvailableCustoms"
+        :row-key="row => row.key"
+        border
+        stripe
+        size="mini"
+        class="customs-table--dense"
+        style="width: 100%"
+        height="400"
+        @selection-change="handleCustomsSelectionChange"
+      >
+        <el-table-column type="selection" width="45" :reserve-selection="true" />
+        <el-table-column type="index" label="序号" width="50" align="center" />
         <el-table-column label="字段名称" prop="name" align="center" />
         <el-table-column label="字段值" prop="key" align="center" />
         <el-table-column label="数据类型" width="120" align="center">
           <template slot-scope="scope">
-            <el-tag v-if="scope.row.keyType === 1" type="info">字符串</el-tag>
-            <el-tag v-else-if="scope.row.keyType === 2" type="warning">数字</el-tag>
-            <el-tag v-else-if="scope.row.keyType === 3" type="success">枚举</el-tag>
-            <el-tag v-else-if="scope.row.keyType === 4" type="primary">日期</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100" align="center">
-          <template slot-scope="scope">
-            <el-button type="text" size="small" @click="handleSelectCustom(scope.row)">
-              添加
-            </el-button>
+            <el-tag v-if="scope.row.keyType === 1" type="info" size="mini">字符串</el-tag>
+            <el-tag v-else-if="scope.row.keyType === 2" type="warning" size="mini">数字</el-tag>
+            <el-tag v-else-if="scope.row.keyType === 3" type="success" size="mini">枚举</el-tag>
+            <el-tag v-else-if="scope.row.keyType === 4" type="primary" size="mini">日期</el-tag>
           </template>
         </el-table-column>
       </el-table>
       <div slot="footer" style="text-align: right">
-        <el-button @click="customsDialogVisible = false">取消</el-button>
+        <el-popover
+          placement="top"
+          width="200"
+          trigger="hover"
+          :disabled="selectedCustoms.length === 0"
+        >
+          <div class="selected-preview">
+            <div v-for="item in selectedCustoms" :key="item.key" class="selected-preview-item">
+              {{ item.name }}
+            </div>
+          </div>
+          <el-button
+            slot="reference"
+            type="primary"
+            size="small"
+            :disabled="selectedCustoms.length === 0"
+            @click="handleBatchAdd"
+          >
+            添加
+            <span v-if="selectedCustoms.length > 0">({{ selectedCustoms.length }})</span>
+          </el-button>
+        </el-popover>
+        <el-button
+          size="small"
+          @click="customsDialogVisible = false"
+          :style="{ marginLeft: '10px' }"
+          >取消</el-button
+        >
       </div>
     </el-dialog>
   </el-dialog>
@@ -388,7 +423,9 @@ export default {
       frontAppendList: [], // 前端追加的搜索条件，不参与配置
       optionsDialogVisible: false,
       customsDialogVisible: false,
+      searchKeyword: "",
       customSearchKeyword: "",
+      selectedCustoms: [],
       currentEditIndex: -1,
       currentOptionConfig: {
         sourceType: "manual",
@@ -412,6 +449,19 @@ export default {
       // 前端追加的字段也要排除在预设可选列表之外，避免重复添加
       const selectedKeys = [...this.configList, ...this.frontAppendList].map(item => item.value);
       return this.customs.filter(custom => !selectedKeys.includes(custom.key));
+    },
+    filteredConfigList() {
+      const keyword = this.searchKeyword.trim().toLowerCase();
+      if (!keyword) return this.configList;
+      return this.configList.filter(
+        item =>
+          String(item.label || "")
+            .toLowerCase()
+            .includes(keyword) ||
+          String(item.value || "")
+            .toLowerCase()
+            .includes(keyword)
+      );
     },
     filteredAvailableCustoms() {
       const keyword = this.customSearchKeyword.trim().toLowerCase();
@@ -438,6 +488,7 @@ export default {
       handler(newVal) {
         this.dialogVisible = newVal;
         if (newVal) {
+          this.searchKeyword = "";
           const tableSearch = this.tableSearch || [];
           // 前端追加的搜索条件不参与配置，但需要一直保留在搜索区域
           this.frontAppendList = tableSearch.filter(item => item.isFrontAppend);
@@ -918,6 +969,25 @@ export default {
       }
 
       this.configList.push(newItem);
+    },
+    handleCustomsDialogOpen() {
+      this.customSearchKeyword = "";
+      this.selectedCustoms = [];
+      this.$nextTick(() => {
+        if (this.$refs.customsTable) {
+          this.$refs.customsTable.clearSelection();
+        }
+      });
+    },
+    handleCustomsSelectionChange(selection) {
+      this.selectedCustoms = selection;
+    },
+    handleBatchAdd() {
+      if (this.selectedCustoms.length === 0) return;
+      this.selectedCustoms.forEach(custom => {
+        this.handleSelectCustom(custom);
+      });
+      this.$message.success(`已添加 ${this.selectedCustoms.length} 个条件`);
       this.customsDialogVisible = false;
     },
     // 处理数组和非数组的双向绑定值, 例如：下拉框和日期选择器切换成多选下拉框时间范围时候 双向绑定的值的类型要改变。this.formSearch是实际双向绑定的值
@@ -958,7 +1028,35 @@ export default {
 };
 </script>
 
+<style>
+.selected-preview {
+  max-height: 240px;
+  overflow-y: auto;
+}
+.selected-preview-item {
+  padding: 3px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+  color: #303133;
+}
+.selected-preview-item:last-child {
+  border-bottom: none;
+}
+/* 从预设添加表格行高压缩 */
+.customs-table--dense .el-table__body-wrapper .el-table__row td,
+.config-table--dense .el-table__body-wrapper .el-table__row td {
+  padding: 3px 0;
+}
+.customs-table--dense .el-table__header-wrapper th,
+.config-table--dense .el-table__header-wrapper th {
+  padding: 4px 0;
+}
+</style>
+
 <style scoped>
+::v-deep .el-dialog__body {
+  padding: 20px;
+}
 .search-config-container {
   padding-bottom: 10px;
 }
@@ -1012,3 +1110,4 @@ export default {
   overflow-y: auto;
 }
 </style>
+
