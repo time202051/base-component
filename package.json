@@ -1,6 +1,6 @@
 {
   "name": "ol-base-components",
-  "version": "3.6.11",
+  "version": "3.6.12",
   "private": false,
   "main": "dist/index.umd.js",
   "style": "dist/style.css",

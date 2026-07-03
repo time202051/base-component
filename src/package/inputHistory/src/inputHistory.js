@@ -1,4 +1,3 @@
-import Vue from 'vue'
 import { addRecord, getRecords } from './inputHistoryDB'
 import DropdownComponent from './dropdown.vue'
 
@@ -143,10 +142,19 @@ function positionDropdown(dropdownEl, inputEl) {
 }
 
 /**
+ * 模块级 Vue 引用，通过 install 设置，确保使用消费方项目的 Vue 实例
+ */
+let _Vue = null
+
+export function setVue(vue) {
+  _Vue = vue
+}
+
+/**
  * 创建下拉面板实例
  */
 function createDropdown() {
-  const DropdownConstructor = Vue.extend(DropdownComponent)
+  const DropdownConstructor = _Vue.extend(DropdownComponent)
   const instance = new DropdownConstructor({
     propsData: {
       visible: false,
