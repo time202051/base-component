@@ -9,22 +9,42 @@
         <div class="header-box" style="margin-bottom: 10px">
           <paper-selector :hiprint-template="hiprintTemplate" ref="paperSelector" />
           <div>
+            <!--
+              slot 暴露给父组件的方法：
+              save = 保存模板并关闭弹窗（emit submit 事件）
+              download = 导出模板为 JSON 文件下载到本地
+              import-template = 从本地 JSON 文件导入模板
+            -->
             <slot
               :hiprint-template="hiprintTemplate"
               :print="print"
               :clear-paper="clearPaper"
-              :export-json="exportJson"
+              :save="save"
+              :download="handleExport"
+              :import-template="handleImport"
+              :export-json="save"
             >
             </slot>
-            <el-button type="primary" size="small" @click="print">
+            <el-button-group>
+              <el-button type="primary" icon="el-icon-upload2" @click="handleExport"></el-button>
+              <el-button type="primary" icon="el-icon-download" @click="handleImport"></el-button>
+            </el-button-group>
+            <input
+              ref="fileInput"
+              type="file"
+              accept=".json"
+              style="display: none"
+              @change="handleFileChange"
+            />
+            <el-button type="primary" @click="print" style="margin-left: 10px">
               <i class="iconfont sv-printer" />
               打印
             </el-button>
-            <el-button type="danger" size="small" @click="clearPaper" style="margin-left: 10px">
+            <el-button type="danger" @click="clearPaper" style="margin-left: 10px">
               <i class="iconfont sv-clear" />
               清空纸张
             </el-button>
-            <el-button type="success" size="small" @click="exportJson" style="margin-left: 10px">
+            <el-button type="success" @click="save" style="margin-left: 10px">
               <i class="iconfont sv-export" />
               保存
             </el-button>
@@ -177,38 +197,55 @@ export default {
     },
     addFontSizeOptions() {
       const container = document.getElementById("PrintElementOptionSetting");
+      if (!container) return;
+
       const fontSizeSelect = $(container)
         .find('.hiprint-option-item-label:contains("字体大小")')
         .next(".hiprint-option-item-field")
         .find("select.auto-submit");
       if (!fontSizeSelect.length) return;
 
-      const currentValue = fontSizeSelect.val();
-      const targetOptions = [
-        { value: "5", text: "5pt" },
-        { value: "4", text: "4pt" },
-        { value: "3", text: "3pt" },
-        { value: "2", text: "2pt" },
-      ];
+      // 断开观察器，避免修改 DOM 时触发自身造成死循环
+      if (this.observer) {
+        this.observer.disconnect();
+      }
 
-      let hasChanges = false;
-      const defaultOption = fontSizeSelect.find('option[value=""]');
+      try {
+        const currentValue = fontSizeSelect.val();
+        const targetOptions = [
+          { value: "5", text: "5pt" },
+          { value: "4", text: "4pt" },
+          { value: "3", text: "3pt" },
+          { value: "2", text: "2pt" },
+        ];
 
-      targetOptions.forEach(opt => {
-        const existing = fontSizeSelect.find(`option[value="${opt.value}"]`);
-        if (existing.length) {
-          if (existing.text() !== opt.text) {
-            existing.text(opt.text);
+        let hasChanges = false;
+        const defaultOption = fontSizeSelect.find('option[value=""]');
+
+        targetOptions.forEach(opt => {
+          const existing = fontSizeSelect.find(`option[value="${opt.value}"]`);
+          if (existing.length) {
+            if (existing.text() !== opt.text) {
+              existing.text(opt.text);
+              hasChanges = true;
+            }
+          } else {
+            defaultOption.after(`<option value="${opt.value}">${opt.text}</option>`);
             hasChanges = true;
           }
-        } else {
-          defaultOption.after(`<option value="${opt.value}">${opt.text}</option>`);
-          hasChanges = true;
-        }
-      });
+        });
 
-      if (hasChanges && currentValue) {
-        fontSizeSelect.val(currentValue);
+        if (hasChanges && currentValue) {
+          fontSizeSelect.val(currentValue);
+        }
+      } finally {
+        // 重新连接观察器
+        if (this.observer) {
+          this.observer.observe(container, {
+            childList: true,
+            subtree: true,
+          });
+        }
       }
     },
     async print() {
@@ -230,10 +267,12 @@ export default {
         // callback: () => {
         //   console.log("浏览器打印窗口已打开");
         // },
-        // styleHandler: () => {
-        //   // 重写 文本 打印样式
-        //   return "<style>.hiprint-printElement-text{color:red !important;}</style>";
-        // },
+        styleHandler: () => {
+          // 翻译扩展（如 KISS-Translator）崩溃时会在 body 中注入报错文本节点。
+          // 扩展的 JS 运行在隔离世界，无法从页面侧 patch 其原型，只能靠 CSS。
+          // body 默认隐藏 → 仅 hiprint 纸张区域可见，裸文本节点自然不可见。
+          return "<style>body{visibility:hidden!important}.hiprint-printPaper,.hiprint-printPaper *{visibility:visible!important}</style>";
+        },
       };
 
       // 使用 props 传入的纸张大小
@@ -242,35 +281,117 @@ export default {
       // 调用浏览器打印
       this.hiprintTemplate.print(data, options, ext);
     },
-    exportJson() {
+    save() {
       const json = this.hiprintTemplate.getJson();
+      // 校验模板是否有元素，防止保存空白模板
+      const panels = json && json.panels;
+      if (!panels || !panels.length || !panels.some(p => p.printElements && p.printElements.length)) {
+        this.$message && this.$message({
+          message: "模板为空，请先添加元素",
+          type: "warning",
+          customClass: "print-message-zindex",
+        });
+        return;
+      }
       const dataStr = JSON.stringify(json, null, 2);
-      const blob = new Blob([dataStr], { type: "application/json" });
       console.log("保存", JSON.parse(dataStr));
       this.$emit("submit", JSON.parse(dataStr));
       this.close();
-      // const url = URL.createObjectURL(blob);
-      // const link = document.createElement("a");
-      // link.href = url;
-      // link.download = `print-template-${Date.now()}.json`;
-      // document.body.appendChild(link);
-      // link.click();
-      // document.body.removeChild(link);
-      // URL.revokeObjectURL(url);
-      // alert("导出成功!");
     },
     clearPaper() {
-      this.hiprintTemplate.clear();
+      const json = this.hiprintTemplate.getJson();
+      const panels = json && json.panels;
+      if (!panels || !panels.length || !panels.some(p => p.printElements && p.printElements.length)) {
+        this.$message && this.$message({
+          message: "纸张上已无元素，无需清空",
+          type: "warning",
+          customClass: "print-message-zindex",
+        });
+        return;
+      }
+      this.$confirm("确定要清空纸张上所有元素吗？此操作不可撤销。", "清空确认", {
+        confirmButtonText: "确定清空",
+        cancelButtonText: "取消",
+        type: "warning",
+        customClass: "print-message-zindex",
+      }).then(() => {
+        this.hiprintTemplate.clear();
+      }).catch(() => {});
+    },
+    handleExport() {
+      const json = this.hiprintTemplate.getJson();
+      // 校验模板是否有元素，防止导出空白模板
+      const panels = json && json.panels;
+      if (!panels || !panels.length || !panels.some(p => p.printElements && p.printElements.length)) {
+        this.$message && this.$message({
+          message: "模板中没有元素，请先拖拽组件到纸张上",
+          type: "warning",
+          customClass: "print-message-zindex",
+        });
+        return;
+      }
+      this.$confirm("确定要导出当前模板为 JSON 文件吗？", "导出确认", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+        customClass: "print-message-zindex",
+      }).then(() => {
+        const dataStr = JSON.stringify(json, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "print-template-" + Date.now() + ".json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }).catch(() => {});
+    },
+    handleImport() {
+      this.$refs.fileInput.click();
+    },
+    handleFileChange(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const json = JSON.parse(e.target.result);
+          this.hiprintTemplate.update(json);
+          this.$message && this.$message({
+            message: "导入成功",
+            type: "success",
+            customClass: "print-message-zindex",
+          });
+        } catch (err) {
+          this.$message && this.$message({
+            message: "导入失败：JSON 格式不正确",
+            type: "error",
+            customClass: "print-message-zindex",
+          });
+          console.error("导入失败:", err);
+        }
+      };
+      reader.readAsText(file);
+      // 重置 input，允许重复选择同一个文件
+      event.target.value = "";
     },
     close() {
       console.log("关闭");
+      // 清理 MutationObserver
       if (this.observer) {
         this.observer.disconnect();
         this.observer = null;
       }
+      // 清理 hiprintTemplate 引用，释放内部 DOM 绑定
+      if (this.hiprintTemplate) {
+        this.hiprintTemplate = null;
+      }
+      // 先通知父组件关闭，再销毁自身
+      this.$emit("close");
       this.$destroy();
       this.$el.remove();
-      this.$emit("close");
     },
   },
 };
@@ -449,6 +570,16 @@ button i {
 </style>
 
 <style>
+/* 设置 message 提示层级高于打印弹窗 (z-index: 3000) */
+.print-message-zindex {
+  z-index: 3100 !important;
+}
+
+/* $confirm 的 z-index 在内联 style 的 wrapper 上，customClass 无法覆盖，需单独处理 */
+.el-message-box__wrapper {
+  z-index: 3100 !important;
+}
+
 /* 重写默认的一个样式 */
 .rect-printElement-types .hiprint-printElement-type > li > ul > li > a {
   color: #000 !important;
