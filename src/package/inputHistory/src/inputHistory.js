@@ -187,9 +187,9 @@ export default {
       positionDropdown(dropdownEl, inputEl)
     }
 
-    // 点击外部关闭
+    // 点击外部关闭（排除 el-input 内部任意元素，如 clearable × 图标）
     function onClickOutside(e) {
-      if (dropdownEl && !dropdownEl.contains(e.target) && e.target !== inputEl) {
+      if (dropdownEl && !dropdownEl.contains(e.target) && !el.contains(e.target)) {
         closeDropdown()
       }
     }
@@ -238,6 +238,14 @@ export default {
     function onInput() {
       dropdown.setQuery(inputEl.value || '')
       dropdown.selectedIndex = -1
+      // 兜底：clearable 等操作可能已关闭面板，有输入内容就必须打开
+      if (inputEl.value && !dropdown.visible) {
+        dropdown.visible = true
+        positionDropdown(dropdownEl, inputEl)
+        window.addEventListener('scroll', onScrollResize, true)
+        window.addEventListener('resize', onScrollResize)
+        document.addEventListener('click', onClickOutside)
+      }
     }
 
     function onKeydown(e) {
