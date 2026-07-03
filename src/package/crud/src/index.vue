@@ -54,6 +54,7 @@
                 clearable
                 v-bind="field.props || {}"
                 @keyup.enter.native="handleSearch"
+                v-input-history
               />
             </div>
 
@@ -78,6 +79,7 @@
                 @keydown.native="onNumberKeydown"
                 @paste.native="onNumberPaste"
                 @input.native="onNumberInput($event, field)"
+                v-input-history
               />
             </div>
 
@@ -220,6 +222,7 @@
                 clearable
                 v-bind="field.props || {}"
                 @keyup.enter.native="handleSearch"
+                v-input-history
               />
             </div>
           </el-form-item>

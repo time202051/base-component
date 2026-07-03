@@ -196,6 +196,7 @@
                 @keyup.enter.native="handleSearch('formSearch')"
                 @keydown.native="keyInput(item, $event)"
                 @paste.native="onPaste(item, $event)"
+                v-input-history
               />
             </div>
           </el-form-item>

@@ -9,6 +9,8 @@ import OlCrud from "./crud";
 
 import OlPrint, { Hiprint } from "./print";
 
+import OlInputHistory from "./inputHistory";
+
 import SwaggerClient from "swagger-client";
 
 const consoleTooltip = () => {
@@ -226,6 +228,7 @@ const install = async function (Vue, options) {
   components.map(item => {
     Vue.component(`ol-${item.name}`, item);
   });
+  Vue.directive('input-history', OlInputHistory);
   Vue.prototype.$olBaseConfig = options || {};
   consoleTooltip();
 };
@@ -244,3 +247,4 @@ export {
   OlCrud,
 };
 export { swaggerInstall, swaggerUnload, Hiprint };
+export { OlInputHistory };
