@@ -37,22 +37,27 @@ export default {
       const q = (this.query || "").trim();
       if (!q) return [];
       const plain = JSON.parse(JSON.stringify(this.records));
-      // 每条记录附带拼音，Fuse 同时匹配原文和拼音
-      const items = plain.map((v) => ({
-        original: v,
-        py: convertToPinyin(v || "", "", true),
-      }));
+      // 每条记录附带拼音全文 + 首字母缩写，Fuse 同时匹配三者
+      const items = plain.map((v) => {
+        const fullPy = convertToPinyin(v || "", "", true);
+        // 首字母缩写：空格分隔每个字的拼音，取首字母
+        const initials = convertToPinyin(v || "", " ", true)
+          .split(" ")
+          .map((s) => s[0] || "")
+          .join("");
+        return { original: v, py: fullPy, pyInitials: initials };
+      });
       const fuse = new Fuse(items, {
-        keys: ["original", "py"],
-        threshold: 0.3,
+        keys: ["original", "py", "pyInitials"],
+        threshold: 0.4,
         distance: 100,
         minMatchCharLength: 1,
       });
       const results = fuse.search(q);
       return results.map((r) => {
-        // 直接是 item 对象 { original, py }
+        // 直接是 item 对象 { original, py, pyInitials }
         if (r && r.original) return r.original;
-        // 包了 FuseResult { item: { original, py } }
+        // 包了 FuseResult { item: { original, py, pyInitials } }
         if (r && r.item && r.item.original) return r.item.original;
         // 纯索引数字
         return plain[r];
