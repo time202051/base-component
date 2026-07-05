@@ -17,7 +17,7 @@
         :key="key"
       >
         <!-- 'label-width': '100px', -->
-        <div class="transitionGroup">
+        <div class="transitionGroup" :style="{ '--form-search-span': effectiveSpan }">
           <el-form-item
             v-for="item in findTableSearch"
             v-show="!item.show"
@@ -323,7 +323,6 @@ export default {
           buttonData: [],
           rules: {},
           value: {},
-          tableSearchSlice: 4, // 默认为展开4当出现特色情况可以自行设置
           // 循环的各种组件
           tableSearch: [],
           // 表格框架各种样式
@@ -334,9 +333,10 @@ export default {
       },
     },
     // btnlist: Array,
-    tableSearchSlice: {
+    // 一行显示搜索字段的个数，同时影响 CSS 布局和折叠数量
+    span: {
       type: Number,
-      default: 4,
+      default: undefined,
     },
     //获取swagger后的钩子，返回swagger结构数据。用于处理swagger数据
     onSwagger: {
@@ -362,7 +362,7 @@ export default {
       findTableSearch: {},
       expend: !(
         this.formSearchData.tableSearch &&
-        this.formSearchData.tableSearch.length > this.tableSearchSlice
+        this.formSearchData.tableSearch.length > this.effectiveSpan
       ),
       formSearch: {
         ...this.formSearchData.value,
@@ -388,12 +388,16 @@ export default {
     showExpendBtn() {
       return (
         this.formSearchData.tableSearch &&
-        this.formSearchData.tableSearch.length > this.tableSearchSlice
+        this.formSearchData.tableSearch.length > this.effectiveSpan
       );
     },
     // 优先级：props > 全局配置 > 默认值
     finalMethod() {
       return this.method || (this.$olBaseConfig && this.$olBaseConfig.method) || "get";
+    },
+    // 优先级：props > formSearchData.options > 全局配置 > 默认值
+    effectiveSpan() {
+      return this.span || (this.$olBaseConfig && this.$olBaseConfig.span) || 4;
     },
   },
   watch: {
@@ -515,9 +519,9 @@ export default {
         this.formSearchData.tableSearch = [...this.formSearchData.tableSearch, ...rangeTimeCloumns];
       }
 
-      const isMoreThanSlice = this.formSearchData.tableSearch.length > this.tableSearchSlice;
+      const isMoreThanSlice = this.formSearchData.tableSearch.length > this.effectiveSpan;
       this.findTableSearch = isMoreThanSlice
-        ? this.formSearchData.tableSearch.slice(0, this.tableSearchSlice)
+        ? this.formSearchData.tableSearch.slice(0, this.effectiveSpan)
         : this.formSearchData.tableSearch;
       // 超过4个默认收起，按钮显示"展开"
       if (this.isCustomSearch) this.expend = !isMoreThanSlice;
@@ -784,7 +788,7 @@ export default {
       this.expend = !this.expend; // 展开和收起
       this.findTableSearch = this.expend
         ? this.formSearchData.tableSearch.slice(0, this.formSearchData.tableSearch.length)
-        : this.formSearchData.tableSearch.slice(0, this.tableSearchSlice);
+        : this.formSearchData.tableSearch.slice(0, this.effectiveSpan);
 
       this.$emit("btnHandleExpend", this.expend);
     },
@@ -877,7 +881,7 @@ export default {
       if (this.isCustomSearch) {
         this.initRangeFields();
       }
-      const isMoreThanSlice = this.formSearchData.tableSearch.length > this.tableSearchSlice;
+      const isMoreThanSlice = this.formSearchData.tableSearch.length > this.effectiveSpan;
 
       if (isMoreThanSlice) {
         // 如果之前没有收展按钮（≤4个），现在有了（>4个），默认收起
@@ -887,7 +891,7 @@ export default {
         // 保持当前 expend 状态决定显示全部还是前4个
         this.findTableSearch = this.expend
           ? this.formSearchData.tableSearch
-          : this.formSearchData.tableSearch.slice(0, this.tableSearchSlice);
+          : this.formSearchData.tableSearch.slice(0, this.effectiveSpan);
       } else {
         // 不超过4个，全部显示
         this.expend = true;
@@ -1028,10 +1032,10 @@ export default {
 //    4. 输入框 flex:1 占据剩余空间
 // ============================================================
 
-$fields-per-row: 4;
 $row-gap: 8px;
 $col-gap: 8px;
-$field-width: calc((100% - (#{$fields-per-row} - 1) * #{$col-gap}) / #{$fields-per-row});
+// 使用 CSS 自定义属性，由 span prop 动态控制
+// 默认 4 列，可通过 props、formSearchData.options、$olBaseConfig 覆盖
 $label-width: 6em;
 
 // ==================== 顶栏 ====================
@@ -1064,7 +1068,7 @@ $label-width: 6em;
   gap: $row-gap $col-gap;
 
   .el-form-item {
-    width: $field-width;
+    width: calc((100% - (var(--form-search-span, 4) - 1) * #{$col-gap}) / var(--form-search-span, 4));
     display: flex;
     margin-right: 0 !important;
     margin-bottom: 0 !important;
@@ -1096,7 +1100,7 @@ $label-width: 6em;
 
   // 日期范围与输入框宽度一致
   .picker {
-    width: $field-width;
+    width: calc((100% - (var(--form-search-span, 4) - 1) * #{$col-gap}) / var(--form-search-span, 4));
   }
 }
 
