@@ -65,6 +65,8 @@
         :visible.sync="dialogVisible"
         width="600px"
         :close-on-click-modal="false"
+        :close-on-press-escape="false"
+        :before-close="beforeClose"
       >
         <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
           <el-form-item label="模板名称" prop="templeteName">
@@ -91,7 +93,7 @@
           </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button @click="handleCancel">取消</el-button>
           <el-button type="primary" @click="handleSubmit">确定</el-button>
         </span>
       </el-dialog>
@@ -126,7 +128,19 @@ export default {
         templeteName: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
         templeteJson: [{ required: true, message: "请输入模板JSON", trigger: "blur" }],
       },
+      originalForm: null,
     };
+  },
+  computed: {
+    isFormDirty() {
+      if (!this.originalForm) return false;
+      return (
+        this.form.templeteName !== this.originalForm.templeteName ||
+        this.form.templeteJson !== this.originalForm.templeteJson ||
+        this.form.sourceUrl !== this.originalForm.sourceUrl ||
+        this.form.remark !== this.originalForm.remark
+      );
+    },
   },
   mounted() {
     this.initMenuTree();
@@ -217,6 +231,7 @@ export default {
       this.dialogVisible = true;
       this.$nextTick(() => {
         this.$refs.formRef && this.$refs.formRef.clearValidate();
+        this.snapshotForm();
       });
     },
     handleEdit(template) {
@@ -229,6 +244,10 @@ export default {
         sourceUrl: template.sourceUrl || "",
       };
       this.dialogVisible = true;
+      this.$nextTick(() => {
+        this.$refs.formRef && this.$refs.formRef.clearValidate();
+        this.snapshotForm();
+      });
     },
     async handleDelete(template) {
       this.$confirm("确认删除该模板吗？", "提示", {
@@ -278,6 +297,7 @@ export default {
             }
             this.dialogVisible = false;
             this.loadTemplates(this.currentMenuId);
+            this.snapshotForm();
           } catch (error) {
             console.error("提交失败:", error);
           }
@@ -301,6 +321,38 @@ export default {
           this.$message.success("模板创建成功！");
         },
       });
+    },
+    snapshotForm() {
+      this.originalForm = {
+        templeteName: this.form.templeteName,
+        templeteJson: this.form.templeteJson,
+        sourceUrl: this.form.sourceUrl,
+        remark: this.form.remark,
+      };
+    },
+    handleCancel() {
+      this.checkBeforeClose(() => {
+        this.dialogVisible = false;
+      });
+    },
+    beforeClose(done) {
+      this.checkBeforeClose(done);
+    },
+    checkBeforeClose(done) {
+      if (this.isFormDirty) {
+        this.$confirm("模板数据已修改，确定放弃编辑吗？", "提示", {
+          confirmButtonText: "确定放弃",
+          cancelButtonText: "继续编辑",
+          type: "warning",
+        })
+          .then(() => {
+            this.originalForm = null;
+            done();
+          })
+          .catch(() => {});
+      } else {
+        done();
+      }
     },
   },
 };

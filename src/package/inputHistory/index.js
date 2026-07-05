@@ -6,4 +6,3 @@ inputHistory.install = function (Vue) {
 }
 
 export default inputHistory
-export { setVue }

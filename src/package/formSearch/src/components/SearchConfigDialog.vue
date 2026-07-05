@@ -12,7 +12,7 @@
       <div class="config-header">
         <el-button
           v-if="customs && customs.length > 0"
-          type="success"
+          type="primary"
           size="small"
           @click="customsDialogVisible = true"
         >

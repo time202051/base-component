@@ -121,6 +121,7 @@ export default {
   data() {
     return {
       hiprintTemplate: {},
+      isDirty: false,
     };
   },
   created() {
@@ -155,6 +156,7 @@ export default {
         onDataChanged: (type, json) => {
           console.log(type); // 新增、移动、删除、修改(参数调整)、大小、旋转
           console.log(json); // 返回 template
+          this.isDirty = true;
         },
         // fontList: [
         //   { title: "微软雅黑", value: "Microsoft YaHei" },
@@ -296,6 +298,7 @@ export default {
       const dataStr = JSON.stringify(json, null, 2);
       console.log("保存", JSON.parse(dataStr));
       this.$emit("submit", JSON.parse(dataStr));
+      this.isDirty = false;
       this.close();
     },
     clearPaper() {
@@ -378,6 +381,22 @@ export default {
       event.target.value = "";
     },
     close() {
+      if (this.isDirty) {
+        this.$confirm("模板数据已修改，确定放弃编辑吗？", "提示", {
+          confirmButtonText: "确定放弃",
+          cancelButtonText: "继续编辑",
+          type: "warning",
+          customClass: "print-message-zindex",
+        })
+          .then(() => {
+            this.doClose();
+          })
+          .catch(() => {});
+      } else {
+        this.doClose();
+      }
+    },
+    doClose() {
       console.log("关闭");
       // 清理 MutationObserver
       if (this.observer) {
@@ -570,14 +589,14 @@ button i {
 </style>
 
 <style>
-/* 设置 message 提示层级高于打印弹窗 (z-index: 3000) */
+/* 设置 message 提示层级高于打印弹窗 (z-index: 5000) */
 .print-message-zindex {
-  z-index: 3100 !important;
+  z-index: 5100 !important;
 }
 
 /* $confirm 的 z-index 在内联 style 的 wrapper 上，customClass 无法覆盖，需单独处理 */
 .el-message-box__wrapper {
-  z-index: 3100 !important;
+  z-index: 5100 !important;
 }
 
 /* 重写默认的一个样式 */
@@ -765,7 +784,7 @@ button i {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
+  z-index: 5000;
 }
 
 .print-dialog {
