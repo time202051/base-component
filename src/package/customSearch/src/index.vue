@@ -188,9 +188,9 @@ export default {
       }).then(res => {
         if (res.code !== 200) return;
         this.$message.success("保存成功");
+        this.init();
+        console.log("保存配置数据", configList);
       });
-      this.init();
-      console.log("保存配置数据", configList);
     },
   },
 };
