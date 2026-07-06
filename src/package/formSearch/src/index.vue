@@ -23,6 +23,7 @@
             v-show="!item.show"
             :key="item.value"
             class="table-header-item"
+            :style="{ gridColumn: `span ${item.span || 1}` }"
             :prop="item.value && !String(item.value).includes('.') ? item.value : undefined"
             v-bind="item.labelProps || {}"
             :class="{
@@ -384,12 +385,13 @@ export default {
   },
   mounted() {},
   computed: {
-    // 搜索框展开折叠按钮是否显示
+    // 搜索框展开折叠按钮是否显示（按每项 span 累计判断，而非项数）
     showExpendBtn() {
-      return (
-        this.formSearchData.tableSearch &&
-        this.formSearchData.tableSearch.length > this.effectiveSpan
-      );
+      if (!this.formSearchData.tableSearch) return false;
+      var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
+        return sum + (item.span || 1);
+      }, 0);
+      return totalSpan > this.effectiveSpan;
     },
     // 优先级：props > 全局配置 > 默认值
     finalMethod() {
@@ -519,9 +521,32 @@ export default {
         this.formSearchData.tableSearch = [...this.formSearchData.tableSearch, ...rangeTimeCloumns];
       }
 
-      const isMoreThanSlice = this.formSearchData.tableSearch.length > this.effectiveSpan;
+      // 为所有项补齐 span 默认值（向后兼容旧数据）
+      this.formSearchData.tableSearch.forEach(function (item) {
+        if (item.span == null) {
+          item.span = 1;
+        }
+      });
+      // datetimerange 且格式含 HH:mm:ss 的自动 span=2（需要更多空间显示完整时分秒）
+      this.formSearchData.tableSearch.forEach(function (item) {
+        if (
+          item.inputType === 'picker' &&
+          item.props &&
+          item.props.type === 'datetimerange' &&
+          item.props.format &&
+          item.props.format.indexOf('HH:mm:ss') !== -1 &&
+          item.span === 1
+        ) {
+          item.span = 2;
+        }
+      });
+
+      var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
+        return sum + (item.span || 1);
+      }, 0);
+      var isMoreThanSlice = totalSpan > this.effectiveSpan;
       this.findTableSearch = isMoreThanSlice
-        ? this.formSearchData.tableSearch.slice(0, this.effectiveSpan)
+        ? this.sliceBySpan(this.formSearchData.tableSearch, this.effectiveSpan)
         : this.formSearchData.tableSearch;
       // 超过4个默认收起，按钮显示"展开"
       if (this.isCustomSearch) this.expend = !isMoreThanSlice;
@@ -564,6 +589,7 @@ export default {
             label: "创建时间",
             value: "createdTime",
             inputType: "picker",
+            span: 2,
             props: {
               type: "datetimerange",
               startPlaceholder: "开始时间",
@@ -623,6 +649,7 @@ export default {
             label: labelCHN,
             value: timeField,
             inputType: "picker",
+            span: 2,
             props: {
               type: "datetimerange",
               startPlaceholder: "开始时间",
@@ -787,10 +814,25 @@ export default {
     handleExpend() {
       this.expend = !this.expend; // 展开和收起
       this.findTableSearch = this.expend
-        ? this.formSearchData.tableSearch.slice(0, this.formSearchData.tableSearch.length)
-        : this.formSearchData.tableSearch.slice(0, this.effectiveSpan);
+        ? this.formSearchData.tableSearch.slice()
+        : this.sliceBySpan(this.formSearchData.tableSearch, this.effectiveSpan);
 
       this.$emit("btnHandleExpend", this.expend);
+    },
+    /** 按每项 span 累计值切片，用于折叠时显示前 N 列 */
+    sliceBySpan(items, maxSpan) {
+      var cumulative = 0;
+      for (var i = 0; i < items.length; i++) {
+        var itemSpan = items[i].span || 1;
+        if (itemSpan > maxSpan) {
+          itemSpan = maxSpan;
+        }
+        if (cumulative + itemSpan > maxSpan) {
+          return items.slice(0, i);
+        }
+        cumulative += itemSpan;
+      }
+      return items.slice();
     },
     getTargetMenuId() {
       const handleMenu = (arr, _this) => {
@@ -881,17 +923,26 @@ export default {
       if (this.isCustomSearch) {
         this.initRangeFields();
       }
-      const isMoreThanSlice = this.formSearchData.tableSearch.length > this.effectiveSpan;
+      // 补齐 span 默认值
+      this.formSearchData.tableSearch.forEach(function (item) {
+        if (item.span == null) {
+          item.span = 1;
+        }
+      });
+      var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
+        return sum + (item.span || 1);
+      }, 0);
+      var isMoreThanSlice = totalSpan > this.effectiveSpan;
 
       if (isMoreThanSlice) {
         // 如果之前没有收展按钮（≤4个），现在有了（>4个），默认收起
         if (!wasExpendBtnVisible) {
           this.expend = false;
         }
-        // 保持当前 expend 状态决定显示全部还是前4个
+        // 保持当前 expend 状态决定显示全部还是折叠
         this.findTableSearch = this.expend
           ? this.formSearchData.tableSearch
-          : this.formSearchData.tableSearch.slice(0, this.effectiveSpan);
+          : this.sliceBySpan(this.formSearchData.tableSearch, this.effectiveSpan);
       } else {
         // 不超过4个，全部显示
         this.expend = true;
@@ -1040,7 +1091,7 @@ $label-width: 6em;
 
 // ==================== 顶栏 ====================
 .table-header {
-  padding: 10px 0;
+  padding: 10px;
   border-bottom: 1px solid #e4e7ed;
   min-height: 49px;
 
@@ -1060,18 +1111,21 @@ $label-width: 6em;
 }
 
 // ==================== 搜索字段网格 ====================
+// 使用 CSS Grid 替代 flexbox，支持每项 grid-column: span N 跨列
 .transitionGroup {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(var(--form-search-span, 4), 1fr);
   flex: 1;
   min-width: 0;
   gap: $row-gap $col-gap;
+  padding-top: 2px;
 
   .el-form-item {
-    width: calc((100% - (var(--form-search-span, 4) - 1) * #{$col-gap}) / var(--form-search-span, 4));
+    // 宽度由 CSS Grid 自动分配，通过 :style 设置 grid-column 控制跨列
     display: flex;
     margin-right: 0 !important;
     margin-bottom: 0 !important;
+    min-width: 0;
 
     // 标签：固定宽度 + 右对齐，保证跨行输入框左对齐
     ::v-deep .el-form-item__label {
@@ -1096,11 +1150,6 @@ $label-width: 6em;
     .el-date-editor {
       width: 100%;
     }
-  }
-
-  // 日期范围与输入框宽度一致
-  .picker {
-    width: calc((100% - (var(--form-search-span, 4) - 1) * #{$col-gap}) / var(--form-search-span, 4));
   }
 }
 

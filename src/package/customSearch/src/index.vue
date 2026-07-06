@@ -9,6 +9,7 @@
     v-on="$listeners"
     ref="customSearchRef"
     :byMenuData="byMenuData"
+    dragable
   />
 </template>
 

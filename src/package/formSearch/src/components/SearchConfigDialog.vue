@@ -91,6 +91,20 @@
           </template>
         </el-table-column>
 
+        <el-table-column label="列宽" width="120" align="center">
+          <template slot-scope="scope">
+            <el-input-number
+              v-model="scope.row.span"
+              :min="1"
+              :max="maxColSpan"
+              :step="1"
+              size="mini"
+              controls-position="right"
+              style="width: 100%"
+            />
+          </template>
+        </el-table-column>
+
         <el-table-column label="配置" width="80" align="center">
           <template slot-scope="scope">
             <div v-if="scope.row.inputType === 'select'">
@@ -421,6 +435,7 @@ export default {
       dialogVisible: false,
       configList: [],
       frontAppendList: [], // 前端追加的搜索条件，不参与配置
+      maxColSpan: 4, // 每项最大跨列数，默认4
       optionsDialogVisible: false,
       customsDialogVisible: false,
       searchKeyword: "",
@@ -481,6 +496,7 @@ export default {
     },
   },
   created() {
+    this.maxColSpan = (this.$olBaseConfig && this.$olBaseConfig.span) || 4;
     this.loadSelectOptions();
     this.loadAllDictList();
     // 重置数据
@@ -498,6 +514,12 @@ export default {
           this.configList = JSON.parse(
             JSON.stringify(tableSearch.filter(item => !item.isFrontAppend))
           );
+          // 向后兼容：确保每项都有 span 字段
+          this.configList.forEach(function (item) {
+            if (item.span == null) {
+              item.span = 1;
+            }
+          });
           this.$nextTick(() => {
             this.initSortable();
           });
@@ -636,6 +658,13 @@ export default {
         row.props = {};
       }
       this.updateDatePickerProps(row);
+
+      // datetimerange 选择器需要更多显示空间，自动设为 span=2；其他类型恢复为 1
+      if (row.dateType === 'datetimerange') {
+        row.span = 2;
+      } else {
+        row.span = 1;
+      }
 
       const rangeTypes = ["daterange", "datetimerange", "monthrange"];
       if (rangeTypes.includes(row.dateType)) {
@@ -972,6 +1001,7 @@ export default {
         value: custom.key,
         inputType: inputTypeMap[custom.keyType] || "text",
         compare: compareTypeMap[custom.keyType] || "eq",
+        span: 1,
         children: [],
         props: {},
       };
