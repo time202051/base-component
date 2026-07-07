@@ -18,6 +18,58 @@
       >
         <!-- 'label-width': '100px', -->
         <div class="transitionGroup" :style="{ '--form-search-span': effectiveSpan }">
+          <!-- 组合查询条件：作为网格第一个格子 -->
+          <div
+            v-if="isCustomSearch && comboPresets.length > 0"
+            class="table-header-item combo-grid-item"
+            style="grid-column: span 1"
+          >
+            <label class="combo-grid-label">组合查询</label>
+            <div class="combo-grid-content">
+              <el-select
+                v-model="activeComboPreset"
+                size="mini"
+                placeholder="选择方案"
+                clearable
+                @change="handleComboSelect"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="(preset, index) in comboPresets"
+                  :key="preset.name"
+                  :label="preset.name"
+                  :value="preset.name"
+                >
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      justify-content: space-between;
+                      width: 100%;
+                    "
+                  >
+                    <span
+                      style="
+                        max-width: 110px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                      "
+                      >{{ preset.name }}</span
+                    >
+                    <el-button
+                      type="text"
+                      icon="el-icon-delete"
+                      size="mini"
+                      style="color: #f56c6c; padding: 0; line-height: 1"
+                      title="删除该组合条件"
+                      @click.stop="handleComboDeleteItem(preset.name, index)"
+                    />
+                  </div>
+                </el-option>
+              </el-select>
+            </div>
+          </div>
           <el-form-item
             v-for="item in findTableSearch"
             v-show="!item.show"
@@ -161,7 +213,13 @@
                 :value="compareMap[item.value] || item.compare || 'contains'"
                 @change="handleCompareChange(item, $event)"
               />
-              <template v-if="isCustomSearch && (compareMap[item.value] || item.compare) === 'range' && Array.isArray(formSearch[item.value])">
+              <template
+                v-if="
+                  isCustomSearch &&
+                  (compareMap[item.value] || item.compare) === 'range' &&
+                  Array.isArray(formSearch[item.value])
+                "
+              >
                 <el-input
                   v-model="formSearch[item.value][0]"
                   clearable
@@ -232,6 +290,9 @@
               </el-dropdown-item>
               <el-dropdown-item @click.native="handleSave">
                 <i class="el-icon-document-checked" /> 保存搜索条件
+              </el-dropdown-item>
+              <el-dropdown-item @click.native="handleSaveCombo">
+                <i class="el-icon-folder-add" /> 保存组合条件
               </el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
@@ -382,6 +443,8 @@ export default {
       tempBoxData: [],
       optionBox: [],
       key: 0,
+      comboPresets: [], // 组合查询条件列表，从 byMenuData.customSearch 解析
+      activeComboPreset: null, // 当前选中的组合条件名称
     };
   },
   async created() {
@@ -418,6 +481,26 @@ export default {
       },
       deep: true,
     },
+    // 监听 byMenuData 解析后端返回的组合查询条件列表
+    byMenuData: {
+      handler(val) {
+        if (val && val.customSearch) {
+          try {
+            var parsed =
+              typeof val.customSearch === "string"
+                ? JSON.parse(val.customSearch)
+                : val.customSearch;
+            this.comboPresets = Array.isArray(parsed) ? parsed : [];
+          } catch (e) {
+            this.comboPresets = [];
+          }
+        } else {
+          this.comboPresets = [];
+        }
+      },
+      immediate: true,
+      deep: true,
+    },
   },
   methods: {
     getSearchPlaceholder(item, prefix) {
@@ -426,10 +509,10 @@ export default {
     },
     /** 鼠标经过表单行时检测 label 文字是否溢出（被截断显示...），是才开 tooltip */
     onLabelHover(e, item) {
-      const labelEl = e.currentTarget.querySelector('.el-form-item__label');
+      const labelEl = e.currentTarget.querySelector(".el-form-item__label");
       if (labelEl) {
         const overflow = labelEl.scrollWidth > labelEl.clientWidth;
-        this.$set(item, '_labelOverflow', overflow);
+        this.$set(item, "_labelOverflow", overflow);
       }
     },
     handleCompareChange(item, compare) {
@@ -447,8 +530,8 @@ export default {
       } else {
         // 非下拉类型：切换比较符时清空右侧输入框的值
         // 范围比较符需要双输入框，初始化为长度为2的数组
-        if (compare === 'range') {
-          this.$set(this.formSearch, key, ['', '']);
+        if (compare === "range") {
+          this.$set(this.formSearch, key, ["", ""]);
         } else {
           this.$set(this.formSearch, key, null);
         }
@@ -456,14 +539,14 @@ export default {
     },
     /** 范围输入框校验：数字类型时确保起始值 ≤ 结束值，否则自动交换 */
     handleRangeValidate(item) {
-      if (item.inputType !== 'number') return;
+      if (item.inputType !== "number") return;
       const key = item.value;
       const val = this.formSearch[key];
       if (!Array.isArray(val)) return;
       const a = val[0];
       const b = val[1];
       // 两个值都存在且起始大于结束，自动交换
-      if (a !== '' && a != null && b !== '' && b != null && Number(a) > Number(b)) {
+      if (a !== "" && a != null && b !== "" && b != null && Number(a) > Number(b)) {
         this.$set(this.formSearch[key], 0, b);
         this.$set(this.formSearch[key], 1, a);
       }
@@ -542,11 +625,11 @@ export default {
       // datetimerange 且格式含 HH:mm:ss 的自动 span=2（需要更多空间显示完整时分秒）
       this.formSearchData.tableSearch.forEach(function (item) {
         if (
-          item.inputType === 'picker' &&
+          item.inputType === "picker" &&
           item.props &&
-          item.props.type === 'datetimerange' &&
+          item.props.type === "datetimerange" &&
           item.props.format &&
-          item.props.format.indexOf('HH:mm:ss') !== -1 &&
+          item.props.format.indexOf("HH:mm:ss") !== -1 &&
           item.span === 1
         ) {
           item.span = 2;
@@ -574,13 +657,22 @@ export default {
       this.formSearchData.tableSearch.forEach(item => {
         if (!item.value) return;
         const compare = this.compareMap[item.value] || item.compare;
-        if (compare !== 'range') return;
+        if (compare !== "range") return;
         // 只处理文本/数字输入框，下拉框和日期选择器有自己的处理逻辑
-        if (item.inputType === 'select' || item.inputType === 'selectTEMP' || item.inputType === 'picker') return;
+        if (
+          item.inputType === "select" ||
+          item.inputType === "selectTEMP" ||
+          item.inputType === "picker"
+        )
+          return;
         const key = item.value;
         if (!Array.isArray(this.formSearch[key])) {
           const existingVal = this.formSearch[key];
-          this.$set(this.formSearch, key, existingVal != null ? [String(existingVal), ''] : ['', '']);
+          this.$set(
+            this.formSearch,
+            key,
+            existingVal != null ? [String(existingVal), ""] : ["", ""]
+          );
         }
       });
     },
@@ -706,6 +798,161 @@ export default {
       return "contains";
     },
 
+    /** 清空所有查询条件和比较符映射 */
+    clearAllFormConditions() {
+      // 清空 formSearch 中所有值
+      Object.keys(this.formSearch).forEach((key) => {
+        this.$set(this.formSearch, key, null);
+      });
+      // 清空比较符映射，并恢复下拉框单选模式
+      Object.keys(this.compareMap).forEach((key) => {
+        this.$set(this.compareMap, key, undefined);
+        var item = this.formSearchData.tableSearch.find(function (t) { return t.value === key; });
+        if (item) {
+          this.syncFieldMultiple(item, undefined);
+        }
+      });
+    },
+
+    /** 选中组合查询条件 — 先清空所有条件，再回填预设值；传空则只清空 */
+    handleComboSelect(name) {
+      // 先清空所有查询条件
+      this.clearAllFormConditions();
+      if (!name) {
+        this.activeComboPreset = null;
+        return;
+      }
+      var preset = this.comboPresets.find(function (p) {
+        return p.name === name;
+      });
+      if (!preset) return;
+
+      // 回填 filterConditions 到 formSearch
+      if (preset.filterConditions && Array.isArray(preset.filterConditions)) {
+        preset.filterConditions.forEach((cond) => {
+          var compare =
+            (preset.compareMap && preset.compareMap[cond.key]) ||
+            this.getDefaultCompare(
+              this.formSearchData.tableSearch.find(function (t) {
+                return t.value === cond.key;
+              })
+            );
+          // range / in / not in 需要数组值，其他取单值
+          var isArr = compare === "range" || compare === "in" || compare === "not in";
+          var val = isArr
+            ? cond.values || []
+            : cond.values && cond.values.length > 0
+            ? cond.values[0]
+            : null;
+          this.$set(this.formSearch, cond.key, val);
+        });
+      }
+
+      // 回填 compareMap 并同步下拉框多选状态
+      if (preset.compareMap) {
+        Object.keys(preset.compareMap).forEach((key) => {
+          this.$set(this.compareMap, key, preset.compareMap[key]);
+          var item = this.formSearchData.tableSearch.find(function (t) {
+            return t.value === key;
+          });
+          if (item) {
+            this.syncFieldMultiple(item, preset.compareMap[key]);
+          }
+        });
+      }
+
+      this.activeComboPreset = name;
+    },
+
+    /** 保存当前搜索条件为组合查询方案（新增或覆盖同名方案） */
+    handleSaveCombo() {
+      this.$prompt("请输入组合条件名称", "保存组合查询条件", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        inputPattern: /\S/,
+        inputErrorMessage: "名称不能为空",
+      })
+        .then((res) => {
+          var name = res.value.trim();
+
+          // 检查名称是否已存在
+          var existingIndex = -1;
+          for (var i = 0; i < this.comboPresets.length; i++) {
+            if (this.comboPresets[i].name === name) {
+              existingIndex = i;
+              break;
+            }
+          }
+          if (existingIndex >= 0) {
+            this.$message.warning('组合条件名称"' + name + '"已存在，请使用其他名称');
+            return;
+          }
+
+          var filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
+
+          var newPreset = {
+            name: name,
+            filterConditions: filterConditions,
+            compareMap: Object.assign({}, this.compareMap),
+          };
+
+          this.comboPresets.push(newPreset);
+
+          this.activeComboPreset = name;
+
+          // 持久化到后端
+          this.saveToApi(
+            {
+              isCustomSearch: true,
+              customSearch: JSON.stringify(this.comboPresets),
+            },
+            '组合条件"' + name + '"保存成功'
+          );
+        })
+        .catch(() => {});
+    },
+
+    /** 删除下拉框中指定的一条组合查询条件 */
+    handleComboDeleteItem(name, index) {
+      this.$confirm('确定要删除组合条件"' + name + '"吗？', "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(() => {
+          // 如果删的是当前选中的，清空选中状态和表单条件
+          if (this.activeComboPreset === name) {
+            this.activeComboPreset = null;
+            this.clearAllFormConditions();
+          }
+          this.comboPresets.splice(index, 1);
+          this.saveToApi(
+            {
+              isCustomSearch: true,
+              customSearch: JSON.stringify(this.comboPresets),
+            },
+            "删除成功"
+          );
+        })
+        .catch(() => {});
+    },
+
+    /** 统一的保存方法 —— 调用方通过 data 决定传哪些字段，各存各的不互相覆盖 */
+    saveToApi(data, successMsg) {
+      var targetMenuId = this.getTargetMenuId();
+      this.put({
+        url: "/api/app/menu-search-setting/" + targetMenuId + "?sysMenuId=" + targetMenuId,
+        data: {
+          isSettingJson: true,
+          settingJson: JSON.stringify(this.formSearchData.tableSearch),
+          ...data,
+        },
+      }).then((res) => {
+        if (res.code !== 200) return;
+        this.$message.success(successMsg || "保存成功");
+      });
+    },
+
     setFilterConditionsByFormSearch(formSearch) {
       const filterConditions = [];
       Object.keys(formSearch).forEach(key => {
@@ -715,8 +962,8 @@ export default {
         if (val !== undefined && val !== null) {
           // 数组值（如范围输入）：全部为空则跳过
           if (Array.isArray(val)) {
-            if (val.every(v => v === '' || v === null || v === undefined)) return;
-          } else if (val === '') {
+            if (val.every(v => v === "" || v === null || v === undefined)) return;
+          } else if (val === "") {
             return;
           }
           filterConditions.push({
@@ -765,12 +1012,37 @@ export default {
       } else {
         // 查询前兜底校验范围字段，防止用户未触发 blur 直接点查询
         this.formSearchData.tableSearch.forEach(item => {
-          if (item.inputType === 'number') {
+          if (item.inputType === "number") {
             this.handleRangeValidate(item);
           }
         });
         // 转成接口需要的结构filterConditions
-        const filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
+        var filterConditions = [];
+        // 1. 先取组合查询条件的 filterConditions（作为基础）
+        if (this.activeComboPreset) {
+          var currentName = this.activeComboPreset;
+          var comboPreset = this.comboPresets.find(function (p) { return p.name === currentName; });
+          if (comboPreset && comboPreset.filterConditions) {
+            filterConditions = comboPreset.filterConditions.slice();
+          }
+        }
+        // 2. 当前查询条件覆盖组合条件（同 key 的后覆盖前）
+        var currentConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
+        for (var ci = 0; ci < currentConditions.length; ci++) {
+          var cc = currentConditions[ci];
+          var idx = -1;
+          for (var fi = 0; fi < filterConditions.length; fi++) {
+            if (filterConditions[fi].key === cc.key) {
+              idx = fi;
+              break;
+            }
+          }
+          if (idx >= 0) {
+            filterConditions[idx] = cc;
+          } else {
+            filterConditions.push(cc);
+          }
+        }
 
         // 提取需要直接作为请求参数的字段（前端写死且 isDirect 为 true 的字段）
         const directParams = {};
@@ -814,9 +1086,11 @@ export default {
           ...this.formSearchData.value,
         };
       }
-      // 重置后恢复范围字段的数组格式
+      // 重置后恢复范围字段的数组格式，同时重置组合查询
       if (this.isCustomSearch) {
         this.initRangeFields();
+        this.activeComboPreset = null;
+        this.clearAllFormConditions();
       }
       this.$emit("handleReset", this.formSearch);
       if (this.formSearchData.reset) return false;
@@ -895,7 +1169,6 @@ export default {
         console.log(`\x1b[36m\x1b[4mol插件-搜索框保存`, tempFormSearch);
       } else {
         const filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
-        const targetMenuId = this.getTargetMenuId();
         console.log(`\x1b[36m\x1b[4mol插件-动态搜索框保存`, this.formSearch, filterConditions);
         console.log(
           112233,
@@ -905,16 +1178,14 @@ export default {
           this.compareMap,
           this.findTableSearch
         );
-        this.put({
-          url: `/api/app/menu-search-setting/${targetMenuId}?sysMenuId=${targetMenuId}`,
-          data: {
-            settingJson: JSON.stringify(this.formSearchData.tableSearch),
+        // 持久化：只传 settingJson + defaultFilterJson，不影响 customSearch
+        this.saveToApi(
+          {
+            isDefaultFilterJson: true,
             defaultFilterJson: JSON.stringify({ filterConditions, compareMap: this.compareMap }),
           },
-        }).then((res) => {
-          if (res.code !== 200) return;
-          this.$message.success("保存成功");
-        });
+          "保存成功"
+        );
       }
     },
     handleOpenConfig() {
@@ -1112,6 +1383,32 @@ $label-width: 6em;
     flex-wrap: wrap;
     align-items: flex-start;
     width: 100%;
+  }
+
+  // ==================== 组合查询条件格子 ====================
+  .combo-grid-item {
+    display: flex;
+    align-items: center;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    min-width: 0;
+
+    .combo-grid-label {
+      width: var(--form-search-label-width, $label-width);
+      flex-shrink: 0;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 6px;
+      font-size: 13px;
+      color: #606266;
+    }
+
+    .combo-grid-content {
+      flex: 1;
+      min-width: 0;
+    }
   }
 
   // 覆盖 el-form--inline 的 inline-block，改为 flex 以便输入框撑满
