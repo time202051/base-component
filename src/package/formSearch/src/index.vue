@@ -23,18 +23,22 @@
             v-show="!item.show"
             :key="item.value"
             class="table-header-item"
-            :style="{ gridColumn: `span ${item.span || 1}` }"
+            :style="{
+              gridColumn: `span ${item.span || 1}`,
+              ...(item.labelWidth ? { '--form-search-label-width': item.labelWidth + 'em' } : {}),
+            }"
             :prop="item.value && !String(item.value).includes('.') ? item.value : undefined"
             v-bind="item.labelProps || {}"
             :class="{
               picker: item.props && item.props.type === 'datetimerange',
               date: item.props && item.props.type === 'date',
             }"
+            @mouseenter.native="onLabelHover($event, item)"
           >
             <template slot="label">
               <el-tooltip
                 :content="item.label"
-                :disabled="!item.label || item.label.length <= 5"
+                :disabled="!item.label || item._labelOverflow === false"
                 placement="top"
               >
                 <span>{{ item.label }}</span>
@@ -419,6 +423,14 @@ export default {
     getSearchPlaceholder(item, prefix) {
       const label = item.placeholder || item.label;
       return `${prefix}${label}`;
+    },
+    /** 鼠标经过表单行时检测 label 文字是否溢出（被截断显示...），是才开 tooltip */
+    onLabelHover(e, item) {
+      const labelEl = e.currentTarget.querySelector('.el-form-item__label');
+      if (labelEl) {
+        const overflow = labelEl.scrollWidth > labelEl.clientWidth;
+        this.$set(item, '_labelOverflow', overflow);
+      }
     },
     handleCompareChange(item, compare) {
       this.$set(this.compareMap, item.value, compare);
@@ -1129,7 +1141,7 @@ $label-width: 6em;
 
     // 标签：固定宽度 + 右对齐，保证跨行输入框左对齐
     ::v-deep .el-form-item__label {
-      width: $label-width;
+      width: var(--form-search-label-width, $label-width);
       flex-shrink: 0;
       text-align: right;
       white-space: nowrap;

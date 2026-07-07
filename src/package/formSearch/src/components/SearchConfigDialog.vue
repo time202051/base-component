@@ -2,7 +2,7 @@
   <el-dialog
     title="搜索条件配置"
     :visible.sync="dialogVisible"
-    width="60%"
+    width="70%"
     :close-on-click-modal="false"
     @close="handleClose"
     append-to-body
@@ -91,7 +91,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="列宽" width="120" align="center">
+        <el-table-column label="列宽" width="100" align="center">
           <template slot-scope="scope">
             <el-input-number
               v-model="scope.row.span"
@@ -100,6 +100,20 @@
               :step="1"
               size="mini"
               controls-position="right"
+              style="width: 100%"
+            />
+          </template>
+        </el-table-column>
+
+        <el-table-column label="标签宽度" width="100" align="center">
+          <template slot-scope="scope">
+            <el-input-number
+              v-model="scope.row.labelWidth"
+              :min="1"
+              :step="1"
+              size="mini"
+              controls-position="right"
+              placeholder="6"
               style="width: 100%"
             />
           </template>
