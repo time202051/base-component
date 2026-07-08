@@ -113,3 +113,7 @@ Swagger 数据通过 `swaggerInstall(url)` 拉取 → 存入 IndexedDB `SwaggerD
 3. **Vue 2 only** — 依赖 `Vue.prototype`、`$set`、`$scopedSlots` 等 Vue 2 专属 API
 4. **el-dropdown 渲染** — `el-dropdown-menu` 可能被渲染到 body 外，scoped CSS 无法穿透，需用非 scoped `<style>` 块
 5. **列去重** — `initFromSwagger` 中 push 新列后必须同步更新去重 Set，否则同 prop 列会重复
+
+
+## 代码习惯
+声明函数的时候尽量用箭头函数,避免this指向不明确
