@@ -105,7 +105,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="标签宽度" width="100" align="center">
+        <el-table-column label="标签宽度" width="120" align="center">
           <template slot-scope="scope">
             <el-input-number
               v-model="scope.row.labelWidth"
