@@ -458,13 +458,21 @@ export default {
   },
   mounted() {},
   computed: {
+    // 组合查询格子是否显示
+    hasComboGrid() {
+      return this.isCustomSearch && this.comboPresets.length > 0;
+    },
+    // 普通搜索项可用的列数：组合查询格子占用 1 列，需腾出位置
+    availableSpan() {
+      return Math.max(1, this.effectiveSpan - (this.hasComboGrid ? 1 : 0));
+    },
     // 搜索框展开折叠按钮是否显示（按每项 span 累计判断，而非项数）
     showExpendBtn() {
       if (!this.formSearchData.tableSearch) return false;
       var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
         return sum + (item.span || 1);
       }, 0);
-      return totalSpan > this.effectiveSpan;
+      return totalSpan > this.availableSpan;
     },
     // 优先级：props > 全局配置 > 默认值
     finalMethod() {
@@ -516,6 +524,12 @@ export default {
       },
       immediate: true,
       deep: true,
+    },
+    // 组合查询格子显隐变化时，重新切分可见的搜索项
+    hasComboGrid: {
+      handler() {
+        this.recalcVisibleItems();
+      },
     },
   },
   methods: {
@@ -655,11 +669,11 @@ export default {
       var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
         return sum + (item.span || 1);
       }, 0);
-      var isMoreThanSlice = totalSpan > this.effectiveSpan;
+      var isMoreThanSlice = totalSpan > this.availableSpan;
       this.findTableSearch = isMoreThanSlice
-        ? this.sliceBySpan(this.formSearchData.tableSearch, this.effectiveSpan)
+        ? this.sliceBySpan(this.formSearchData.tableSearch, this.availableSpan)
         : this.formSearchData.tableSearch;
-      // 超过4个默认收起，按钮显示"展开"
+      // 超过每行列数默认收起，按钮显示"展开"
       if (this.isCustomSearch) this.expend = !isMoreThanSlice;
       await this.loadOptionSources();
       // 初始化时，比较运算符为"范围"的文本/数字输入框需要将值转为长度为2的数组
@@ -1121,12 +1135,30 @@ export default {
       if (this.formSearchData.reset) return false;
       this.handleSearch();
     },
+    /** 组合查询显隐或列数变化时，重新计算可见搜索项 */
+    recalcVisibleItems() {
+      var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
+        return sum + (item.span || 1);
+      }, 0);
+      var overflows = totalSpan > this.availableSpan;
+      if (this.expend) {
+        // 展开状态直接显示全部；但如果现在能在一行放下了，自动收起
+        if (!overflows) {
+          this.expend = false;
+        }
+        this.findTableSearch = this.formSearchData.tableSearch;
+      } else {
+        this.findTableSearch = overflows
+          ? this.sliceBySpan(this.formSearchData.tableSearch, this.availableSpan)
+          : this.formSearchData.tableSearch;
+      }
+    },
     // 展开和收起
     handleExpend() {
       this.expend = !this.expend; // 展开和收起
       this.findTableSearch = this.expend
         ? this.formSearchData.tableSearch.slice()
-        : this.sliceBySpan(this.formSearchData.tableSearch, this.effectiveSpan);
+        : this.sliceBySpan(this.formSearchData.tableSearch, this.availableSpan);
 
       this.$emit("btnHandleExpend", this.expend);
     },
@@ -1240,19 +1272,19 @@ export default {
       var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
         return sum + (item.span || 1);
       }, 0);
-      var isMoreThanSlice = totalSpan > this.effectiveSpan;
+      var isMoreThanSlice = totalSpan > this.availableSpan;
 
       if (isMoreThanSlice) {
-        // 如果之前没有收展按钮（≤4个），现在有了（>4个），默认收起
+        // 如果之前没有收展按钮，现在有了，默认收起
         if (!wasExpendBtnVisible) {
           this.expend = false;
         }
         // 保持当前 expend 状态决定显示全部还是折叠
         this.findTableSearch = this.expend
           ? this.formSearchData.tableSearch
-          : this.sliceBySpan(this.formSearchData.tableSearch, this.effectiveSpan);
+          : this.sliceBySpan(this.formSearchData.tableSearch, this.availableSpan);
       } else {
-        // 不超过4个，全部显示
+        // 不超出一行，全部显示
         this.expend = true;
         this.findTableSearch = this.formSearchData.tableSearch;
       }
