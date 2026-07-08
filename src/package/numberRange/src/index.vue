@@ -231,7 +231,7 @@ export default {
   }
 
   &:focus-within {
-    border-color: #409eff;
+    border-color: var(--color-primary, #409eff);
     outline: none;
   }
 

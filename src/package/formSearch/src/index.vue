@@ -17,14 +17,20 @@
         :key="key"
       >
         <!-- 'label-width': '100px', -->
-        <div class="transitionGroup" :style="{ '--form-search-span': effectiveSpan, '--form-search-label-font-size': labelFontSize }">
+        <div
+          class="transitionGroup"
+          :style="{
+            '--form-search-span': effectiveSpan,
+            '--form-search-label-font-size': labelFontSize,
+          }"
+        >
           <!-- 组合查询条件：作为网格第一个格子 -->
           <div
             v-if="isCustomSearch && comboPresets.length > 0"
             class="table-header-item combo-grid-item"
             style="grid-column: span 1"
           >
-            <label class="combo-grid-label">组合查询</label>
+            <label class="combo-grid-label"><i class="el-icon-link"></i> 组合查询</label>
             <div class="combo-grid-content">
               <el-select
                 v-model="activeComboPreset"
@@ -470,14 +476,13 @@ export default {
     },
     // 表单实际生效的 size（formProps 可能覆盖 el-form 的静态 size="mini"）
     effectiveFormSize() {
-      var formProps =
-        this.formSearchData.options && this.formSearchData.options.formProps;
-      return (formProps && formProps.size) || 'mini';
+      var formProps = this.formSearchData.options && this.formSearchData.options.formProps;
+      return (formProps && formProps.size) || "mini";
     },
     // 根据 size 返回对应的标签字号，保证组合查询和查询条件字体一致
     labelFontSize() {
-      var map = { mini: '12px', small: '13px', medium: '14px' };
-      return map[this.effectiveFormSize] || '12px';
+      var map = { mini: "12px", small: "13px", medium: "14px" };
+      return map[this.effectiveFormSize] || "12px";
     },
   },
   watch: {
@@ -812,13 +817,15 @@ export default {
     /** 清空所有查询条件和比较符映射 */
     clearAllFormConditions() {
       // 清空 formSearch 中所有值
-      Object.keys(this.formSearch).forEach((key) => {
+      Object.keys(this.formSearch).forEach(key => {
         this.$set(this.formSearch, key, null);
       });
       // 清空比较符映射，并恢复下拉框单选模式
-      Object.keys(this.compareMap).forEach((key) => {
+      Object.keys(this.compareMap).forEach(key => {
         this.$set(this.compareMap, key, undefined);
-        var item = this.formSearchData.tableSearch.find(function (t) { return t.value === key; });
+        var item = this.formSearchData.tableSearch.find(function (t) {
+          return t.value === key;
+        });
         if (item) {
           this.syncFieldMultiple(item, undefined);
         }
@@ -840,7 +847,7 @@ export default {
 
       // 回填 filterConditions 到 formSearch
       if (preset.filterConditions && Array.isArray(preset.filterConditions)) {
-        preset.filterConditions.forEach((cond) => {
+        preset.filterConditions.forEach(cond => {
           var compare =
             (preset.compareMap && preset.compareMap[cond.key]) ||
             this.getDefaultCompare(
@@ -861,7 +868,7 @@ export default {
 
       // 回填 compareMap 并同步下拉框多选状态
       if (preset.compareMap) {
-        Object.keys(preset.compareMap).forEach((key) => {
+        Object.keys(preset.compareMap).forEach(key => {
           this.$set(this.compareMap, key, preset.compareMap[key]);
           var item = this.formSearchData.tableSearch.find(function (t) {
             return t.value === key;
@@ -883,7 +890,7 @@ export default {
         inputPattern: /\S/,
         inputErrorMessage: "名称不能为空",
       })
-        .then((res) => {
+        .then(res => {
           var name = res.value.trim();
 
           // 检查名称是否已存在
@@ -900,6 +907,11 @@ export default {
           }
 
           var filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
+
+          if (filterConditions.length === 0) {
+            this.$message.warning('请先填写查询条件，不能保存空的组合查询');
+            return;
+          }
 
           var newPreset = {
             name: name,
@@ -958,7 +970,7 @@ export default {
           settingJson: JSON.stringify(this.formSearchData.tableSearch),
           ...data,
         },
-      }).then((res) => {
+      }).then(res => {
         if (res.code !== 200) return;
         this.$message.success(successMsg || "保存成功");
       });
@@ -1032,7 +1044,9 @@ export default {
         // 1. 先取组合查询条件的 filterConditions（作为基础）
         if (this.activeComboPreset) {
           var currentName = this.activeComboPreset;
-          var comboPreset = this.comboPresets.find(function (p) { return p.name === currentName; });
+          var comboPreset = this.comboPresets.find(function (p) {
+            return p.name === currentName;
+          });
           if (comboPreset && comboPreset.filterConditions) {
             filterConditions = comboPreset.filterConditions.slice();
           }
@@ -1403,6 +1417,9 @@ $label-width: 78px;
     margin-right: 0 !important;
     margin-bottom: 0 !important;
     min-width: 0;
+    // background: var(--color-primary-light-9, #f0f9ff);
+    background: color-mix(in srgb, var(--color-primary) 5%, #fff);
+    border-radius: 3px;
 
     .combo-grid-label {
       width: var(--form-search-label-width, $label-width);
@@ -1413,7 +1430,7 @@ $label-width: 78px;
       text-overflow: ellipsis;
       padding-right: 6px;
       font-size: var(--form-search-label-font-size, 12px);
-      color: #606266;
+      color: var(--color-primary, #409eff);
     }
 
     .combo-grid-content {

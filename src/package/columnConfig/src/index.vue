@@ -395,7 +395,7 @@ export default {
   cursor: pointer;
 }
 .index-text:hover {
-  color: #409eff;
+  color: var(--color-primary, #409eff);
 }
 .index-input {
   width: 60px;
@@ -414,7 +414,7 @@ export default {
   border-radius: 50%;
   transition: all 0.25s;
   &:hover {
-    color: #409eff;
+    color: var(--color-primary, #409eff);
     background-color: #f0f9ff;
     transform: scale(1.1);
   }

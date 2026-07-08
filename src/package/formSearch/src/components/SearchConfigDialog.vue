@@ -1154,7 +1154,7 @@ export default {
 }
 
 .sort-handle:hover {
-  color: #409eff;
+  color: var(--color-primary, #409eff);
 }
 
 .sortable-ghost {

@@ -449,7 +449,7 @@ export default {
 }
 
 .empty-card:hover {
-  border-color: #409eff;
+  border-color: var(--color-primary, #409eff);
   background: #f0f9ff;
 }
 
@@ -461,7 +461,7 @@ export default {
 }
 
 .empty-card:hover .add-icon {
-  color: #409eff;
+  color: var(--color-primary, #409eff);
   transform: scale(1.1);
 }
 
@@ -494,7 +494,7 @@ export default {
 
 .card-icon {
   font-size: 24px;
-  color: #409eff;
+  color: var(--color-primary, #409eff);
   margin-right: 10px;
 }
 
