@@ -203,9 +203,8 @@ export default {
       //   });
     },
     handleSearch(from) {
-      var self = this;
-      self.formSearchData.value = { ...from };
-      self.paginations.page = 1;
+      this.formSearchData.value = { ...from };
+      this.paginations.page = 1;
       this.getTable(); // 获取表格数据
     },
     handleReset() {},

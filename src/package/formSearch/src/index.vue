@@ -17,7 +17,7 @@
         :key="key"
       >
         <!-- 'label-width': '100px', -->
-        <div class="transitionGroup" :style="{ '--form-search-span': effectiveSpan }">
+        <div class="transitionGroup" :style="{ '--form-search-span': effectiveSpan, '--form-search-label-font-size': labelFontSize }">
           <!-- 组合查询条件：作为网格第一个格子 -->
           <div
             v-if="isCustomSearch && comboPresets.length > 0"
@@ -77,7 +77,7 @@
             class="table-header-item"
             :style="{
               gridColumn: `span ${item.span || 1}`,
-              ...(item.labelWidth ? { '--form-search-label-width': item.labelWidth + 'em' } : {}),
+              ...(item.labelWidth ? { '--form-search-label-width': item.labelWidth + 'px' } : {}),
             }"
             :prop="item.value && !String(item.value).includes('.') ? item.value : undefined"
             v-bind="item.labelProps || {}"
@@ -467,6 +467,17 @@ export default {
     // 优先级：props > formSearchData.options > 全局配置 > 默认值
     effectiveSpan() {
       return this.span || (this.$olBaseConfig && this.$olBaseConfig.span) || 4;
+    },
+    // 表单实际生效的 size（formProps 可能覆盖 el-form 的静态 size="mini"）
+    effectiveFormSize() {
+      var formProps =
+        this.formSearchData.options && this.formSearchData.options.formProps;
+      return (formProps && formProps.size) || 'mini';
+    },
+    // 根据 size 返回对应的标签字号，保证组合查询和查询条件字体一致
+    labelFontSize() {
+      var map = { mini: '12px', small: '13px', medium: '14px' };
+      return map[this.effectiveFormSize] || '12px';
     },
   },
   watch: {
@@ -1370,7 +1381,7 @@ $row-gap: 8px;
 $col-gap: 8px;
 // 使用 CSS 自定义属性，由 span prop 动态控制
 // 默认 4 列，可通过 props、formSearchData.options、$olBaseConfig 覆盖
-$label-width: 6em;
+$label-width: 78px;
 
 // ==================== 顶栏 ====================
 .table-header {
@@ -1401,7 +1412,7 @@ $label-width: 6em;
       overflow: hidden;
       text-overflow: ellipsis;
       padding-right: 6px;
-      font-size: 13px;
+      font-size: var(--form-search-label-font-size, 12px);
       color: #606266;
     }
 
@@ -1445,6 +1456,7 @@ $label-width: 6em;
       overflow: hidden;
       text-overflow: ellipsis;
       padding-right: 6px;
+      font-size: var(--form-search-label-font-size, 12px);
     }
 
     // 内容区：占据剩余空间

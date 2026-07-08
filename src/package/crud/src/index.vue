@@ -2482,7 +2482,7 @@ export default {
 
     // 标签：固定宽度 + 右对齐，跨行输入框对齐
     ::v-deep .el-form-item__label {
-      width: 6em;
+      width: 78px;
       flex-shrink: 0;
       text-align: right;
       white-space: nowrap;

@@ -109,11 +109,11 @@
           <template slot-scope="scope">
             <el-input-number
               v-model="scope.row.labelWidth"
-              :min="1"
+              :min="40"
               :step="1"
               size="mini"
               controls-position="right"
-              placeholder="6"
+              placeholder="78"
               style="width: 100%"
             />
           </template>
