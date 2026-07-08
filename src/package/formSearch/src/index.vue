@@ -1450,7 +1450,8 @@ $label-width: 78px;
     margin-bottom: 0 !important;
     min-width: 0;
     // background: var(--color-primary-light-9, #f0f9ff);
-    background: color-mix(in srgb, var(--color-primary) 5%, #fff);
+    // background: color-mix(in srgb, var(--color-primary) 5%, #fff);
+    background: var(--color-primary-light-9, #ecf5ff);
     border-radius: 3px;
 
     .combo-grid-label {
