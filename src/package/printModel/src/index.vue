@@ -164,6 +164,7 @@ export default {
         this.currentItem = targetNode;
         this.loadTemplates(targetNode.id);
       }
+      console.log("111222", this.menuTreeData)
     },
     findFirstMenuNode(menus) {
       if (!menus || menus.length === 0) return null;
@@ -203,12 +204,12 @@ export default {
     },
     async loadTemplates(menuId) {
       try {
-        const routeMenuId = this.$route?.query?.menuId;
-        const finalMenuId = routeMenuId || menuId;
+        // const routeMenuId = this.$route?.query?.menuId;
+        // const finalMenuId = routeMenuId || menuId;
         const res = await this.get({
           url: "/api/app/print-templete/page-list",
           data: {
-            MenuId: finalMenuId,
+            MenuId: menuId,
             Page: 1,
             MaxResultCount: 1000,
           },
