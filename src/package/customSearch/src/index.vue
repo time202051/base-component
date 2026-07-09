@@ -17,10 +17,10 @@
 export default {
   name: "customSearch",
   props: {
-    menuId: {
-      type: String,
-      default: "",
-    },
+    // menuId: {
+    //   type: String,
+    //   default: "",
+    // },
     formSearchData: {
       type: Object,
       default: () => {
@@ -94,7 +94,7 @@ export default {
       this.currentPageItem = handleMenu(menus, this);
 
       const targetMenuId =
-        this.menuId ||
+        this.$attrs.menuId ||
         this.$route.query.menuId ||
         (this.currentPageItem && this.currentPageItem.id);
 
@@ -174,7 +174,7 @@ export default {
     //保存
     onSave(configList) {
       const targetMenuId =
-        this.menuId ||
+        this.$attrs.menuId ||
         this.$route.query.menuId ||
         (this.currentPageItem && this.currentPageItem.id);
       let defaultFilter = {};

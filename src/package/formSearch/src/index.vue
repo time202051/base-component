@@ -923,7 +923,7 @@ export default {
           var filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
 
           if (filterConditions.length === 0) {
-            this.$message.warning('请先填写查询条件，不能保存空的组合查询');
+            this.$message.warning("请先填写查询条件，不能保存空的组合查询");
             return;
           }
 
@@ -978,8 +978,9 @@ export default {
     saveToApi(data, successMsg) {
       var targetMenuId = this.getTargetMenuId();
       this.put({
-        url: "/api/app/menu-search-setting/" + targetMenuId + "?sysMenuId=" + targetMenuId,
+        url: "/api/app/menu-search-setting",
         data: {
+          sysMenuId: targetMenuId,
           isSettingJson: true,
           settingJson: JSON.stringify(this.formSearchData.tableSearch),
           ...data,

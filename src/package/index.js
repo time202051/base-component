@@ -6,6 +6,7 @@ import OlForm from "./form";
 import OlNumberRange from "./numberRange";
 import OlPrintModel from "./printModel";
 import OlCrud from "./crud";
+import OlExportExcel from "./exportExcel";
 
 import OlPrint, { Hiprint } from "./print";
 
@@ -222,6 +223,7 @@ const components = [
   OlPrint,
   OlPrintModel,
   OlCrud,
+  OlExportExcel,
 ];
 const install = async function (Vue, options) {
   // 设置全局数据
@@ -245,6 +247,7 @@ export {
   OlPrint,
   OlPrintModel,
   OlCrud,
+  OlExportExcel,
 };
 export { swaggerInstall, swaggerUnload, Hiprint };
 export { InputHistory };
