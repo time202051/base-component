@@ -10,6 +10,7 @@
     ref="customSearchRef"
     :byMenuData="byMenuData"
     dragable
+    @resetAllConfig="resetAllConfig"
   />
 </template>
 
@@ -192,6 +193,12 @@ export default {
         this.init();
         console.log("保存配置数据", configList);
       });
+    },
+    resetAllConfig() {
+      this.key++;
+      this.formSearchData.tableSearch = [];
+      this.formSearchData.options = [];
+      this.init();
     },
   },
 };

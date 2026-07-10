@@ -300,6 +300,9 @@
               <el-dropdown-item @click.native="handleSaveCombo">
                 <i class="el-icon-folder-add" /> 保存组合条件
               </el-dropdown-item>
+              <el-dropdown-item @click.native="handleResetAllConfig">
+                <i class="el-icon-delete" /> 重置所有配置
+              </el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
         </el-form-item>
@@ -970,6 +973,34 @@ export default {
             },
             "删除成功"
           );
+        })
+        .catch(() => {});
+    },
+
+    /** 重置所有存储的配置：清空 settingJson、customSearch、defaultFilterJson */
+    handleResetAllConfig() {
+      this.$confirm(
+        "此操作将清空该页面所有已保存的搜索配置（包括搜索条件、组合查询等），且不可恢复！",
+        "重置确认",
+        {
+          confirmButtonText: "确定重置",
+          cancelButtonText: "取消",
+          type: "warning",
+        }
+      )
+        .then(() => {
+          var targetMenuId = this.getTargetMenuId();
+          this.put({
+            url: "/api/app/menu-search-setting",
+            data: {
+              sysMenuId: targetMenuId,
+              isAllClear: true,
+            },
+          }).then(res => {
+            if (res.code !== 200) return;
+            this.$message.success("所有配置已重置");
+            this.$emit("resetAllConfig");
+          });
         })
         .catch(() => {});
     },
