@@ -15,6 +15,7 @@
 </template>
 
 <script>
+import { getTargetMenuId } from "../../../utils/initData.js";
 export default {
   name: "customSearch",
   props: {
@@ -195,10 +196,34 @@ export default {
       });
     },
     resetAllConfig() {
-      this.key++;
-      this.formSearchData.tableSearch = [];
-      this.formSearchData.options = [];
-      this.init();
+      this.$confirm(
+        "此操作将清空该页面所有已保存的搜索配置（包括搜索条件、组合查询等），且不可恢复！",
+        "重置确认",
+        {
+          confirmButtonText: "确定重置",
+          cancelButtonText: "取消",
+          type: "warning",
+        }
+      )
+        .then(() => {
+          var targetMenuId = getTargetMenuId(this);
+          console.log(133323, targetMenuId);
+          this.put({
+            url: "/api/app/menu-search-setting",
+            data: {
+              sysMenuId: targetMenuId,
+              isAllClear: true,
+            },
+          }).then(res => {
+            if (res.code !== 200) return;
+            this.key++;
+            this.formSearchData.tableSearch = [];
+            this.formSearchData.options = [];
+            this.$message.success("所有配置已重置");
+            this.init();
+          });
+        })
+        .catch(() => {});
     },
   },
 };

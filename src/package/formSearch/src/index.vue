@@ -324,6 +324,7 @@
 <script>
 import { getData } from "../../index.js";
 import { getEnum } from "../../../utils/getEnum.js";
+import { getTargetMenuId } from "../../../utils/initData.js";
 import OlNumberRange from "../../numberRange/index.js";
 import SearchConfigDialog from "./components/SearchConfigDialog.vue";
 import ComparePrefixSelect from "./components/ComparePrefixSelect.vue";
@@ -530,7 +531,11 @@ export default {
     },
     // 组合查询格子显隐变化时，重新切分可见的搜索项
     hasComboGrid: {
-      handler() {
+      handler(newVal) {
+        // 组合查询出现时强制收起，确保只显示一行
+        if (newVal) {
+          this.expend = false;
+        }
         this.recalcVisibleItems();
       },
     },
@@ -979,35 +984,12 @@ export default {
 
     /** 重置所有存储的配置：清空 settingJson、customSearch、defaultFilterJson */
     handleResetAllConfig() {
-      this.$confirm(
-        "此操作将清空该页面所有已保存的搜索配置（包括搜索条件、组合查询等），且不可恢复！",
-        "重置确认",
-        {
-          confirmButtonText: "确定重置",
-          cancelButtonText: "取消",
-          type: "warning",
-        }
-      )
-        .then(() => {
-          var targetMenuId = this.getTargetMenuId();
-          this.put({
-            url: "/api/app/menu-search-setting",
-            data: {
-              sysMenuId: targetMenuId,
-              isAllClear: true,
-            },
-          }).then(res => {
-            if (res.code !== 200) return;
-            this.$message.success("所有配置已重置");
-            this.$emit("resetAllConfig");
-          });
-        })
-        .catch(() => {});
+      this.$emit("resetAllConfig");
     },
 
     /** 统一的保存方法 —— 调用方通过 data 决定传哪些字段，各存各的不互相覆盖 */
     saveToApi(data, successMsg) {
-      var targetMenuId = this.getTargetMenuId();
+      var targetMenuId = getTargetMenuId(this);
       this.put({
         url: "/api/app/menu-search-setting",
         data: {
@@ -1208,28 +1190,6 @@ export default {
         cumulative += itemSpan;
       }
       return items.slice();
-    },
-    getTargetMenuId() {
-      const handleMenu = (arr, _this) => {
-        for (const item of arr) {
-          if (item.path === _this.$route.path) {
-            return item;
-          }
-          if (item.child && item.child.length > 0 && item.type !== 1) {
-            const found = handleMenu(item.child, _this);
-            if (found) return found;
-          }
-        }
-        return null;
-      };
-      let wms = JSON.parse(localStorage.getItem("wms"));
-      let SET_MENUS = null;
-      if (wms) SET_MENUS = wms.SET_MENUS;
-      const menus = SET_MENUS;
-      const currentPageItem = handleMenu(menus, this);
-      return (
-        this.$attrs.menuId || this.$route.query.menuId || (currentPageItem && currentPageItem.id)
-      );
     },
     handleSave() {
       if (!this.isCustomSearch) {
