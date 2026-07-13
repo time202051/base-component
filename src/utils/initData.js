@@ -185,3 +185,27 @@ export const getSelectSwaggerData = async () => {
   });
   return swaggerDataSelectOptions;
 };
+
+// menuId获取规则 1. 从props中获取menuId 2. 从路由参数中获取menuId 3. 从当前路由中获取menuIdId
+export const getTargetMenuId = that => {
+  if (that.$attrs.menuId) return that.$attrs.menuId;
+  if (that.$route.query.menuId) return that.$route.query.menuId;
+  const handleMenu = (arr, _this) => {
+    for (const item of arr) {
+      if (item.path === _this.$route.path) {
+        return item;
+      }
+      if (item.child && item.child.length > 0 && item.type !== 1) {
+        const found = handleMenu(item.child, _this);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+  let wms = JSON.parse(localStorage.getItem("wms"));
+  let SET_MENUS = null;
+  if (wms) SET_MENUS = wms.SET_MENUS;
+  const menus = SET_MENUS;
+  const currentPageItem = handleMenu(menus, that);
+  return currentPageItem && currentPageItem.id;
+};
