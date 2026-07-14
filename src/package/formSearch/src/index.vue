@@ -328,6 +328,7 @@ import { getTargetMenuId } from "../../../utils/initData.js";
 import OlNumberRange from "../../numberRange/index.js";
 import SearchConfigDialog from "./components/SearchConfigDialog.vue";
 import ComparePrefixSelect from "./components/ComparePrefixSelect.vue";
+import { convertSettingJson } from "./utils/index.js";
 
 export default {
   name: "search",
@@ -988,7 +989,7 @@ export default {
     },
 
     /** 统一的保存方法 —— 调用方通过 data 决定传哪些字段，各存各的不互相覆盖 */
-    saveToApi(data, successMsg) {
+    saveToApi(data, successMsg, callback) {
       var targetMenuId = getTargetMenuId(this);
       this.put({
         url: "/api/app/menu-search-setting",
@@ -1000,6 +1001,7 @@ export default {
         },
       }).then(res => {
         if (res.code !== 200) return;
+        if (callback) callback();
         this.$message.success(successMsg || "保存成功");
       });
     },
@@ -1219,14 +1221,6 @@ export default {
       } else {
         const filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
         console.log(`\x1b[36m\x1b[4mol插件-动态搜索框保存`, this.formSearch, filterConditions);
-        console.log(
-          112233,
-          this.formSearchData,
-          this.formSearch,
-          filterConditions,
-          this.compareMap,
-          this.findTableSearch
-        );
         // 持久化：只传 settingJson + defaultFilterJson，不影响 customSearch
         this.saveToApi(
           {
@@ -1280,7 +1274,18 @@ export default {
         this.expend = true;
         this.findTableSearch = this.formSearchData.tableSearch;
       }
-      this.$emit("onSave", configList);
+
+      const { defaultFilterJson, isDefaultFilterJson } = convertSettingJson(
+        this.byMenuData,
+        { configList },
+        this.formSearch
+      );
+      const callback = callback =>
+        this.saveToApi({ defaultFilterJson, isDefaultFilterJson }, "时间类型变化，默认搜索条件已同步更新", callback);
+
+      const result = { configList };
+      if (isDefaultFilterJson) Object.assign(result, { callback });
+      this.$emit("onSave", result);
     },
     async loadOptionSources() {
       for (const item of this.formSearchData.tableSearch) {

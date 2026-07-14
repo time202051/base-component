@@ -16,6 +16,7 @@
 
 <script>
 import { getTargetMenuId } from "../../../utils/initData.js";
+import { convertSettingJson } from "../../formSearch/src/utils/index.js";
 export default {
   name: "customSearch",
   props: {
@@ -109,6 +110,7 @@ export default {
         if (res.code !== 200) return;
         this.byMenuData = res.result;
         const configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
+        convertSettingJson(res.result, { configList });
         // 合并搜索字段配置：formSearchData.tableSearch + frontSearchData 优先，接口返回的补充
         // 前端追加的搜索条件标记为 isFrontAppend，不参与配置弹框编辑
         const localTableSearch = [
@@ -174,14 +176,15 @@ export default {
       });
     },
     //保存
-    onSave(configList) {
+    onSave({ configList, callback }) {
       const targetMenuId =
         this.$attrs.menuId ||
         this.$route.query.menuId ||
         (this.currentPageItem && this.currentPageItem.id);
-      let defaultFilter = {};
-      // configList.forEach(item => {
-      // });
+      // 保存前清洗冗余数据 + 重新绑定快捷选项事件
+      // if (this.byMenuData) {
+      //   convertSettingJson(this.byMenuData, { configList });
+      // }
       this.post({
         url: `/api/app/menu-search-setting`,
         data: {
@@ -191,7 +194,7 @@ export default {
       }).then(res => {
         if (res.code !== 200) return;
         this.$message.success("保存成功");
-        this.init();
+        if(callback) callback(() => this.init());
         console.log("保存配置数据", configList);
       });
     },
@@ -207,7 +210,6 @@ export default {
       )
         .then(() => {
           var targetMenuId = getTargetMenuId(this);
-          console.log(133323, targetMenuId);
           this.put({
             url: "/api/app/menu-search-setting",
             data: {

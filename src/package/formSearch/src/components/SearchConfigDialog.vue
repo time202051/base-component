@@ -360,7 +360,7 @@
 <script>
 import Sortable from "sortablejs";
 import { getSelectSwaggerData } from "../../../../utils/initData.js";
-
+import { buildRangePickerOptions } from "../utils/index.js";
 // interface OptionItem {
 //   key: string;
 //   value: string;
@@ -480,7 +480,9 @@ export default {
       const selectedKeysLower = [...this.configList, ...this.frontAppendList].map(item =>
         String(item.value || "").toLowerCase()
       );
-      return this.customs.filter(custom => !selectedKeysLower.includes(String(custom.key || "").toLowerCase()));
+      return this.customs.filter(
+        custom => !selectedKeysLower.includes(String(custom.key || "").toLowerCase())
+      );
     },
     filteredConfigList() {
       const keyword = this.searchKeyword.trim().toLowerCase();
@@ -674,7 +676,7 @@ export default {
       this.updateDatePickerProps(row);
 
       // datetimerange 选择器需要更多显示空间，自动设为 span=2；其他类型恢复为 1
-      if (row.dateType === 'datetimerange') {
+      if (row.dateType === "datetimerange") {
         row.span = 2;
       } else {
         row.span = 1;
@@ -711,6 +713,7 @@ export default {
           props.placeholder = "选择日期范围";
           props.valueFormat = "yyyy-MM-dd";
           props.format = "yyyy/MM/dd";
+          props.pickerOptions = buildRangePickerOptions();
           break;
         case "datetimerange":
           props.type = "datetimerange";
@@ -720,6 +723,7 @@ export default {
           props.valueFormat = "yyyy-MM-dd HH:mm:ss";
           props.format = "yyyy/MM/dd HH:mm:ss";
           props.defaultTime = ["00:00:00", "23:59:59"];
+          props.pickerOptions = buildRangePickerOptions();
           break;
         case "month":
           props.type = "month";
@@ -1179,4 +1183,3 @@ export default {
   overflow-y: auto;
 }
 </style>
-
