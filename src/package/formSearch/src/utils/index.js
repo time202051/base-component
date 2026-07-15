@@ -30,20 +30,20 @@ const buildRangePickerOptions = () => {
 
   // 本月
   const thisMonthStart = new Date(year, month, 1);
-  const thisMonthEnd = new Date(year, month + 1, 0);
+  const thisMonthEnd = new Date(year, month + 1, 0, 23, 59, 59);
 
   // 上月
   const lastMonthStart = new Date(year, month - 1, 1);
-  const lastMonthEnd = new Date(year, month, 0);
+  const lastMonthEnd = new Date(year, month, 0, 23, 59, 59);
 
   // 本季度
   const quarterStartMonth = Math.floor(month / 3) * 3;
   const thisQuarterStart = new Date(year, quarterStartMonth, 1);
-  const thisQuarterEnd = new Date(year, quarterStartMonth + 3, 0);
+  const thisQuarterEnd = new Date(year, quarterStartMonth + 3, 0, 23, 59, 59);
 
   // 本年
   const thisYearStart = new Date(year, 0, 1);
-  const thisYearEnd = new Date(year, 11, 31);
+  const thisYearEnd = new Date(year, 11, 31, 23, 59, 59);
 
   // 最近一周（过去7天）
   const last7DaysStart = new Date(year, month, day - 6);
