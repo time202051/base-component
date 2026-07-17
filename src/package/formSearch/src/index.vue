@@ -1647,8 +1647,8 @@ $label-width: 78px;
 
 /* ----- 折叠 "+N" 标签（.is-hit） ----- */
 .custom-select ::v-deep .el-tag.is-hit {
-  background: #e8f3ff;
-  color: #3370ff;
+  background: var(--color-primary-light-9, #ecf5ff);
+  color: var(--color-primary, #409eff);
   border: none;
   font-weight: 500;
   padding: 0 12px;
@@ -1667,8 +1667,7 @@ $label-width: 78px;
   border-color: #b3bcc6;
 }
 .custom-select ::v-deep .el-input__inner:focus {
-  border-color: #3370ff;
-  box-shadow: 0 0 0 3px rgba(51, 112, 255, 0.12);
+  border-color: var(--color-primary, #409eff);
 }
 
 /* ----- 输入框后缀（箭头）位置修复 ----- */
@@ -1686,7 +1685,7 @@ $label-width: 78px;
 }
 .custom-select ::v-deep .el-select-dropdown__item.selected {
   font-weight: 500;
-  color: #3370ff;
+  color: var(--color-primary, #409eff);
 }
 
 /* ----- 禁用状态保留样式 ----- */
