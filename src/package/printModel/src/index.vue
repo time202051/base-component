@@ -64,6 +64,8 @@
         :title="dialogTitle"
         :visible.sync="dialogVisible"
         width="600px"
+        :append-to-body="true"
+        :z-index="2000"
         :close-on-click-modal="false"
         :close-on-press-escape="false"
         :before-close="beforeClose"
