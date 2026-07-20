@@ -61,7 +61,7 @@ export default {
     return {
       currentPageItem: {},
       key: 0,
-      byMenuData: null,
+      byMenuData: {},
     };
   },
 
@@ -108,7 +108,7 @@ export default {
         },
       }).then(async res => {
         if (res.code !== 200) return;
-        this.byMenuData = res.result;
+        this.byMenuData = res.result || {};
         const configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
         convertSettingJson(res.result, { configList });
         // 合并搜索字段配置：formSearchData.tableSearch + frontSearchData 优先，接口返回的补充
@@ -134,7 +134,7 @@ export default {
         const defaultValue = { ...(this.formSearchData.value || {}), ...this.frontDefaultValue };
 
         // 解析并回显默认搜索条件
-        if (res.result.defaultFilterJson) {
+        if (res.result?.defaultFilterJson) {
           try {
             const { filterConditions: defaultFilters, compareMap } = JSON.parse(
               res.result.defaultFilterJson

@@ -153,7 +153,7 @@ const buildRangePickerOptions = () => {
  * 2. 为范围日期选择器重新绑定快捷选项 onClick（JSON 序列化后函数会丢失）
  */
 const convertSettingJson = (byMenuData, { configList }, formSearch = {}) => {
-  const { defaultFilterJson, settingJson, customSearch } = byMenuData;
+  const { defaultFilterJson, settingJson, customSearch } = byMenuData || {};
   const tempDefaultFilterJson = defaultFilterJson ? JSON.parse(defaultFilterJson) : null;
   const tempCustomSearch = customSearch ? JSON.parse(customSearch) : null;
   const tempSettingJson = settingJson ? JSON.parse(settingJson) : null;

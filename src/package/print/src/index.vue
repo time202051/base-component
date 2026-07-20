@@ -168,9 +168,16 @@ export default {
         //   { title: "cursive", value: "cursive" },
         // ],
       });
-      // 使用 props 传入的纸张大小
+      // 优先使用保存模板中的纸张大小，其次使用 props 传入的纸张大小
+      let paperSize = this.paperSize;
+      if (this.defaultTemplate && this.defaultTemplate.panels && this.defaultTemplate.panels.length > 0) {
+        const firstPanel = this.defaultTemplate.panels[0];
+        if (firstPanel.width != null && firstPanel.height != null) {
+          paperSize = { width: firstPanel.width, height: firstPanel.height };
+        }
+      }
       if (this.$refs.paperSelector) {
-        this.$refs.paperSelector.curPaper = this.paperSize;
+        this.$refs.paperSelector.curPaper = paperSize;
       }
       // 构建 并填充到 容器中
       // 可以先 console.log($("#hiprint-printTemplate")) 看看是否有该 dom
@@ -589,14 +596,14 @@ button i {
 </style>
 
 <style>
-/* 设置 message 提示层级高于打印弹窗 (z-index: 5000) */
+/* 设置 message 提示层级高于打印弹窗 */
 .print-message-zindex {
-  z-index: 5100 !important;
+  z-index: 9999 !important;
 }
 
 /* $confirm 的 z-index 在内联 style 的 wrapper 上，customClass 无法覆盖，需单独处理 */
 .el-message-box__wrapper {
-  z-index: 5100 !important;
+  z-index: 9999 !important;
 }
 
 /* 重写默认的一个样式 */

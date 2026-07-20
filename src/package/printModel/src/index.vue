@@ -261,7 +261,7 @@ export default {
         .then(async () => {
           try {
             await this.del({
-              url: `/api/app/print-template/print-template?Id=${template.id}`,
+              url: `/api/app/print-templete/print-templete?Id=${template.id}`,
             });
             this.$message.success("删除成功");
             this.loadTemplates(this.currentMenuId);
@@ -280,9 +280,10 @@ export default {
                 url: "/api/app/print-templete/print-templete",
                 data: {
                   id: this.form.id,
-                  templeteName: this.form.templeteName,
-                  templeteJson: this.form.templeteJson,
-                  sourceUrl: this.form.sourceUrl,
+                  ...this.form
+                  // templeteName: this.form.templeteName,
+                  // templeteJson: this.form.templeteJson,
+                  // sourceUrl: this.form.sourceUrl,
                 },
               });
               this.$message.success("编辑成功");
@@ -291,9 +292,10 @@ export default {
                 url: "/api/app/print-templete/print-templete",
                 data: {
                   menuId: this.currentMenuId,
-                  templeteName: this.form.templeteName,
-                  templeteJson: this.form.templeteJson,
-                  sourceUrl: this.form.sourceUrl,
+                  ...this.form
+                  // templeteName: this.form.templeteName,
+                  // templeteJson: this.form.templeteJson,
+                  // sourceUrl: this.form.sourceUrl,
                 },
               });
               this.$message.success("新增成功");
