@@ -4,6 +4,7 @@
       <div class="left-panel">
         <div class="panel-title">菜单树</div>
         <el-tree
+          ref="menuTree"
           :data="menuTreeData"
           :props="treeProps"
           node-key="id"
@@ -18,7 +19,7 @@
       <div class="right-panel">
         <div class="panel-header">
           <span class="panel-title">{{ currentMenuName }} - 打印模板</span>
-          <el-button type="primary" size="small" icon="el-icon-plus" @click="handleAdd">
+          <el-button type="primary" size="small" icon="el-icon-plus" :disabled="!currentMenuId" @click="handleAdd">
             新增模板
           </el-button>
         </div>
@@ -128,7 +129,8 @@ export default {
       },
       rules: {
         templeteName: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
-        templeteJson: [{ required: true, message: "请输入模板JSON", trigger: "blur" }],
+        templeteJson: [{ required: true, message: "请创建模板", trigger: "blur" }],
+        sourceUrl: [{ required: true, message: "请输入数据源URL", trigger: "blur" }],
       },
       originalForm: null,
     };
@@ -152,30 +154,31 @@ export default {
       const wms = JSON.parse(localStorage.getItem("wms") || "{}");
       const menus = wms.SET_MENUS || [];
       this.menuTreeData = this.buildTreeData(menus);
-      const routeMenuId = this.$route?.query?.menuId;
-      let targetNode = null;
-      if (routeMenuId) {
-        targetNode = this.findMenuNodeById(this.menuTreeData, routeMenuId);
-      }
-      if (!targetNode) {
-        targetNode = this.findFirstMenuNode(this.menuTreeData);
-      }
+      const targetNode = this.findFirstLeafNode(this.menuTreeData);
       if (targetNode) {
         this.currentMenuId = targetNode.id;
         this.currentMenuName = targetNode.title;
         this.currentItem = targetNode;
         this.loadTemplates(targetNode.id);
+        // el-tree 在 default-expand-all 时渲染较慢，用双重 nextTick 确保 DOM 就绪
+        this.$nextTick(() => {
+          this.$nextTick(() => {
+            if (this.$refs.menuTree) {
+              this.$refs.menuTree.setCurrentKey(targetNode.id);
+            }
+          });
+        });
       }
-      console.log("111222", this.menuTreeData)
     },
-    findFirstMenuNode(menus) {
+    findFirstLeafNode(menus) {
       if (!menus || menus.length === 0) return null;
       for (const menu of menus) {
         if (menu.child && menu.child.length > 0) {
-          const found = this.findFirstMenuNode(menu.child);
+          const found = this.findFirstLeafNode(menu.child);
           if (found) return found;
+        } else {
+          return menu;
         }
-        return menu;
       }
       return null;
     },
@@ -199,6 +202,8 @@ export default {
       });
     },
     handleNodeClick(data) {
+      // 只有叶子节点（没有子菜单的页面）才能选中
+      if (data.child && data.child.length > 0) return;
       this.currentMenuId = data.id;
       this.currentMenuName = data.title;
       this.currentItem = data;
