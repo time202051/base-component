@@ -194,7 +194,11 @@ export default {
       }
 
       this.observer = new MutationObserver(() => {
-        this.addFontSizeOptions();
+        // Edge 浏览器中 hiprint 渲染属性面板可能分多步完成，
+        // MutationObserver 触发时 DOM 未必就绪，加 setTimeout 延迟执行
+        setTimeout(() => {
+          this.addFontSizeOptions();
+        }, 50);
       });
 
       this.observer.observe(container, {
@@ -606,7 +610,16 @@ button i {
   z-index: 9999 !important;
 }
 
-/* 重写默认的一个样式 */
+/* 重写默认样式：跨浏览器兼容左侧拖拽元素的网格布局 */
+.rect-printElement-types .hiprint-printElement-type > li > ul {
+  display: flex;
+  flex-wrap: wrap;
+}
+.rect-printElement-types .hiprint-printElement-type > li > ul > li {
+  float: none;
+  width: 50%;
+  box-sizing: border-box;
+}
 .rect-printElement-types .hiprint-printElement-type > li > ul > li > a {
   color: #000 !important;
   display: flex;
