@@ -228,8 +228,8 @@ export default {
         const targetOptions = [
           { value: "5", text: "5pt" },
           { value: "4", text: "4pt" },
-          { value: "3", text: "3pt" },
-          { value: "2", text: "2pt" },
+          // { value: "3", text: "3pt" },
+          // { value: "2", text: "2pt" },
         ];
 
         let hasChanges = false;

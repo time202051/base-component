@@ -9,6 +9,7 @@ import OlCrud from "./crud";
 import OlExportExcel from "./exportExcel";
 
 import OlPrint, { Hiprint } from "./print";
+import { getFilterConditions } from "./customSearch/src/forcedFilter";
 
 import InputHistory from "./inputHistory";
 
@@ -232,6 +233,7 @@ const install = async function (Vue, options) {
   });
   Vue.use(InputHistory);
   Vue.prototype.$olBaseConfig = options || {};
+  Vue.prototype.$getFilterConditions = getFilterConditions;
   consoleTooltip();
 };
 
@@ -251,3 +253,4 @@ export {
 };
 export { swaggerInstall, swaggerUnload, Hiprint };
 export { InputHistory };
+// export { getFilterConditions };

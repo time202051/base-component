@@ -3,6 +3,7 @@
     <div
       v-if="formSearchData.tableSearch && formSearchData.tableSearch.length >= 0"
       class="table-header"
+      :class="{ 'force-filter-mode': searchMode === 'adminDefault' }"
     >
       <el-form
         ref="formSearch"
@@ -77,7 +78,7 @@
             </div>
           </div>
           <el-form-item
-            v-for="item in findTableSearch"
+            v-for="item in visibleTableSearch"
             v-show="!item.show"
             :key="item.value"
             class="table-header-item"
@@ -291,15 +292,43 @@
           <el-dropdown v-if="isCustomSearch" trigger="click">
             <el-button plain icon="el-icon-more" />
             <el-dropdown-menu slot="dropdown">
+              <!-- 所有模式都有 -->
               <el-dropdown-item @click.native="handleOpenConfig">
                 <i class="el-icon-setting" /> 配置
               </el-dropdown-item>
-              <el-dropdown-item @click.native="handleSave">
-                <i class="el-icon-document-checked" /> 保存搜索条件
+
+              <!-- 仅 A 模式（normal） -->
+              <template v-if="searchMode === 'normal'">
+                <el-dropdown-item @click.native="handleSave">
+                  <i class="el-icon-document-checked" /> 保存搜索条件
+                </el-dropdown-item>
+                <el-dropdown-item @click.native="handleSaveCombo">
+                  <i class="el-icon-folder-add" /> 保存组合条件
+                </el-dropdown-item>
+              </template>
+
+              <!-- 仅 B 模式（adminDefault） -->
+              <el-dropdown-item
+                v-if="searchMode === 'adminDefault'"
+                @click.native="handleSaveAdminDefaults"
+              >
+                <i class="el-icon-document-checked" /> 保存强制筛选
               </el-dropdown-item>
-              <el-dropdown-item @click.native="handleSaveCombo">
-                <i class="el-icon-folder-add" /> 保存组合条件
+              <el-dropdown-item
+                v-if="searchMode === 'adminDefault'"
+                @click.native="$emit('switchToNormalMode')"
+              >
+                <i class="el-icon-back" /> 退出强制筛选
               </el-dropdown-item>
+
+              <!-- 仅 A 模式（normal）+ admin 可见：切换到 B 模式的入口 -->
+              <el-dropdown-item
+                v-if="searchMode === 'normal' && isDefaultFilterAdmin"
+                @click.native="goToAdminDefaultMode"
+              >
+                <i class="el-icon-collection-tag" /> 强制筛选
+              </el-dropdown-item>
+
               <el-dropdown-item @click.native="handleResetAllConfig">
                 <i class="el-icon-delete" /> 重置所有配置
               </el-dropdown-item>
@@ -314,7 +343,7 @@
       :table-search="formSearchData.tableSearch"
       :formSearchData="formSearchData"
       :formSearch="formSearch"
-      :customs="formSearchData.customs"
+      :customs="filteredCustoms"
       @save="handleSaveConfig"
       v-bind="$attrs"
     />
@@ -433,6 +462,23 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    // admin 配置的默认查询条件（非 admin 用户不可见，但查询时自动合并）
+    adminDefaultConditions: {
+      type: Array,
+      default: function () {
+        return [];
+      },
+    },
+    // 当前用户是否可以管理默认查询条件（由 customSearch 传入）
+    isDefaultFilterAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    // 当前模式：'normal' | 'adminDefault'
+    searchMode: {
+      type: String,
+      default: "normal",
+    },
   },
   data() {
     return {
@@ -496,6 +542,30 @@ export default {
     labelFontSize() {
       var map = { mini: "12px", small: "13px", medium: "14px" };
       return map[this.effectiveFormSize] || "12px";
+    },
+    // 搜索表单实际展示的字段（非 admin 需过滤掉 admin 默认条件字段）
+    visibleTableSearch() {
+      if (this.isDefaultFilterAdmin) return this.findTableSearch;
+      var adminKeys = new Set();
+      (this.adminDefaultConditions || []).forEach(function (c) {
+        adminKeys.add(c.key);
+      });
+      return this.findTableSearch.filter(function (item) {
+        return !adminKeys.has(item.value);
+      });
+    },
+    // 配置弹框可选的字段池（过滤掉已在强制筛选中的字段，防止重复添加）
+    filteredCustoms() {
+      var customs = this.formSearchData.customs || [];
+      var conditions = this.adminDefaultConditions || [];
+      if (conditions.length === 0) return customs;
+      var forcedKeys = new Set();
+      conditions.forEach(function (c) {
+        forcedKeys.add(c.key);
+      });
+      return customs.filter(function (item) {
+        return !forcedKeys.has(item.key);
+      });
     },
   },
   watch: {
@@ -988,6 +1058,43 @@ export default {
       this.$emit("resetAllConfig");
     },
 
+    /** 通知 customSearch 切换到 B 模式（admin 默认条件配置模式） */
+    goToAdminDefaultMode() {
+      this.$emit("switchToAdminDefaultMode");
+    },
+
+    /** B 模式下保存当前条件为 admin 默认查询条件 */
+    handleSaveAdminDefaults() {
+      const filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
+      const adminDefaultData = JSON.stringify({
+        filterConditions: filterConditions,
+        compareMap: this.compareMap,
+      });
+      // 1. 保存到后缀 menuId（B 模式自身的回显用）
+      this.saveToApi(
+        {
+          isAdminDefaultFilterJson: true,
+          adminDefaultFilterJson: adminDefaultData,
+        },
+        "强制筛选保存成功",
+        () => {
+          // 2. 同步到原始 menuId（非 admin 读取用）
+          let targetMenuId = getTargetMenuId(this);
+          const originalMenuId = targetMenuId.replace("_admin_default_search", "");
+          if (originalMenuId !== targetMenuId) {
+            this.put({
+              url: "/api/app/menu-search-setting",
+              data: {
+                sysMenuId: originalMenuId,
+                isAdminDefaultFilterJson: true,
+                adminDefaultFilterJson: adminDefaultData,
+              },
+            });
+          }
+        }
+      );
+    },
+
     /** 统一的保存方法 —— 调用方通过 data 决定传哪些字段，各存各的不互相覆盖 */
     saveToApi(data, successMsg, callback) {
       var targetMenuId = getTargetMenuId(this);
@@ -995,8 +1102,8 @@ export default {
         url: "/api/app/menu-search-setting",
         data: {
           sysMenuId: targetMenuId,
-          isSettingJson: true,
-          settingJson: JSON.stringify(this.formSearchData.tableSearch),
+          // isSettingJson: true,
+          // settingJson: JSON.stringify(this.formSearchData.tableSearch),
           ...data,
         },
       }).then(res => {
@@ -1107,6 +1214,29 @@ export default {
             directParams[key] = this.formSearch[key];
           }
         });
+
+        // 3. 合并 admin 默认条件（非 admin 用户不可见的强制过滤条件）
+        //    admin 默认条件优先级最低：只添加用户未设置同 key 的条件
+        if (
+          !this.isDefaultFilterAdmin &&
+          this.searchMode === "normal" &&
+          this.adminDefaultConditions &&
+          this.adminDefaultConditions.length > 0
+        ) {
+          for (var ai = 0; ai < this.adminDefaultConditions.length; ai++) {
+            var ac = this.adminDefaultConditions[ai];
+            var exists = filterConditions.some(function (fc) {
+              return fc.key === ac.key;
+            });
+            if (!exists) {
+              filterConditions.push({
+                key: ac.key,
+                values: ac.values.slice(),
+                compare: ac.compare,
+              });
+            }
+          }
+        }
 
         // 动态模式
         this.$emit("handleSearch", this.formSearch, { filterConditions, directParams });
@@ -1281,7 +1411,11 @@ export default {
         this.formSearch
       );
       const callback = callback =>
-        this.saveToApi({ defaultFilterJson, isDefaultFilterJson }, "时间类型变化，默认搜索条件已同步更新", callback);
+        this.saveToApi(
+          { defaultFilterJson, isDefaultFilterJson },
+          "时间类型变化，默认搜索条件已同步更新",
+          callback
+        );
 
       const result = { configList };
       if (isDefaultFilterJson) Object.assign(result, { callback });
@@ -1475,6 +1609,12 @@ $label-width: 78px;
     margin-right: 0;
     margin-bottom: 0;
   }
+}
+
+// 强制筛选模式：搜索区域背景变色
+.table-header.force-filter-mode {
+  background: var(--color-primary-light-9, #ecf5ff);
+  border-radius: 4px;
 }
 
 // ==================== 搜索字段网格 ====================
