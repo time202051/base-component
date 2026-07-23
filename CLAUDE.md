@@ -117,3 +117,10 @@ Swagger 数据通过 `swaggerInstall(url)` 拉取 → 存入 IndexedDB `SwaggerD
 
 ## 代码习惯
 声明函数的时候尽量用箭头函数,避免this指向不明确
+
+禁止使用`self`指向`this`
+```js
+var self = this;
+
+声明变量时候,尽量用const,避免变量提升，不要用var
+声明函数时候，尽量用箭头函数

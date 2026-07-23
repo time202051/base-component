@@ -306,21 +306,9 @@
                   <i class="el-icon-folder-add" /> 保存组合条件
                 </el-dropdown-item>
               </template>
-
-              <!-- 仅 B 模式（adminDefault） -->
-              <el-dropdown-item
-                v-if="searchMode === 'adminDefault'"
-                @click.native="handleSaveAdminDefaults"
-              >
-                <i class="el-icon-document-checked" /> 保存强制筛选
+              <el-dropdown-item @click.native="handleResetAllConfig">
+                <i class="el-icon-delete" /> 重置所有配置
               </el-dropdown-item>
-              <el-dropdown-item
-                v-if="searchMode === 'adminDefault'"
-                @click.native="$emit('switchToNormalMode')"
-              >
-                <i class="el-icon-back" /> 退出强制筛选
-              </el-dropdown-item>
-
               <!-- 仅 A 模式（normal）+ admin 可见：切换到 B 模式的入口 -->
               <el-dropdown-item
                 v-if="searchMode === 'normal' && isDefaultFilterAdmin"
@@ -328,9 +316,18 @@
               >
                 <i class="el-icon-collection-tag" /> 强制筛选
               </el-dropdown-item>
-
-              <el-dropdown-item @click.native="handleResetAllConfig">
-                <i class="el-icon-delete" /> 重置所有配置
+              <el-dropdown-item
+                v-if="searchMode === 'adminDefault'"
+                @click.native="$emit('switchToNormalMode')"
+              >
+                <i class="el-icon-back" /> 退出强制筛选
+              </el-dropdown-item>
+              <!-- 仅 B 模式（adminDefault） -->
+              <el-dropdown-item
+                v-if="searchMode === 'adminDefault'"
+                @click.native="handleSaveAdminDefaults"
+              >
+                <i class="el-icon-document-checked" /> 保存强制筛选
               </el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
