@@ -83,13 +83,13 @@ export default {
     },
     // 从全局配置读取当前用户是否可以管理默认查询条件（支持函数和布尔值）
     isDefaultFilterAdmin() {
-      var val = this.$olBaseConfig && this.$olBaseConfig.isDefaultFilterAdmin;
+      let val = this.$olBaseConfig && this.$olBaseConfig.isDefaultFilterAdmin;
       if (typeof val === "function") return val();
       return !!val;
     },
     // 根据当前模式返回有效的 menuId（B 模式加后缀）
     effectiveMenuId() {
-      var base =
+      let base =
         this.$attrs.menuId ||
         this.$route.query.menuId ||
         (this.currentPageItem && this.currentPageItem.id) ||
@@ -115,44 +115,45 @@ export default {
       });
     },
     async init() {
-      var handleMenu = function (arr, _this) {
-        for (var i = 0; i < arr.length; i++) {
-          var item = arr[i];
+      let handleMenu = function (arr, _this) {
+        for (let i = 0; i < arr.length; i++) {
+          let item = arr[i];
           if (item.path === _this.$route.path) {
             return item;
           }
           if (item.child && item.child.length > 0 && item.type !== 1) {
-            var found = handleMenu(item.child, _this);
+            let found = handleMenu(item.child, _this);
             if (found) return found;
           }
         }
         return null;
       };
-      var wms = JSON.parse(localStorage.getItem("wms"));
-      var SET_MENUS = null;
+      let wms = JSON.parse(localStorage.getItem("wms"));
+      let SET_MENUS = null;
       if (wms) SET_MENUS = wms.SET_MENUS;
-      var menus = SET_MENUS;
+      let menus = SET_MENUS;
       this.currentPageItem = handleMenu(menus, this);
 
-      var targetMenuId = this.effectiveMenuId;
+      let targetMenuId = this.effectiveMenuId;
       if (!targetMenuId) return;
 
-      var res = await this.get({
+      let res = await this.get({
         url: "/api/app/menu-search-setting/by-menu",
         data: { sysMenuId: targetMenuId },
       });
 
       if (res.code !== 200) return;
-      var configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
+      if (!res.result) res.result = {};
+      let configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
       convertSettingJson(res.result, { configList });
 
       // 合并搜索字段配置：formSearchData.tableSearch + frontSearchData 优先，接口返回的补充
-      var localTableSearch = (this.formSearchData.tableSearch || []).slice().concat(
+      let localTableSearch = (this.formSearchData.tableSearch || []).slice().concat(
         this.frontSearchData.map(function (item) {
           return Object.assign({}, item, { isFrontAppend: true });
         })
       );
-      var tableSearchMap = new Map();
+      let tableSearchMap = new Map();
       localTableSearch.forEach(function (item) {
         if (item.value) tableSearchMap.set(item.value, item);
       });
@@ -161,23 +162,23 @@ export default {
           tableSearchMap.set(item.value, item);
         }
       });
-      var mergedTableSearch = Array.from(tableSearchMap.values());
+      let mergedTableSearch = Array.from(tableSearchMap.values());
 
       // ===== 处理 admin 默认条件 =====
-      var adminDefaultCompareMap = {};
+      let adminDefaultCompareMap = {};
       if (this.searchMode === "adminDefault" && res.result && res.result.adminDefaultFilterJson) {
         // B 模式：解析并准备回显已保存的 admin 默认条件
-        var adminParsed = parseForcedFilter(res.result);
+        let adminParsed = parseForcedFilter(res.result);
         this.adminDefaultConditions = adminParsed.filterConditions;
         adminDefaultCompareMap = adminParsed.compareMap;
       }
 
       if (!this.isDefaultFilterAdmin && res.result && res.result.adminDefaultFilterJson) {
         // 非 admin：从主响应获取 admin 默认条件，并过滤字段
-        var nonAdminParsed = parseForcedFilter(res.result);
+        let nonAdminParsed = parseForcedFilter(res.result);
         this.adminDefaultConditions = nonAdminParsed.filterConditions;
         if (this.adminDefaultConditions.length > 0) {
-          var adminKeys = new Set();
+          let adminKeys = new Set();
           this.adminDefaultConditions.forEach(function (c) {
             adminKeys.add(c.key);
           });
@@ -191,15 +192,15 @@ export default {
       this.$set(this.formSearchData, "tableSearch", mergedTableSearch);
 
       // 合并默认搜索值：formSearchData.value / frontDefaultValue 优先级最高，接口默认值不覆盖
-      var hasDefaultFilter = false;
-      var defaultValue = Object.assign({}, this.formSearchData.value || {}, this.frontDefaultValue);
+      let hasDefaultFilter = false;
+      let defaultValue = Object.assign({}, this.formSearchData.value || {}, this.frontDefaultValue);
 
       // 解析并回显默认搜索条件
       if (res.result && res.result.defaultFilterJson) {
         try {
-          var defaultParsed = JSON.parse(res.result.defaultFilterJson);
-          var defaultFilters = defaultParsed.filterConditions;
-          var compareMap = defaultParsed.compareMap;
+          let defaultParsed = JSON.parse(res.result.defaultFilterJson);
+          let defaultFilters = defaultParsed.filterConditions;
+          let compareMap = defaultParsed.compareMap;
           if (defaultFilters) {
             this.$set(this.formSearchData, "filterConditions", defaultFilters);
             defaultFilters.forEach(function (item) {
@@ -227,7 +228,7 @@ export default {
         });
         // 恢复比较运算符映射
         if (Object.keys(adminDefaultCompareMap).length > 0) {
-          var existingCompareMap = this.$refs.customSearchRef.compareMap || {};
+          let existingCompareMap = this.$refs.customSearchRef.compareMap || {};
           this.$refs.customSearchRef.compareMap = Object.assign(
             existingCompareMap,
             adminDefaultCompareMap
@@ -235,14 +236,14 @@ export default {
         }
       }
       this.$set(this.formSearchData, "value", defaultValue);
-      // tableSearch、value 都已就绪，最后设置 byMenuData 触发 formSearch watcher 初始化
-      this.byMenuData = res.result || {};
+      // 标记 _loaded，即便后端返回 null，formSearch watcher 也能感知数据已加载完成
+      this.byMenuData = Object.assign({ _loaded: true }, res.result || {});
     },
     //保存
     onSave(_ref) {
-      var configList = _ref.configList;
-      var callback = _ref.callback;
-      var targetMenuId = this.effectiveMenuId;
+      let configList = _ref.configList;
+      let callback = _ref.callback;
+      let targetMenuId = this.effectiveMenuId;
       this.post({
         url: "/api/app/menu-search-setting",
         data: {
@@ -256,7 +257,7 @@ export default {
           callback(() => {
             this.init();
           });
-        console.log("保存配置数据", configList);
+        console.log(`\x1b[36m\x1b[4mol插件-保存配置数据`, configList);
       });
     },
     resetAllConfig() {
@@ -270,7 +271,7 @@ export default {
         }
       )
         .then(() => {
-          var targetMenuId = this.effectiveMenuId;
+          let targetMenuId = this.effectiveMenuId;
           this.put({
             url: "/api/app/menu-search-setting",
             data: {
@@ -293,3 +294,4 @@ export default {
 </script>
 
 <style lang="scss" scoped></style>
+

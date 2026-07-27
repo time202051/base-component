@@ -8,25 +8,25 @@
 // 与 columnConfig resolveMenuId 一致的实现，只是不依赖 this.$route / this.menuId
 function detectCurrentMenuId() {
   try {
-    var wms = JSON.parse(localStorage.getItem("wms") || "{}");
-    var menus = wms.SET_MENUS;
+    let wms = JSON.parse(localStorage.getItem("wms") || "{}");
+    let menus = wms.SET_MENUS;
     if (!menus) return "";
     // 从 window.location 获取当前路径（兼容 hash 和 history 路由）
-    var path = window.location.hash
+    let path = window.location.hash
       ? window.location.hash.replace(/^#/, "")
       : window.location.pathname;
-    var find = function (arr) {
-      for (var i = 0; i < arr.length; i++) {
-        var item = arr[i];
+    let find = function (arr) {
+      for (let i = 0; i < arr.length; i++) {
+        let item = arr[i];
         if (item.path === path) return item;
         if (item.child && item.child.length > 0 && item.type !== 1) {
-          var found = find(item.child);
+          let found = find(item.child);
           if (found) return found;
         }
       }
       return null;
     };
-    var m = find(menus);
+    let m = find(menus);
     return (m && m.id) || "";
   } catch (e) {
     return "";
@@ -41,14 +41,14 @@ export function parseForcedFilter({ adminDefaultFilterJson }) {
 
 // 合并两个 filterConditions 数组，按 key 去重，forced 优先
 function mergeFilterConditions(userConditions, forcedConditions) {
-  var map = {};
+  let map = {};
   (userConditions || []).forEach(function (c) {
     if (c.key) map[c.key] = c;
   });
   (forcedConditions || []).forEach(function (c) {
     if (c.key) map[c.key] = c;
   });
-  var result = [];
+  let result = [];
   Object.keys(map).forEach(function (k) {
     result.push(map[k]);
   });

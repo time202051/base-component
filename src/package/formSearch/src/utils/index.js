@@ -158,7 +158,6 @@ const convertSettingJson = (byMenuData, { configList }, formSearch = {}) => {
   const tempCustomSearch = customSearch ? JSON.parse(customSearch) : null;
   const tempSettingJson = settingJson ? JSON.parse(settingJson) : null;
 
-  console.log("999接口数据", tempDefaultFilterJson, tempSettingJson, tempCustomSearch);
   let changed = false;
 
   /**

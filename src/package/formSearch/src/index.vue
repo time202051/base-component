@@ -479,7 +479,7 @@ export default {
   },
   data() {
     return {
-      findTableSearch: {},
+      findTableSearch: [],
       expend: !(
         this.formSearchData.tableSearch &&
         this.formSearchData.tableSearch.length > this.effectiveSpan
@@ -520,7 +520,7 @@ export default {
     // 搜索框展开折叠按钮是否显示（按每项 span 累计判断，而非项数）
     showExpendBtn() {
       if (!this.formSearchData.tableSearch) return false;
-      var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
+      let totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
         return sum + (item.span || 1);
       }, 0);
       return totalSpan > this.availableSpan;
@@ -535,18 +535,18 @@ export default {
     },
     // 表单实际生效的 size（formProps 可能覆盖 el-form 的静态 size="mini"）
     effectiveFormSize() {
-      var formProps = this.formSearchData.options && this.formSearchData.options.formProps;
+      let formProps = this.formSearchData.options && this.formSearchData.options.formProps;
       return (formProps && formProps.size) || "mini";
     },
     // 根据 size 返回对应的标签字号，保证组合查询和查询条件字体一致
     labelFontSize() {
-      var map = { mini: "12px", small: "13px", medium: "14px" };
+      let map = { mini: "12px", small: "13px", medium: "14px" };
       return map[this.effectiveFormSize] || "12px";
     },
     // 搜索表单实际展示的字段（非 admin 需过滤掉 admin 默认条件字段）
     visibleTableSearch() {
       if (this.isDefaultFilterAdmin) return this.findTableSearch;
-      var adminKeys = new Set();
+      let adminKeys = new Set();
       (this.adminDefaultConditions || []).forEach(function (c) {
         adminKeys.add(c.key);
       });
@@ -556,10 +556,10 @@ export default {
     },
     // 配置弹框可选的字段池（过滤掉已在强制筛选中的字段，防止重复添加）
     filteredCustoms() {
-      var customs = this.formSearchData.customs || [];
-      var conditions = this.adminDefaultConditions || [];
+      let customs = this.formSearchData.customs || [];
+      let conditions = this.adminDefaultConditions || [];
       if (conditions.length === 0) return customs;
-      var forcedKeys = new Set();
+      let forcedKeys = new Set();
       conditions.forEach(function (c) {
         forcedKeys.add(c.key);
       });
@@ -585,7 +585,7 @@ export default {
       handler(val) {
         if (val && val.customSearch) {
           try {
-            var parsed =
+            let parsed =
               typeof val.customSearch === "string"
                 ? JSON.parse(val.customSearch)
                 : val.customSearch;
@@ -596,8 +596,8 @@ export default {
         } else {
           this.comboPresets = [];
         }
-        // customSearch 模式下，byMenuData 从空变为有内容时说明父组件数据已就绪，触发初始化
-        if (this.isCustomSearch && val && Object.keys(val).length > 0) {
+        // 父组件 API 完成后 always 触发 init（_loaded 标识数据已加载，即使结果为空）
+        if (this.isCustomSearch && val && val._loaded) {
           this.init();
         }
       },
@@ -749,10 +749,10 @@ export default {
         }
       });
 
-      var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
+      let totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
         return sum + (item.span || 1);
       }, 0);
-      var isMoreThanSlice = totalSpan > this.availableSpan;
+      let isMoreThanSlice = totalSpan > this.availableSpan;
       this.findTableSearch = isMoreThanSlice
         ? this.sliceBySpan(this.formSearchData.tableSearch, this.availableSpan)
         : this.formSearchData.tableSearch;
@@ -764,7 +764,7 @@ export default {
         this.initRangeFields();
       }
       // 自动查询, 非isCustomSearch模式其实也可以，但是项目太多，不想改。这里先就改isCustomSearch模式的
-      if(this.isCustomSearch) this.handleSearch();
+      if (this.isCustomSearch) this.handleSearch();
 
       console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch);
     },
@@ -923,7 +923,7 @@ export default {
       // 清空比较符映射，并恢复下拉框单选模式
       Object.keys(this.compareMap).forEach(key => {
         this.$set(this.compareMap, key, undefined);
-        var item = this.formSearchData.tableSearch.find(function (t) {
+        let item = this.formSearchData.tableSearch.find(function (t) {
           return t.value === key;
         });
         if (item) {
@@ -940,7 +940,7 @@ export default {
         this.activeComboPreset = null;
         return;
       }
-      var preset = this.comboPresets.find(function (p) {
+      let preset = this.comboPresets.find(function (p) {
         return p.name === name;
       });
       if (!preset) return;
@@ -948,7 +948,7 @@ export default {
       // 回填 filterConditions 到 formSearch
       if (preset.filterConditions && Array.isArray(preset.filterConditions)) {
         preset.filterConditions.forEach(cond => {
-          var compare =
+          let compare =
             (preset.compareMap && preset.compareMap[cond.key]) ||
             this.getDefaultCompare(
               this.formSearchData.tableSearch.find(function (t) {
@@ -956,8 +956,8 @@ export default {
               })
             );
           // range / in / not in 需要数组值，其他取单值
-          var isArr = compare === "range" || compare === "in" || compare === "not in";
-          var val = isArr
+          let isArr = compare === "range" || compare === "in" || compare === "not in";
+          let val = isArr
             ? cond.values || []
             : cond.values && cond.values.length > 0
             ? cond.values[0]
@@ -970,7 +970,7 @@ export default {
       if (preset.compareMap) {
         Object.keys(preset.compareMap).forEach(key => {
           this.$set(this.compareMap, key, preset.compareMap[key]);
-          var item = this.formSearchData.tableSearch.find(function (t) {
+          let item = this.formSearchData.tableSearch.find(function (t) {
             return t.value === key;
           });
           if (item) {
@@ -991,11 +991,11 @@ export default {
         inputErrorMessage: "名称不能为空",
       })
         .then(res => {
-          var name = res.value.trim();
+          let name = res.value.trim();
 
           // 检查名称是否已存在
-          var existingIndex = -1;
-          for (var i = 0; i < this.comboPresets.length; i++) {
+          let existingIndex = -1;
+          for (let i = 0; i < this.comboPresets.length; i++) {
             if (this.comboPresets[i].name === name) {
               existingIndex = i;
               break;
@@ -1006,14 +1006,14 @@ export default {
             return;
           }
 
-          var filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
+          let filterConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
 
           if (filterConditions.length === 0) {
             this.$message.warning("请先填写查询条件，不能保存空的组合查询");
             return;
           }
 
-          var newPreset = {
+          let newPreset = {
             name: name,
             filterConditions: filterConditions,
             compareMap: Object.assign({}, this.compareMap),
@@ -1104,7 +1104,7 @@ export default {
 
     /** 统一的保存方法 —— 调用方通过 data 决定传哪些字段，各存各的不互相覆盖 */
     saveToApi(data, successMsg, callback) {
-      var targetMenuId = getTargetMenuId(this);
+      let targetMenuId = getTargetMenuId(this);
       this.put({
         url: "/api/app/menu-search-setting",
         data: {
@@ -1184,11 +1184,11 @@ export default {
           }
         });
         // 转成接口需要的结构filterConditions
-        var filterConditions = [];
+        let filterConditions = [];
         // 1. 先取组合查询条件的 filterConditions（作为基础）
         if (this.activeComboPreset) {
-          var currentName = this.activeComboPreset;
-          var comboPreset = this.comboPresets.find(function (p) {
+          let currentName = this.activeComboPreset;
+          let comboPreset = this.comboPresets.find(function (p) {
             return p.name === currentName;
           });
           if (comboPreset && comboPreset.filterConditions) {
@@ -1196,11 +1196,11 @@ export default {
           }
         }
         // 2. 当前查询条件覆盖组合条件（同 key 的后覆盖前）
-        var currentConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
-        for (var ci = 0; ci < currentConditions.length; ci++) {
-          var cc = currentConditions[ci];
-          var idx = -1;
-          for (var fi = 0; fi < filterConditions.length; fi++) {
+        let currentConditions = this.setFilterConditionsByFormSearch(this.formSearch) || [];
+        for (let ci = 0; ci < currentConditions.length; ci++) {
+          let cc = currentConditions[ci];
+          let idx = -1;
+          for (let fi = 0; fi < filterConditions.length; fi++) {
             if (filterConditions[fi].key === cc.key) {
               idx = fi;
               break;
@@ -1230,9 +1230,9 @@ export default {
           this.adminDefaultConditions &&
           this.adminDefaultConditions.length > 0
         ) {
-          for (var ai = 0; ai < this.adminDefaultConditions.length; ai++) {
-            var ac = this.adminDefaultConditions[ai];
-            var exists = filterConditions.some(function (fc) {
+          for (let ai = 0; ai < this.adminDefaultConditions.length; ai++) {
+            let ac = this.adminDefaultConditions[ai];
+            let exists = filterConditions.some(function (fc) {
               return fc.key === ac.key;
             });
             if (!exists) {
@@ -1244,7 +1244,6 @@ export default {
             }
           }
         }
-
         // 动态模式
         this.$emit("handleSearch", this.formSearch, { filterConditions, directParams });
         console.log(`\x1b[36m\x1b[4mol插件-动态搜索框查询`, this.formSearch, {
@@ -1290,10 +1289,10 @@ export default {
     },
     /** 组合查询显隐或列数变化时，重新计算可见搜索项 */
     recalcVisibleItems() {
-      var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
+      let totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
         return sum + (item.span || 1);
       }, 0);
-      var overflows = totalSpan > this.availableSpan;
+      let overflows = totalSpan > this.availableSpan;
       if (this.expend) {
         // 展开状态直接显示全部；但如果现在能在一行放下了，自动收起
         if (!overflows) {
@@ -1317,9 +1316,9 @@ export default {
     },
     /** 按每项 span 累计值切片，用于折叠时显示前 N 列 */
     sliceBySpan(items, maxSpan) {
-      var cumulative = 0;
-      for (var i = 0; i < items.length; i++) {
-        var itemSpan = items[i].span || 1;
+      let cumulative = 0;
+      for (let i = 0; i < items.length; i++) {
+        let itemSpan = items[i].span || 1;
         if (itemSpan > maxSpan) {
           itemSpan = maxSpan;
         }
@@ -1392,10 +1391,10 @@ export default {
           item.span = 1;
         }
       });
-      var totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
+      let totalSpan = this.formSearchData.tableSearch.reduce(function (sum, item) {
         return sum + (item.span || 1);
       }, 0);
-      var isMoreThanSlice = totalSpan > this.availableSpan;
+      let isMoreThanSlice = totalSpan > this.availableSpan;
 
       if (isMoreThanSlice) {
         // 如果之前没有收展按钮，现在有了，默认收起
@@ -1841,3 +1840,4 @@ $label-width: 78px;
   border-color: #e4e7ed;
 }
 </style>
+

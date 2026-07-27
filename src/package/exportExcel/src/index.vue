@@ -97,12 +97,12 @@ export default {
   },
   methods: {
     handleTrigger() {
-      var rows = this.data;
+      let rows = this.data;
       if (!rows || rows.length === 0) {
         this.$message.warning("没有可导出的数据");
         return;
       }
-      var columns = this.columns;
+      let columns = this.columns;
       if (!columns || columns.length === 0) {
         this.$message.warning("没有可导出的列");
         return;
@@ -116,12 +116,12 @@ export default {
       this.doExport(this.exportFilename || this.filename);
     },
     doExport(name) {
-      var rows = this.data;
-      var columns = this.columns;
+      let rows = this.data;
+      let columns = this.columns;
 
       // 展平列为叶子列，跳过 show === false 的列
-      var flatColumns = [];
-      var flattenColumns = function (cols) {
+      let flatColumns = [];
+      let flattenColumns = function (cols) {
         cols.forEach(function (col) {
           if (col.show === false) return;
           if (col.children && col.children.length > 0) {
@@ -139,16 +139,16 @@ export default {
       }
 
       // 构建叶子列表头
-      var header = flatColumns.map(function (col) {
+      let header = flatColumns.map(function (col) {
         return col.alias || col.label;
       });
 
       // 计算多级表头最大深度
-      var getMaxDepth = function (cols, depth) {
+      let getMaxDepth = function (cols, depth) {
         if (depth === void 0) {
           depth = 1;
         }
-        var maxDepth = depth;
+        let maxDepth = depth;
         cols.forEach(function (col) {
           if (col.show === false) return;
           if (col.children && col.children.length > 0) {
@@ -157,14 +157,14 @@ export default {
         });
         return maxDepth;
       };
-      var maxDepth = getMaxDepth(columns);
+      let maxDepth = getMaxDepth(columns);
 
       // 构建多级表头数组（不含叶子层，叶子层已在 header 中）
-      var multiHeader = [];
+      let multiHeader = [];
       if (maxDepth > 1) {
-        for (var level = 0; level < maxDepth - 1; level++) {
-          var rowCells = [];
-          var traverse = function (cols, currentDepth) {
+        for (let level = 0; level < maxDepth - 1; level++) {
+          let rowCells = [];
+          let traverse = function (cols, currentDepth) {
             cols.forEach(function (col) {
               if (col.show === false) return;
               if (currentDepth === level) {
@@ -182,7 +182,7 @@ export default {
       }
 
       // HTML 剥离
-      var stripHtml = function (str) {
+      let stripHtml = function (str) {
         if (str === null || str === undefined) return "";
         return String(str)
           .replace(/<[^>]*>/g, "")
@@ -195,22 +195,22 @@ export default {
       };
 
       // 获取单元格值
-      var getCellValue = function (row, col) {
+      let getCellValue = function (row, col) {
         if (col.render && typeof col.render === "function") {
           try {
             return stripHtml(col.render(row));
           } catch (e) {
-            var fallback = row[col.prop];
+            let fallback = row[col.prop];
             return fallback !== null && fallback !== undefined ? stripHtml(String(fallback)) : "";
           }
         }
-        var val = row[col.prop];
+        let val = row[col.prop];
         if (val === null || val === undefined) return "";
         return val;
       };
 
       // 构建数据行
-      var data = rows.map(function (row) {
+      let data = rows.map(function (row) {
         return flatColumns.map(function (col) {
           return getCellValue(row, col);
         });
