@@ -170,7 +170,11 @@ export default {
       });
       // 优先使用保存模板中的纸张大小，其次使用 props 传入的纸张大小
       let paperSize = this.paperSize;
-      if (this.defaultTemplate && this.defaultTemplate.panels && this.defaultTemplate.panels.length > 0) {
+      if (
+        this.defaultTemplate &&
+        this.defaultTemplate.panels &&
+        this.defaultTemplate.panels.length > 0
+      ) {
         const firstPanel = this.defaultTemplate.panels[0];
         if (firstPanel.width != null && firstPanel.height != null) {
           paperSize = { width: firstPanel.width, height: firstPanel.height };
@@ -294,16 +298,55 @@ export default {
       // 调用浏览器打印
       this.hiprintTemplate.print(data, options, ext);
     },
+    // 返回html
+    async getHtml() {
+      let data = this.printData;
+      if (this.onPrintData) {
+        try {
+          const result = await this.onPrintData(this.printData);
+          if (result) data = result;
+          else console.error("onPrintData 执行失败，返回数据为空");
+        } catch (error) {
+          console.error("onPrintData 执行失败:", error);
+        }
+      }
+      return this.hiprintTemplate.getHtml(data)[0].outerHTML;
+    },
+    async exportPdf() {
+      let data = this.printData;
+      if (this.onPrintData) {
+        try {
+          const result = await this.onPrintData(this.printData);
+          if (result) data = result;
+          else console.error("onPrintData 执行失败，返回数据为空");
+        } catch (error) {
+          console.error("onPrintData 执行失败:", error);
+        }
+      }
+      this.hiprintTemplate
+        .toPdf(data, "测试导出pdf", { isDownload: false, type: "blob" })
+        .then(res => {
+          console.log(res);
+          const formData = new FormData();
+          formData.append("file", res, "打印内容.pdf");
+          // axios.post("/api/upload", formData);
+        });
+    },
     save() {
       const json = this.hiprintTemplate.getJson();
       // 校验模板是否有元素，防止保存空白模板
       const panels = json && json.panels;
-      if (!panels || !panels.length || !panels.some(p => p.printElements && p.printElements.length)) {
-        this.$message && this.$message({
-          message: "模板为空，请先添加元素",
-          type: "warning",
-          customClass: "print-message-zindex",
-        });
+      if (
+        !panels ||
+        !panels.length ||
+        !panels.some(p => p.printElements && p.printElements.length)
+      ) {
+        this.$message &&
+          this.$message({
+            message: "模板为空，请先添加元素",
+            type: "warning",
+            customClass: "print-message-zindex",
+          });
         return;
       }
       const dataStr = JSON.stringify(json, null, 2);
@@ -315,12 +358,17 @@ export default {
     clearPaper() {
       const json = this.hiprintTemplate.getJson();
       const panels = json && json.panels;
-      if (!panels || !panels.length || !panels.some(p => p.printElements && p.printElements.length)) {
-        this.$message && this.$message({
-          message: "纸张上已无元素，无需清空",
-          type: "warning",
-          customClass: "print-message-zindex",
-        });
+      if (
+        !panels ||
+        !panels.length ||
+        !panels.some(p => p.printElements && p.printElements.length)
+      ) {
+        this.$message &&
+          this.$message({
+            message: "纸张上已无元素，无需清空",
+            type: "warning",
+            customClass: "print-message-zindex",
+          });
         return;
       }
       this.$confirm("确定要清空纸张上所有元素吗？此操作不可撤销。", "清空确认", {
@@ -328,20 +376,27 @@ export default {
         cancelButtonText: "取消",
         type: "warning",
         customClass: "print-message-zindex",
-      }).then(() => {
-        this.hiprintTemplate.clear();
-      }).catch(() => {});
+      })
+        .then(() => {
+          this.hiprintTemplate.clear();
+        })
+        .catch(() => {});
     },
     handleExport() {
       const json = this.hiprintTemplate.getJson();
       // 校验模板是否有元素，防止导出空白模板
       const panels = json && json.panels;
-      if (!panels || !panels.length || !panels.some(p => p.printElements && p.printElements.length)) {
-        this.$message && this.$message({
-          message: "模板中没有元素，请先拖拽组件到纸张上",
-          type: "warning",
-          customClass: "print-message-zindex",
-        });
+      if (
+        !panels ||
+        !panels.length ||
+        !panels.some(p => p.printElements && p.printElements.length)
+      ) {
+        this.$message &&
+          this.$message({
+            message: "模板中没有元素，请先拖拽组件到纸张上",
+            type: "warning",
+            customClass: "print-message-zindex",
+          });
         return;
       }
       this.$confirm("确定要导出当前模板为 JSON 文件吗？", "导出确认", {
@@ -349,18 +404,20 @@ export default {
         cancelButtonText: "取消",
         type: "warning",
         customClass: "print-message-zindex",
-      }).then(() => {
-        const dataStr = JSON.stringify(json, null, 2);
-        const blob = new Blob([dataStr], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "print-template-" + Date.now() + ".json";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }).catch(() => {});
+      })
+        .then(() => {
+          const dataStr = JSON.stringify(json, null, 2);
+          const blob = new Blob([dataStr], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "print-template-" + Date.now() + ".json";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        })
+        .catch(() => {});
     },
     handleImport() {
       this.$refs.fileInput.click();
@@ -373,17 +430,19 @@ export default {
         try {
           const json = JSON.parse(e.target.result);
           this.hiprintTemplate.update(json);
-          this.$message && this.$message({
-            message: "导入成功",
-            type: "success",
-            customClass: "print-message-zindex",
-          });
+          this.$message &&
+            this.$message({
+              message: "导入成功",
+              type: "success",
+              customClass: "print-message-zindex",
+            });
         } catch (err) {
-          this.$message && this.$message({
-            message: "导入失败：JSON 格式不正确",
-            type: "error",
-            customClass: "print-message-zindex",
-          });
+          this.$message &&
+            this.$message({
+              message: "导入失败：JSON 格式不正确",
+              type: "error",
+              customClass: "print-message-zindex",
+            });
           console.error("导入失败:", err);
         }
       };

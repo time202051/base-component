@@ -45,7 +45,6 @@ const Hiprint = {
       printInstance = new PrintComponent({
         propsData,
       });
-
       // 监听 submit 事件
       if (onSubmit && typeof onSubmit === "function") {
         printInstance.$on("submit", json => {
@@ -64,6 +63,25 @@ const Hiprint = {
     Vue.prototype.$hiprint.print = function (options) {
       const instance = hiprint(options);
       instance.print();
+      instance.$nextTick(() => {
+        instance.close();
+      });
+    };
+
+    // 获取打印HTML字符串
+    Vue.prototype.$hiprint.getHtml = async function (options) {
+      const instance = hiprint(options);
+      const html = await instance.getHtml();
+      instance.$nextTick(() => {
+        instance.close();
+      });
+      return html;
+    };
+
+    // 获取打印HTML字符串
+    Vue.prototype.$hiprint.exportPdf = async function (options) {
+      const instance = hiprint(options);
+      await instance.exportPdf();
       instance.$nextTick(() => {
         instance.close();
       });

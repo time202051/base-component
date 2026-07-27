@@ -187,7 +187,7 @@ export default {
       options.printData = this.printData || {};
       this.doPrint(options);
     },
-    doPrint(options) {
+    async doPrint(options) {
       if (this.beforePrint && typeof this.beforePrint === "function") {
         const result = this.beforePrint(options);
         if (result !== undefined) {
@@ -229,3 +229,4 @@ export default {
   display: inline-block;
 }
 </style>
+
