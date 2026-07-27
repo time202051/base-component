@@ -1,6 +1,6 @@
 {
   "name": "ol-base-components",
-  "version": "3.7.0",
+  "version": "3.7.1",
   "private": false,
   "main": "dist/index.umd.js",
   "style": "dist/style.css",
@@ -32,6 +32,7 @@
   },
   "scripts": {
     "serve": "vue-cli-service serve --no-verify",
+    "dev": "vue-cli-service serve --no-verify",
     "build": "vite build",
     "build:cli": "vue-cli-service build",
     "lint": "vue-cli-service lint",
@@ -100,7 +101,6 @@
     "not dead"
   ],
   "bugs": {
-    "url": "https://github.com/time202051/base-component/issues",
     "email": "809949003@qq.com"
   },
   "license": "MIT",

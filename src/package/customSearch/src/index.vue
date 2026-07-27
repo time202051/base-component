@@ -73,10 +73,8 @@ export default {
     };
   },
 
-  mounted() {
-    this.$nextTick(() => {
-      this.init();
-    });
+  created() {
+    this.init();
   },
   computed: {
     // 优先级：props > 全局配置 > 默认值
@@ -145,7 +143,6 @@ export default {
       });
 
       if (res.code !== 200) return;
-      this.byMenuData = res.result || {};
       var configList = res.result.settingJson ? JSON.parse(res.result.settingJson) : [];
       convertSettingJson(res.result, { configList });
 
@@ -237,18 +234,9 @@ export default {
           );
         }
       }
-
       this.$set(this.formSearchData, "value", defaultValue);
-      hasDefaultFilter = Object.keys(defaultValue).length > 0;
-
-      await this.$refs.customSearchRef.init();
-
-      // 如果有默认搜索条件，自动触发一次查询
-      if (hasDefaultFilter) {
-        this.$nextTick(() => {
-          this.$refs.customSearchRef.handleSearch("formSearch");
-        });
-      }
+      // tableSearch、value 都已就绪，最后设置 byMenuData 触发 formSearch watcher 初始化
+      this.byMenuData = res.result || {};
     },
     //保存
     onSave(_ref) {

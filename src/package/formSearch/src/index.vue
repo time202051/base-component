@@ -135,7 +135,7 @@
                 :placeholder="getSearchPlaceholder(item, '请选择')"
                 :popper-append-to-body="false"
                 @change="item.change && item.change(formSearch[item.value])"
-                @keyup.enter.native="handleSearch('formSearch')"
+                @keyup.enter.native="handleSearch"
               >
                 <el-option
                   v-for="option in item.children"
@@ -166,7 +166,7 @@
                 :placeholder="getSearchPlaceholder(item, '请选择')"
                 :popper-append-to-body="false"
                 @change="item.change && item.change(formSearch[item.value])"
-                @keyup.enter.native="handleSearch('formSearch')"
+                @keyup.enter.native="handleSearch"
               >
                 <el-option
                   v-for="option in item.children"
@@ -235,7 +235,7 @@
                   :maxlength="item.maxlength"
                   :class="item.inputType == 'number' ? 'numrule' : ''"
                   @change="handleRangeValidate(item)"
-                  @keyup.enter.native="handleSearch('formSearch')"
+                  @keyup.enter.native="handleSearch"
                   @keydown.native="keyInput(item, $event)"
                   @paste.native="onPaste(item, $event)"
                 />
@@ -248,7 +248,7 @@
                   :maxlength="item.maxlength"
                   :class="item.inputType == 'number' ? 'numrule' : ''"
                   @change="handleRangeValidate(item)"
-                  @keyup.enter.native="handleSearch('formSearch')"
+                  @keyup.enter.native="handleSearch"
                   @keydown.native="keyInput(item, $event)"
                   @paste.native="onPaste(item, $event)"
                 />
@@ -263,7 +263,7 @@
                 :maxlength="item.maxlength"
                 :oninput="handleChangeInput(item)"
                 :class="item.inputType == 'number' ? 'numrule' : ''"
-                @keyup.enter.native="handleSearch('formSearch')"
+                @keyup.enter.native="handleSearch"
                 @keydown.native="keyInput(item, $event)"
                 @paste.native="onPaste(item, $event)"
                 v-input-history
@@ -275,7 +275,7 @@
           style="word-break: keep-all; white-space: nowrap; margin-left: 10px"
           class="fromBtn"
         >
-          <el-button v-if="formSearchData.reset" type="primary" @click="handleSearch('formSearch')"
+          <el-button v-if="formSearchData.reset" type="primary" @click="handleSearch"
             >查询
           </el-button>
           <el-button v-if="formSearchData.reset" plain @click="handleReset('formSearch')"
@@ -502,7 +502,10 @@ export default {
     };
   },
   async created() {
-    this.init();
+    // customSearch 模式下不在此初始化，等父组件数据(byMenuData)就绪后由 watcher 驱动
+    if (!this.isCustomSearch) {
+      this.init();
+    }
   },
   mounted() {},
   computed: {
@@ -577,7 +580,7 @@ export default {
       },
       deep: true,
     },
-    // 监听 byMenuData 解析后端返回的组合查询条件列表
+    // 监听 byMenuData：解析组合查询条件 + 数据就绪后触发初始化
     byMenuData: {
       handler(val) {
         if (val && val.customSearch) {
@@ -592,6 +595,10 @@ export default {
           }
         } else {
           this.comboPresets = [];
+        }
+        // customSearch 模式下，byMenuData 从空变为有内容时说明父组件数据已就绪，触发初始化
+        if (this.isCustomSearch && val && Object.keys(val).length > 0) {
+          this.init();
         }
       },
       immediate: true,
@@ -756,6 +763,9 @@ export default {
       if (this.isCustomSearch) {
         this.initRangeFields();
       }
+      // 自动查询, 非isCustomSearch模式其实也可以，但是项目太多，不想改。这里先就改isCustomSearch模式的
+      if(this.isCustomSearch) this.handleSearch();
+
       console.log(`\x1b[36m\x1b[4mol插件-搜索框渲染`, this.formSearchData.tableSearch);
     },
     /** 初始化范围比较字段：确保值为 [开始值, 结束值] 格式的数组 */
@@ -1133,7 +1143,7 @@ export default {
       return filterConditions;
     },
     // 搜索查询按钮
-    handleSearch(formName, item) {
+    handleSearch() {
       if (!this.isCustomSearch) {
         if (this.formSearch.createdTime) {
           this.formSearch.BeginTime = this.formSearch.createdTime[0];
@@ -1159,12 +1169,12 @@ export default {
 
         const tempFormSearch = Object.assign({}, this.formSearch);
         if (this.formSearchData.rules) {
-          return this.$refs[formName].validate(valid => {
+          return this.$refs.formSearch.validate(valid => {
             if (!valid) return false;
-            this.$emit("handleSearch", tempFormSearch, item);
+            this.$emit("handleSearch", tempFormSearch);
           });
         }
-        this.$emit("handleSearch", tempFormSearch, item);
+        this.$emit("handleSearch", tempFormSearch);
         console.log(`\x1b[36m\x1b[4mol插件-搜索框查询`, tempFormSearch);
       } else {
         // 查询前兜底校验范围字段，防止用户未触发 blur 直接点查询
