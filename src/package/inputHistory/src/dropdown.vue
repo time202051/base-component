@@ -52,16 +52,14 @@ export default {
         threshold: 0.4,
         distance: 100,
         minMatchCharLength: 1,
+        shouldSort: true, // 按匹配度从高到低排序
       });
+      // Fuse.js v3 search() 返回匹配的 item 数组，已按 score 排序
+      // 再按字符串长度升序排列：输入 "7" 时 "77" 比 "777" 更接近，短串优先
       const results = fuse.search(q);
-      return results.map((r) => {
-        // 直接是 item 对象 { original, py, pyInitials }
-        if (r && r.original) return r.original;
-        // 包了 FuseResult { item: { original, py, pyInitials } }
-        if (r && r.item && r.item.original) return r.item.original;
-        // 纯索引数字
-        return plain[r];
-      });
+      return results
+        .map((r) => r.original)
+        .sort((a, b) => a.length - b.length);
     },
   },
   methods: {

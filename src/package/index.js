@@ -231,7 +231,7 @@ const install = async function (Vue, options) {
   components.map(item => {
     Vue.component(`ol-${item.name}`, item);
   });
-  Vue.use(InputHistory);
+  Vue.use(InputHistory, options);
   Vue.prototype.$olBaseConfig = options || {};
   Vue.prototype.$getFilterConditions = getFilterConditions;
   consoleTooltip();

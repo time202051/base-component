@@ -10,6 +10,7 @@
  */
 
 let db = null
+let maxRecords = 20
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -62,7 +63,7 @@ export function addRecord(id, value) {
         // 添加到最前面
         values.unshift(value)
         // 最多保留 10 条
-        values = values.slice(0, 10)
+        values = values.slice(0, maxRecords)
 
         store.put({ id, values })
       }
@@ -100,6 +101,12 @@ export function getRecords(id) {
  * 删除 id 对应的所有历史记录
  * @param {string} id
  */
+export function setMaxRecords(n) {
+  if (typeof n === 'number' && n > 0) {
+    maxRecords = n
+  }
+}
+
 export function deleteRecords(id) {
   if (!id) return Promise.resolve()
 

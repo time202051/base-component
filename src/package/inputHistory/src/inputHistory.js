@@ -225,7 +225,7 @@ export default {
       inputEl.dispatchEvent(new Event('input', { bubbles: true }))
       inputEl.dispatchEvent(new Event('change', { bubbles: true }))
       closeDropdown()
-      inputEl.blur()
+      // 不调 blur()，让 keyup Enter 事件正常冒泡，触发父组件 @keyup.enter.native
     }
 
     let blurTimer = null
@@ -239,31 +239,25 @@ export default {
       dropdown.setQuery(inputEl.value || '')
       dropdown.selectedIndex = -1
       // 兜底：clearable 等操作可能已关闭面板，有输入内容就必须打开
+      // 走 openDropdown() 刷新 IndexedDB 数据，避免显示旧记录
       if (inputEl.value && !dropdown.visible) {
-        dropdown.visible = true
-        positionDropdown(dropdownEl, inputEl)
-        window.addEventListener('scroll', onScrollResize, true)
-        window.addEventListener('resize', onScrollResize)
-        document.addEventListener('click', onClickOutside)
+        openDropdown()
       }
     }
 
     function onKeydown(e) {
       if (e.key === 'Enter') {
-        if (dropdown.visible) {
-          e.preventDefault()
+        if (dropdown.visible && dropdown.selectedIndex >= 0) {
           const items = dropdown.filteredRecords
           const len = items.length
-          if (dropdown.selectedIndex >= 0 && dropdown.selectedIndex < len) {
+          if (dropdown.selectedIndex < len) {
             selectRecord(items[dropdown.selectedIndex])
-          } else if (len > 0) {
-            selectRecord(items[0])
+            return
           }
-          return
         }
-        // 面板未显示时，直接保存当前输入
-        e.preventDefault()
-        saveCurrentValue()
+        // 未选中下拉项（或面板未显示）时，直接保存值并关闭下拉
+        // 等 IndexedDB 写入完成后再关闭，确保下次打开下拉时数据已刷新
+        saveCurrentValue().then(() => closeDropdown())
         return
       }
 
@@ -290,8 +284,9 @@ export default {
     function saveCurrentValue() {
       const value = (inputEl.value || '').trim()
       if (value) {
-        addRecord(historyKey, value)
+        return addRecord(historyKey, value)
       }
+      return Promise.resolve()
     }
 
     function onBlur() {
