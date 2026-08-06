@@ -131,6 +131,7 @@
                 :key="`sel_${item.value}_${item.props && item.props.multiple ? 'multi' : 'single'}`"
                 v-el-select-all="item.loadmores"
                 :clearable="item.clearable === undefined || item.clearable"
+                :disabled="isNonValueCompare(compareMap[item.value] || item.compare)"
                 v-bind="{ collapseTags: true, ...(item.props || {}) }"
                 :placeholder="getSearchPlaceholder(item, '请选择')"
                 :popper-append-to-body="false"
@@ -162,6 +163,7 @@
                   item.props && item.props.multiple ? 'multi' : 'single'
                 }`"
                 v-el-select-all="item.loadmores"
+                :disabled="isNonValueCompare(compareMap[item.value] || item.compare)"
                 v-bind="{ clearable: true, collapseTags: true, ...(item.props || {}) }"
                 :placeholder="getSearchPlaceholder(item, '请选择')"
                 :popper-append-to-body="false"
@@ -257,6 +259,7 @@
                 v-else
                 v-model="formSearch[item.value]"
                 clearable
+                :disabled="isNonValueCompare(compareMap[item.value] || item.compare)"
                 v-bind="item.props || {}"
                 :type="item.inputType || 'text'"
                 :placeholder="getSearchPlaceholder(item, '请输入')"
@@ -353,7 +356,7 @@ import { getEnum } from "../../../utils/getEnum.js";
 import { getTargetMenuId } from "../../../utils/initData.js";
 import OlNumberRange from "../../numberRange/index.js";
 import SearchConfigDialog from "./components/SearchConfigDialog.vue";
-import ComparePrefixSelect from "./components/ComparePrefixSelect.vue";
+import ComparePrefixSelect, { isNonValueCompare } from "./components/ComparePrefixSelect.vue";
 import { convertSettingJson } from "./utils/index.js";
 
 export default {
@@ -616,6 +619,8 @@ export default {
     },
   },
   methods: {
+    /** 判断比较符是否为"无需输入值"的类型（为空/不为空），供模板使用 */
+    isNonValueCompare,
     getSearchPlaceholder(item, prefix) {
       const label = item.placeholder || item.label;
       return `${prefix}${label}`;
@@ -631,6 +636,21 @@ export default {
     handleCompareChange(item, compare) {
       this.$set(this.compareMap, item.value, compare);
       const key = item.value;
+      // 为空/不为空：不需要输入值，禁用输入框并清空值为空数组
+      if (isNonValueCompare(compare)) {
+        if (item.inputType === "select" || item.inputType === "selectTEMP") {
+          if (!item.props) {
+            this.$set(item, "props", {});
+          }
+          this.$set(item.props, "multiple", false);
+        }
+        this.$set(
+          this.formSearch,
+          key,
+          item.inputType === "select" || item.inputType === "selectTEMP" ? [] : ""
+        );
+        return;
+      }
       if (item.inputType === "select" || item.inputType === "selectTEMP") {
         const isMultiple = compare === "in" || compare === "not in";
         // 同步 el-select 的 multiple 属性，否则单选模式收到数组会报错
@@ -950,11 +970,20 @@ export default {
         preset.filterConditions.forEach(cond => {
           let compare =
             (preset.compareMap && preset.compareMap[cond.key]) ||
+            cond.compare ||
             this.getDefaultCompare(
               this.formSearchData.tableSearch.find(function (t) {
                 return t.value === cond.key;
               })
             );
+          // 为空/不为空：不需要输入值，清空即可
+          if (isNonValueCompare(compare)) {
+            const item = this.formSearchData.tableSearch.find(t => t.value === cond.key);
+            const isSelect =
+              item && (item.inputType === "select" || item.inputType === "selectTEMP");
+            this.$set(this.formSearch, cond.key, isSelect ? [] : "");
+            return;
+          }
           // range / in / not in 需要数组值，其他取单值
           let isArr = compare === "range" || compare === "in" || compare === "not in";
           let val = isArr
@@ -1122,10 +1151,19 @@ export default {
 
     setFilterConditionsByFormSearch(formSearch) {
       const filterConditions = [];
-      Object.keys(formSearch).forEach(key => {
-        const tempItem = this.formSearchData.tableSearch.find(item => item.value === key);
+      // 遍历所有配置的搜索字段（而非 formSearch 的键），确保为空/不为空等无需输入值的条件也能被构建
+      (this.formSearchData.tableSearch || []).forEach(tempItem => {
         if (!tempItem || tempItem.isDirect) return;
+        const key = tempItem.value;
         const val = formSearch[key];
+        const compare = this.compareMap[key] || this.getDefaultCompare(tempItem);
+        if (isNonValueCompare(compare))
+          return filterConditions.push({
+            key: key,
+            values: [],
+            compare: compare,
+          });
+
         if (val !== undefined && val !== null) {
           // 数组值（如范围输入）：全部为空则跳过
           if (Array.isArray(val)) {
@@ -1136,7 +1174,7 @@ export default {
           filterConditions.push({
             key: key,
             values: Array.isArray(val) ? val : [val],
-            compare: this.compareMap[key] || this.getDefaultCompare(tempItem),
+            compare: compare,
           });
         }
       });

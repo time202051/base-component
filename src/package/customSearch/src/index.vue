@@ -22,6 +22,7 @@
 
 <script>
 import { convertSettingJson } from "../../formSearch/src/utils/index.js";
+import { isNonValueCompare } from "../../formSearch/src/components/ComparePrefixSelect.vue";
 import { parseForcedFilter } from "./forcedFilter";
 export default {
   name: "customSearch",
@@ -208,6 +209,11 @@ export default {
                 if (!(item.key in defaultValue)) {
                   defaultValue[item.key] = item.values.length === 1 ? item.values[0] : item.values;
                 }
+              } else if (isNonValueCompare(item.compare)) {
+                // 为空/不为空：不需要回填值，但确保 key 存在以触发后续 compare 恢复
+                if (!(item.key in defaultValue)) {
+                  defaultValue[item.key] = "";
+                }
               }
             });
           }
@@ -223,6 +229,10 @@ export default {
           if (item.values && item.values.length > 0) {
             if (!(item.key in defaultValue)) {
               defaultValue[item.key] = item.values.length === 1 ? item.values[0] : item.values;
+            }
+          } else if (isNonValueCompare(item.compare)) {
+            if (!(item.key in defaultValue)) {
+              defaultValue[item.key] = "";
             }
           }
         });
