@@ -28,6 +28,7 @@ export const COMPARE_OPTIONS = [
   { label: "小于", value: "lt" },
   { label: "小于等于", value: "le" },
   { label: "包含", value: "contains" },
+  { label: "不包含", value: "notcontains" },
   { label: "以...开始", value: "startswith" },
   { label: "以...结束", value: "endswith" },
 ];
