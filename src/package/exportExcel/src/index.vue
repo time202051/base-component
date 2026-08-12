@@ -21,23 +21,45 @@
           clearable
           @keyup.enter.native="handleConfirm"
         >
-          <template slot="append">.{{ exportFormat }}</template>
+          <template slot="append">
+            <el-select
+              v-model="exportFormat"
+              class="format-append-select"
+              popper-class="format-append-popper"
+            >
+              <el-option
+                v-for="item in formatOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </template>
         </el-input>
       </div>
       <div style="margin-bottom: 16px">
-        <div style="margin-bottom: 8px; font-size: 14px; color: #606266">文件格式</div>
-        <el-select v-model="exportFormat" style="width: 100%">
+        <div style="margin-bottom: 8px; font-size: 14px; color: #606266">数据范围</div>
+        <el-select v-model="exportScope" style="width: 100%">
           <el-option
-            v-for="item in formatOptions"
+            v-for="item in scopeOptions"
             :key="item.value"
             :label="item.label"
             :value="item.value"
           />
         </el-select>
       </div>
-      <div style="padding: 12px; background: #f5f7fa; border-radius: 4px; font-size: 13px; color: #606266">
+
+      <div
+        style="
+          padding: 12px;
+          background: #f5f7fa;
+          border-radius: 4px;
+          font-size: 13px;
+          color: #606266;
+        "
+      >
         <i class="el-icon-info" style="color: #909399; margin-right: 6px" />
-        将导出 <b style="color: #303133">{{ data.length }}</b> 条数据
+        将导出 <b style="color: #303133">{{ exportCountText }}</b> 条数据
       </div>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
@@ -58,6 +80,16 @@ export default {
       type: Array,
       default: () => [],
     },
+    // 当前页选中的数据
+    selection: {
+      type: Array,
+      default: () => [],
+    },
+    // 全量导出 exportUrl（全量数据模式下由父组件自行处理导出逻辑）
+    exportUrl: {
+      type: String,
+      default: "",
+    },
     columns: {
       type: Array,
       default: () => [],
@@ -70,54 +102,115 @@ export default {
       type: Boolean,
       default: true,
     },
+    // 搜索框查询条件
+    formSearchData: {
+      type: Object,
+      default: () => {},
+    },
   },
   data() {
     return {
       excelIcon: excelIcon,
       dialogVisible: false,
-      exportFilename: "",
+      exportFilename: "xlsx",
       exportFormat: "xlsx",
+      exportScope: "current",
+      scopeOptions: [
+        { label: "当前数据（当前页）", value: "current" },
+        { label: "选中数据（当前页选中）", value: "selected" },
+        { label: "全量数据（所有分页）", value: "all" },
+      ],
       formatOptions: [
-        { label: "Excel 2007+ (.xlsx)", value: "xlsx" },
-        { label: "Excel 宏启用 (.xlsm)", value: "xlsm" },
-        { label: "Excel 二进制 (.xlsb)", value: "xlsb" },
-        { label: "Excel 97-2004 (.xls)", value: "xls" },
-        { label: "Excel 2003 XML (.xlml)", value: "xlml" },
-        { label: "OpenDocument (.ods)", value: "ods" },
-        { label: "Flat ODS (.fods)", value: "fods" },
-        { label: "CSV 逗号分隔 (.csv)", value: "csv" },
-        { label: "TXT Tab 分隔 (.txt)", value: "txt" },
-        { label: "HTML 网页 (.html)", value: "html" },
-        { label: "SYLK 符号链接 (.sylk)", value: "sylk" },
-        { label: "DIF 数据交换 (.dif)", value: "dif" },
-        { label: "Lotus (.prn)", value: "prn" },
-        { label: "Ethercalc (.eth)", value: "eth" },
+        { label: "xlsx", value: "xlsx" },
+        { label: "csv", value: "csv" },
+        // { label: "Excel 宏启用 (.xlsm)", value: "xlsm" },
+        // { label: "Excel 二进制 (.xlsb)", value: "xlsb" },
+        // { label: "Excel 97-2004 (.xls)", value: "xls" },
+        // { label: "Excel 2003 XML (.xlml)", value: "xlml" },
+        // { label: "OpenDocument (.ods)", value: "ods" },
+        // { label: "Flat ODS (.fods)", value: "fods" },
+        // { label: "TXT Tab 分隔 (.txt)", value: "txt" },
+        // { label: "HTML 网页 (.html)", value: "html" },
+        // { label: "SYLK 符号链接 (.sylk)", value: "sylk" },
+        // { label: "DIF 数据交换 (.dif)", value: "dif" },
+        // { label: "Lotus (.prn)", value: "prn" },
+        // { label: "Ethercalc (.eth)", value: "eth" },
       ],
     };
   },
+  computed: {
+    exportCountText() {
+      const scope = this.exportScope;
+      if (scope === "current") {
+        return this.data.length;
+      }
+      if (scope === "selected") {
+        return this.selection.length;
+      }
+      // 全量数据数量未知，父组件自行处理
+      return "全量";
+    },
+  },
   methods: {
     handleTrigger() {
-      let rows = this.data;
-      if (!rows || rows.length === 0) {
-        this.$message.warning("没有可导出的数据");
-        return;
-      }
-      let columns = this.columns;
+      const columns = this.columns;
       if (!columns || columns.length === 0) {
         this.$message.warning("没有可导出的列");
         return;
       }
       this.exportFilename = this.filename;
       this.exportFormat = "xlsx";
+      this.exportScope = "current";
       this.dialogVisible = true;
     },
-    handleConfirm() {
+    async handleConfirm() {
+      const scope = this.exportScope;
+      const name = this.exportFilename || this.filename;
+
+      // 全量数据：交由父组件处理
+      if (scope === "all") {
+        this.dialogVisible = false;
+        const filterConditions = await this.$getFilterConditions(
+          this.formSearchData.filterConditions
+        );
+        if (!this.exportUrl) return this.$message.warning("请联系管理员配置导出接口");
+        const res = await this.post({
+          url: this.exportUrl,
+          isLoading: true,
+          responseType: "blob",
+          data: Object.assign({
+            filterConditions: filterConditions,
+            exportFormat: this.exportFormat,
+          }),
+        });
+        const mimeMap = {
+          xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          csv: "text/csv",
+        };
+        const blob = new Blob([res.data], {
+          type: mimeMap[this.exportFormat] || mimeMap.xlsx,
+        });
+        const downloadElement = document.createElement("a");
+        const href = window.URL.createObjectURL(blob);
+        downloadElement.href = href;
+        downloadElement.download = decodeURI(name) + "." + this.exportFormat;
+        document.body.appendChild(downloadElement);
+        downloadElement.click(); //点击下载
+        document.body.removeChild(downloadElement); //下载完成移除元素
+        window.URL.revokeObjectURL(href); //释放blob对象
+        return;
+      }
+      // 当前数据 / 选中数据
+      const rows = scope === "selected" ? this.selection : this.data;
+      if (!rows || rows.length === 0) {
+        this.$message.warning("没有可导出的数据");
+        return;
+      }
       this.dialogVisible = false;
-      this.doExport(this.exportFilename || this.filename);
+      this.doExport(name, rows);
     },
-    doExport(name) {
-      let rows = this.data;
-      let columns = this.columns;
+    doExport(name, rows) {
+      const columns = this.columns;
 
       // 展平列为叶子列，跳过 show === false 的列
       let flatColumns = [];
@@ -231,3 +324,27 @@ export default {
   },
 };
 </script>
+
+<style>
+/* 文件名输入框 append 中的格式选择器 */
+.format-append-select {
+  width: 68px;
+}
+.format-append-select .el-input__inner {
+  border: none;
+  background: transparent;
+  padding: 0 12px 0 4px;
+}
+.format-append-select .el-input .el-input__suffix {
+  right: 0;
+}
+
+/* 格式下拉选项 popper（弹窗 append-to-body 后需要全局样式覆盖） */
+.format-append-popper {
+  min-width: 90px !important;
+}
+.format-append-popper .el-select-dropdown__item {
+  font-size: 13px;
+}
+</style>
+
