@@ -2,12 +2,12 @@
   <div>
     <img
       :src="excelIcon"
-      title="导出Excel"
+      title="导出"
       style="display: inline-block; cursor: pointer; width: 16px; height: 16px"
       @click="handleTrigger"
     />
     <el-dialog
-      title="导出Excel"
+      title="导出"
       :visible.sync="dialogVisible"
       :close-on-click-modal="false"
       width="400px"
@@ -22,18 +22,25 @@
           @keyup.enter.native="handleConfirm"
         >
           <template slot="append">
-            <el-select
-              v-model="exportFormat"
-              class="format-append-select"
-              popper-class="format-append-popper"
+            <el-dropdown
+              trigger="click"
+              class="format-append-dropdown"
+              @command="handleFormatChange"
             >
-              <el-option
-                v-for="item in formatOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              />
-            </el-select>
+              <span class="format-append-trigger">
+                <span>{{ exportFormat }}</span>
+                <i class="el-icon-arrow-down" />
+              </span>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item
+                  v-for="item in formatOptions"
+                  :key="item.value"
+                  :command="item.value"
+                >
+                  {{ item.label }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </template>
         </el-input>
       </div>
@@ -162,6 +169,9 @@ export default {
       this.exportFormat = "xlsx";
       this.exportScope = "current";
       this.dialogVisible = true;
+    },
+    handleFormatChange(format) {
+      this.exportFormat = format;
     },
     async handleConfirm() {
       const scope = this.exportScope;
@@ -325,26 +335,28 @@ export default {
 };
 </script>
 
-<style>
-/* 文件名输入框 append 中的格式选择器 */
-.format-append-select {
-  width: 68px;
+<style scoped>
+/* 文件名输入框 append 中的格式选择器（el-dropdown 触发区域） */
+.format-append-dropdown {
+  width: 100%;
 }
-.format-append-select .el-input__inner {
-  border: none;
-  background: transparent;
-  padding: 0 12px 0 4px;
+::v-deep .el-input-group__append {
+  padding: 0 10px;
 }
-.format-append-select .el-input .el-input__suffix {
-  right: 0;
+.format-append-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 48px;
+  cursor: pointer;
+  color: #606266;
+  font-size: 14px;
+  outline: none;
 }
-
-/* 格式下拉选项 popper（弹窗 append-to-body 后需要全局样式覆盖） */
-.format-append-popper {
-  min-width: 90px !important;
-}
-.format-append-popper .el-select-dropdown__item {
-  font-size: 13px;
+.format-append-trigger .el-icon-arrow-down {
+  font-size: 12px;
+  color: #c0c4cc;
+  transition: transform 0.3s;
 }
 </style>
 
