@@ -126,7 +126,6 @@
                 @change="handleCompareChange(item, $event)"
               />
               <el-select
-                class="custom-select"
                 v-model="formSearch[item.value]"
                 :key="`sel_${item.value}_${item.props && item.props.multiple ? 'multi' : 'single'}`"
                 v-el-select-all="item.loadmores"
@@ -1743,139 +1742,19 @@ $label-width: 78px;
   }
 
   // ==================== 多选标签：不换行 + 超长截断 ====================
-  ::v-deep .el-select .el-select__tags {
-    max-width: 100% !important;
-    overflow: hidden !important;
-    flex-wrap: nowrap !important;
-  }
-  ::v-deep .el-select .el-select__tags-text {
-    display: inline-block;
-    max-width: 64px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-    vertical-align: middle;
-  }
-}
-</style>
-<style scoped>
-.custom-select ::v-deep .el-select__tags {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 4px;
-}
-
-.custom-select ::v-deep .el-select__tags > span:first-child {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: nowrap;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  padding-left: 3px;
-}
-.custom-select ::v-deep .el-select__tags > span:first-child > span:first-child {
-  display: flex;
-  flex-wrap: nowrap;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-  width: calc(100% - 42px);
-}
-
-/* ----- 每个标签（普通标签） ----- */
-.custom-select ::v-deep .el-tag.el-tag--info {
-  background: #f0f2f5;
-  border: none;
-  padding: 0 8px;
-  /* max-width: 70%; */
-  flex-shrink: 1; /* 空间不足时收缩 */
-  /* min-width: 30px; */
-  display: inline-flex;
-  align-items: center;
-  transition: background 0.2s;
-  margin: 1px 0;
-}
-
-/* ----- 标签内文字（强制一行显示） ----- */
-.custom-select ::v-deep .el-tag .el-select__tags-text {
-  display: inline-block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap; /* ★ 强制单行，绝不换行 */
-  vertical-align: middle;
-  margin-top: 2px;
-}
-.custom-select ::v-deep .el-tag .el-icon-close {
-  margin-top: 2px;
-}
-
-/* ----- 标签关闭按钮 ----- */
-.custom-select ::v-deep .el-tag .el-tag__close {
-  font-size: 12px;
-  color: #86909c;
-  background: transparent;
-  padding: 0;
-  width: 16px;
-  height: 16px;
-  line-height: 16px;
-  text-align: center;
-  flex-shrink: 0;
-  transition: all 0.2s;
-}
-.custom-select ::v-deep .el-tag .el-tag__close:hover {
-  background: #e5e6eb;
-  color: #1d2129;
-}
-
-/* ----- 折叠 "+N" 标签（.is-hit） ----- */
-.custom-select ::v-deep .el-tag.is-hit {
-  background: var(--color-primary-light-9, #ecf5ff);
-  color: var(--color-primary, #409eff);
-  border: none;
-  font-weight: 500;
-  padding: 0 12px;
-  max-width: 100px; /* +N 不宜过宽 */
-}
-.custom-select ::v-deep .el-tag.is-hit .el-tag__close {
-  display: none; /* +N 无关闭按钮 */
-}
-
-/* ----- 输入框样式 ----- */
-.custom-select ::v-deep .el-input__inner {
-  border-color: #d9dde4;
-  transition: border-color 0.25s, box-shadow 0.25s;
-}
-.custom-select ::v-deep .el-input__inner:hover {
-  border-color: #b3bcc6;
-}
-.custom-select ::v-deep .el-input__inner:focus {
-  border-color: var(--color-primary, #409eff);
-}
-
-/* ----- 输入框后缀（箭头）位置修复 ----- */
-.custom-select ::v-deep .el-input .el-input__suffix {
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-/* ----- 下拉菜单选项 ----- */
-.custom-select ::v-deep .el-select-dropdown__item {
-  font-size: 13px;
-  padding: 0 16px;
-  /* height: 34px;
-  line-height: 34px; */
-}
-.custom-select ::v-deep .el-select-dropdown__item.selected {
-  font-weight: 500;
-  color: var(--color-primary, #409eff);
-}
-
-/* ----- 禁用状态保留样式 ----- */
-.custom-select ::v-deep .el-input.is-disabled .el-input__inner {
-  background-color: #f5f7fa;
-  border-color: #e4e7ed;
+  // ::v-deep .el-select .el-select__tags {
+  //   max-width: 100% !important;
+  //   overflow: hidden !important;
+  //   flex-wrap: nowrap !important;
+  // }
+  // ::v-deep .el-select .el-select__tags-text {
+  //   display: inline-block;
+  //   max-width: 64px !important;
+  //   overflow: hidden !important;
+  //   text-overflow: ellipsis !important;
+  //   white-space: nowrap !important;
+  //   vertical-align: middle;
+  // }
 }
 </style>
 
