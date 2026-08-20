@@ -112,7 +112,9 @@ export default {
     // 搜索框查询条件
     formSearchData: {
       type: Object,
-      default: () => {},
+      default: () => {
+        filterConditions: [];
+      },
     },
   },
   data() {
@@ -123,9 +125,9 @@ export default {
       exportFormat: "xlsx",
       exportScope: "current",
       scopeOptions: [
-        { label: "当前数据（当前页）", value: "current" },
-        { label: "选中数据（当前页选中）", value: "selected" },
-        { label: "全量数据（所有分页）", value: "all" },
+        // { label: "当前数据（当前页）", value: "current" },
+        // { label: "选中数据（当前页选中）", value: "selected" },
+        // { label: "全量数据（所有分页）", value: "all" },
       ],
       formatOptions: [
         { label: "xlsx", value: "xlsx" },
@@ -144,6 +146,15 @@ export default {
         // { label: "Ethercalc (.eth)", value: "eth" },
       ],
     };
+  },
+  created() {
+    this.scopeOptions = [
+      { label: "当前数据（当前页）", value: "current" },
+      { label: "选中数据（当前页选中）", value: "selected" },
+    ];
+    if (this.exportUrl) {
+      this.scopeOptions.push({ label: "全量数据（所有分页）", value: "all" });
+    }
   },
   computed: {
     exportCountText() {
@@ -181,7 +192,7 @@ export default {
       if (scope === "all") {
         this.dialogVisible = false;
         const filterConditions = await this.$getFilterConditions(
-          this.formSearchData.filterConditions
+          this.formSearchData ? this.formSearchData.filterConditions : []
         );
         if (!this.exportUrl) return this.$message.warning("请联系管理员配置导出接口");
         const res = await this.post({
