@@ -21,7 +21,7 @@
 </template>
 
 <script>
-import { convertSettingJson } from "../../formSearch/src/utils/index.js";
+import { convertSettingJson, resetTableSearch } from "../../formSearch/src/utils/index.js";
 import { isNonValueCompare } from "../../formSearch/src/components/ComparePrefixSelect.vue";
 import { parseForcedFilter } from "./forcedFilter";
 export default {
@@ -107,8 +107,11 @@ export default {
       if (this.searchMode === mode) return;
       this.searchMode = mode;
       // 重置 formSearchData 数据，避免旧数据污染新模式
-      this.formSearchData.tableSearch = [];
-      this.formSearchData.value = {};
+      // this.formSearchData.tableSearch = [];
+      this.formSearchData.tableSearch = resetTableSearch(this.formSearchData.tableSearch);
+      // this.formSearchData.value = {};
+      this.$refs.customSearchRef.handleReset(false);
+
       this.byMenuData = {};
       this.key++;
       this.$nextTick(() => {
@@ -291,7 +294,7 @@ export default {
           }).then(res => {
             if (res.code !== 200) return;
             this.key++;
-            this.formSearchData.tableSearch = [];
+            this.formSearchData.tableSearch = resetTableSearch(this.formSearchData.tableSearch);
             this.formSearchData.options = [];
             this.$message.success("所有配置已重置");
             this.init();

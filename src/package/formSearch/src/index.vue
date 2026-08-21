@@ -120,8 +120,9 @@
               :class="isCustomSearch ? 'select-with-prefix' : ''"
               style="width: 100%"
             >
+              <!-- isFrontAppend前端传入的，isDirect为true时候， 不显示这个组件 -->
               <compare-prefix-select
-                v-if="isCustomSearch"
+                v-if="isCustomSearch && !(item.isFrontAppend && item.isDirect)"
                 :value="compareMap[item.value] || item.compare || 'eq'"
                 @change="handleCompareChange(item, $event)"
               />
@@ -280,7 +281,7 @@
           <el-button v-if="formSearchData.reset" type="primary" @click="handleSearch"
             >查询
           </el-button>
-          <el-button v-if="formSearchData.reset" plain @click="handleReset('formSearch')"
+          <el-button v-if="formSearchData.reset" plain @click="handleReset"
             >重置</el-button
           >
           <el-button
@@ -1293,8 +1294,8 @@ export default {
       this.$emit("loadmore", obj);
     },
     // 搜索重置按钮
-    handleReset(formName) {
-      this.$refs[formName].resetFields();
+    handleReset(runSearch = true) {
+      this.$refs.formSearch.resetFields();
       if (this.formSearchData.reset) {
         for (const key in this.formSearch) {
           if (Object.prototype.toString.call(this.formSearch[key]) === "[object String]") {
@@ -1322,7 +1323,7 @@ export default {
       }
       this.$emit("handleReset", this.formSearch);
       if (this.formSearchData.reset) return false;
-      this.handleSearch();
+      if(runSearch) this.handleSearch();
     },
     /** 组合查询显隐或列数变化时，重新计算可见搜索项 */
     recalcVisibleItems() {
@@ -1757,4 +1758,3 @@ $label-width: 78px;
   // }
 }
 </style>
-

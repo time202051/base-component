@@ -209,4 +209,13 @@ const convertSettingJson = (byMenuData, { configList }, formSearch = {}) => {
   };
 };
 
-export { buildRangePickerOptions, convertSettingJson };
+/**
+ * 重置渲染的表格数据
+ * isFrontAppend前端传入的，重置时候保留
+ */
+const resetTableSearch = data => {
+  if (!Array.isArray(data)) return [];
+  return data.filter(item => item.isFrontAppend);
+};
+
+export { buildRangePickerOptions, convertSettingJson, resetTableSearch };
