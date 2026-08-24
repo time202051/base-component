@@ -28,7 +28,7 @@
           <!-- 组合查询条件：作为网格第一个格子 -->
           <div
             v-if="isCustomSearch && comboPresets.length > 0"
-            class="table-header-item combo-grid-item"
+            :class="['table-header-item', 'combo-grid-item']"
             style="grid-column: span 1"
           >
             <label class="combo-grid-label"><i class="el-icon-link"></i> 组合查询</label>
@@ -91,17 +91,20 @@
             :class="{
               picker: item.props && item.props.type === 'datetimerange',
               date: item.props && item.props.type === 'date',
+              'table-header-item-isFrontAppend': item.isFrontAppend
             }"
             @mouseenter.native="onLabelHover($event, item)"
           >
             <template slot="label">
-              <el-tooltip
-                :content="item.label"
-                :disabled="!item.label || item._labelOverflow === false"
-                placement="top"
-              >
-                <span>{{ item.label }}</span>
-              </el-tooltip>
+              <div class="label-wrap">
+                <el-tooltip
+                  :content="item.label"
+                  :disabled="!item.label || item._labelOverflow === false"
+                  placement="top"
+                >
+                  <span class="label-text">{{ item.label }}</span>
+                </el-tooltip>
+              </div>
             </template>
             <!--    <template v-if="item.inputType === 'treeSelect'">
                 <slot name="treeSlot"></slot>
@@ -272,6 +275,13 @@
                 v-input-history
               />
             </div>
+            <span
+              v-if="searchMode === 'adminDefault' && item.isFrontAppend"
+              class="front-append-icon"
+              title="固定字段，保存强制筛选时不会包含"
+            >
+              <i class="el-icon-lock" />
+            </span>
           </el-form-item>
         </div>
         <el-form-item
@@ -627,9 +637,9 @@ export default {
     },
     /** 鼠标经过表单行时检测 label 文字是否溢出（被截断显示...），是才开 tooltip */
     onLabelHover(e, item) {
-      const labelEl = e.currentTarget.querySelector(".el-form-item__label");
-      if (labelEl) {
-        const overflow = labelEl.scrollWidth > labelEl.clientWidth;
+      const labelTextEl = e.currentTarget.querySelector(".label-text");
+      if (labelTextEl) {
+        const overflow = labelTextEl.scrollWidth > labelTextEl.clientWidth;
         this.$set(item, "_labelOverflow", overflow);
       }
     },
@@ -1659,6 +1669,43 @@ $label-width: 78px;
 .table-header.force-filter-mode {
   background: var(--color-primary-light-9, #ecf5ff);
   border-radius: 4px;
+  .table-header-item-isFrontAppend{
+    position: relative;
+    // 淡红色，标示不会被保存给admin
+    background: var(--color-danger-light-9, #fff5f5);
+    border-radius: 3px;
+  }
+}
+
+// ==================== label 区域：文字 + 前端标签 ====================
+.label-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  overflow: hidden;
+}
+.label-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.front-append-icon {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.15);
+  color: #f56c6c;
+  font-size: 10px;
+  cursor: help;
 }
 
 // ==================== 搜索字段网格 ====================
