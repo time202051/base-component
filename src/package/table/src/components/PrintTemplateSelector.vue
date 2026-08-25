@@ -124,7 +124,7 @@ export default {
       return this.$route.query?.menuId;
     },
     handleCommand(command) {
-      if (!Array.isArray(this.templateList)) return;
+      if (!Array.isArray(this.templateList)) return this.$message.error("打印模板列表为空");
       const tempItem = this.templateList.find(item => item.id === command);
       if (!tempItem) return this.$message.error("未找到打印模板");
 
@@ -167,6 +167,8 @@ export default {
       }
     },
     async printByApi(options, tempItem) {
+      if (!this.multipleSelection || this.multipleSelection.length === 0)
+        return this.$message.error("请勾选要打印的行");
       // 默认接口数据
       options.printData = await this.getPrintDataByApi(tempItem);
       // 请求失败时直接返回，不提示"打印数据不能为空"
