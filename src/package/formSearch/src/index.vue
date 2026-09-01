@@ -91,7 +91,7 @@
             :class="{
               picker: item.props && item.props.type === 'datetimerange',
               date: item.props && item.props.type === 'date',
-              'table-header-item-isFrontAppend': item.isFrontAppend
+              'table-header-item-isFrontAppend': item.isFrontAppend,
             }"
             @mouseenter.native="onLabelHover($event, item)"
           >
@@ -156,7 +156,7 @@
               style="width: 100%"
             >
               <compare-prefix-select
-                v-if="isCustomSearch"
+                v-if="isCustomSearch && !(item.isFrontAppend && item.isDirect)"
                 :value="compareMap[item.value] || item.compare || 'eq'"
                 @change="handleCompareChange(item, $event)"
               />
@@ -221,7 +221,7 @@
             ></ol-number-range>
             <div v-else :class="isCustomSearch ? 'input-with-prefix' : ''" style="width: 100%">
               <compare-prefix-select
-                v-if="isCustomSearch"
+                v-if="isCustomSearch && !(item.isFrontAppend && item.isDirect)"
                 :value="compareMap[item.value] || item.compare || 'contains'"
                 @change="handleCompareChange(item, $event)"
               />
@@ -291,9 +291,7 @@
           <el-button v-if="formSearchData.reset" type="primary" @click="handleSearch"
             >查询
           </el-button>
-          <el-button v-if="formSearchData.reset" plain @click="handleReset"
-            >重置</el-button
-          >
+          <el-button v-if="formSearchData.reset" plain @click="handleReset">重置</el-button>
           <el-button
             v-if="showExpendBtn"
             plain
@@ -1333,7 +1331,7 @@ export default {
       }
       this.$emit("handleReset", this.formSearch);
       if (this.formSearchData.reset) return false;
-      if(runSearch) this.handleSearch();
+      if (runSearch) this.handleSearch();
     },
     /** 组合查询显隐或列数变化时，重新计算可见搜索项 */
     recalcVisibleItems() {
@@ -1669,7 +1667,7 @@ $label-width: 78px;
 .table-header.force-filter-mode {
   background: var(--color-primary-light-9, #ecf5ff);
   border-radius: 4px;
-  .table-header-item-isFrontAppend{
+  .table-header-item-isFrontAppend {
     position: relative;
     // 淡红色，标示不会被保存给admin
     background: var(--color-danger-light-9, #fff5f5);
