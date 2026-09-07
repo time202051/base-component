@@ -65,13 +65,13 @@ export default {
   flex: none !important;
 
   ::v-deep .el-input__inner {
-    padding: 0 2px;
+    padding: 0 1px;
     min-width: 36px;
     text-align: center;
     color: #909399;
     background: #f5f7fa;
     border-color: #e4e7ed;
-    font-size: 12px;
+    font-size: 10px;
   }
 
   ::v-deep .el-select__caret {

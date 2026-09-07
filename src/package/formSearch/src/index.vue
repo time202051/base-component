@@ -1179,9 +1179,15 @@ export default {
           } else if (val === "") {
             return;
           }
+          // 包含，不包含 有空格就转成数组（会从excel表格多行复制过来，el-input会把换行啥的转成空格，这里不管，只要遇到空格就转成数组）
+          // （如果有带空格的字符串，后期遇到再处理）
           filterConditions.push({
             key: key,
-            values: Array.isArray(val) ? val : [val],
+            values: Array.isArray(val)
+              ? val
+              : ["in", "not in"].includes(compare)
+              ? val.split(/\s+/)
+              : [val],
             compare: compare,
           });
         }

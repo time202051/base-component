@@ -2295,6 +2295,9 @@ export default {
     /** 行点击 */
     onRowClick(row, column, event) {
       if (column && column.label === "操作") return;
+      if (this.$cfg('showSelection') && column && column.type !== "selection") {
+        this.$refs.crudTable.toggleRowSelection(row);
+      }
       this.$emit("row-click", row, column, event);
     },
 

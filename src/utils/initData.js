@@ -99,7 +99,13 @@ export const initForm = options => {
       const property = properties[item.prop];
       if (property) {
         const modelItem = setModelItemByProperty(item.prop, property);
-        item = { ...modelItem, ...item };
+        console.log(8881, modelItem, item);
+        // item = { ...modelItem, ...item };
+        Object.keys(modelItem).forEach(key => {
+          if (!item[key]) {
+            item[key] = modelItem[key];
+          }
+        })
         // Object.assign(item, {
         //   prop: item.prop,
         //   label: property.description,
@@ -112,11 +118,14 @@ export const initForm = options => {
       }
     });
     //  2.将properties都push到model中（只提取swagger中有的type和description）
+    console.log(8882, properties);
+
     Object.keys(properties).forEach(key => {
       const property = properties[key];
       if (!form.model.find(item => item.prop === key) && property.description) {
         // 删除对象的某些属性
         const modelItem = setModelItemByProperty(key, property);
+        console.log(8883, modelItem);
         form.model.push(modelItem);
       }
     });
@@ -134,6 +143,7 @@ export const initForm = options => {
         }
       });
     }
+    console.log(888, form.model);
   });
 };
 

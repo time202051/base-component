@@ -207,10 +207,14 @@ export default {
           let compareMap = defaultParsed.compareMap;
           if (defaultFilters) {
             this.$set(this.formSearchData, "filterConditions", defaultFilters);
-            defaultFilters.forEach(function (item) {
+            defaultFilters.forEach(item => {
               if (item.values && item.values.length > 0) {
                 if (!(item.key in defaultValue)) {
-                  defaultValue[item.key] = item.values.length === 1 ? item.values[0] : item.values;
+                  defaultValue[item.key] = ["in", "not in"].includes(item.compare)
+                    ? item.values.join(" ")
+                    : item.values.length === 1
+                    ? item.values[0]
+                    : item.values;
                 }
               } else if (isNonValueCompare(item.compare)) {
                 // 为空/不为空：不需要回填值，但确保 key 存在以触发后续 compare 恢复
@@ -228,10 +232,14 @@ export default {
 
       // B 模式：回显 admin 默认条件的值到表单（同 defaultFilterJson 的 echo 逻辑）
       if (this.searchMode === "adminDefault" && this.adminDefaultConditions.length > 0) {
-        this.adminDefaultConditions.forEach(function (item) {
+        this.adminDefaultConditions.forEach(item => {
           if (item.values && item.values.length > 0) {
             if (!(item.key in defaultValue)) {
-              defaultValue[item.key] = item.values.length === 1 ? item.values[0] : item.values;
+              defaultValue[item.key] = ["in", "not in"].includes(item.compare)
+                ? item.values.join(" ")
+                : item.values.length === 1
+                ? item.values[0]
+                : item.values;
             }
           } else if (isNonValueCompare(item.compare)) {
             if (!(item.key in defaultValue)) {

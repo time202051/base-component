@@ -31,9 +31,28 @@ const consoleTooltip = () => {
   console.log(`
 ${cyan}${bold}${star.repeat(
     3
-  )}${green}${bold}${underline}ol-base-components 插件加载成功！ ${checkMark}
-${cyan}感谢使用我们的组件库，期待你的精彩应用！${reset}
+  )}${green}${bold}${underline}ol-base-components 组件库加载成功！ ${checkMark}
+${cyan}感谢您的使用，期待您的精彩应用！${reset}
 `);
+
+  // 常用组件速查表（无索引、无引号）
+  const componentList = [
+    ["ol-crud", "核心组件：表格 + 搜索 + 分页一体化"],
+    ["ol-table", "基础表格 + 打印"],
+    ["ol-search", "搜索表单"],
+    ["ol-form", "动态表单"],
+    ["ol-print", "打印功能（含 hiprint）"],
+    ["ol-print-model", "打印模板"],
+    ["ol-export-excel", "Excel 导出"],
+    ["ol-number-range", "数字范围输入"],
+    ["ol-customSearch", "自定义搜索配置"],
+    ["ol-dropdown-print", "表格下拉打印"],
+  ];
+  const nameWidth = componentList.reduce((w, [name]) => Math.max(w, name.length), 0) + 2;
+  console.log(
+    `📦 常用组件速查表：\n` +
+      componentList.map(([name, desc]) => `  ${name.padEnd(nameWidth)}${desc}`).join("\n")
+  );
 };
 const consoleSwagger = () => {
   // 定义颜色和样式
