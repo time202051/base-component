@@ -931,7 +931,8 @@ export default {
     /** 根据字段类型返回默认比较符（与 compare-prefix-select 的默认值一致） */
     getDefaultCompare(item) {
       if (!item) return "contains";
-      if (item.inputType === "select" || item.inputType === "selectTEMP") return "eq";
+      const eqList = ["select", "selectTEMP", "number"];
+      if (eqList.includes(item.inputType)) return "eq";
       if (item.inputType === "picker") {
         const rangeTypes = ["daterange", "datetimerange", "monthrange"];
         const isRange =
@@ -1165,6 +1166,8 @@ export default {
         const key = tempItem.value;
         const val = formSearch[key];
         const compare = this.compareMap[key] || this.getDefaultCompare(tempItem);
+
+        // 后端要求，如果是空和不为空，则不传values，只传compare 后端自己处理
         if (isNonValueCompare(compare))
           return filterConditions.push({
             key: key,
