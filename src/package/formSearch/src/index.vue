@@ -239,6 +239,8 @@
                   :placeholder="item.inputType === 'number' ? '最小值' : '起始值'"
                   :maxlength="item.maxlength"
                   :class="item.inputType == 'number' ? 'numrule' : ''"
+                  @input="handleNumberRangeInput(item, 0, $event)"
+                  @compositionend.native="handleNumberCompositionEnd(item, $event)"
                   @change="handleRangeValidate(item)"
                   @keyup.enter.native="handleSearch"
                   @keydown.native="keyInput(item, $event)"
@@ -252,6 +254,8 @@
                   :placeholder="item.inputType === 'number' ? '最大值' : '结束值'"
                   :maxlength="item.maxlength"
                   :class="item.inputType == 'number' ? 'numrule' : ''"
+                  @input="handleNumberRangeInput(item, 1, $event)"
+                  @compositionend.native="handleNumberCompositionEnd(item, $event)"
                   @change="handleRangeValidate(item)"
                   @keyup.enter.native="handleSearch"
                   @keydown.native="keyInput(item, $event)"
@@ -269,6 +273,8 @@
                 :maxlength="item.maxlength"
                 :oninput="handleChangeInput(item)"
                 :class="item.inputType == 'number' ? 'numrule' : ''"
+                @input="handleNumberInput(item, $event)"
+                @compositionend.native="handleNumberCompositionEnd(item, $event)"
                 @keyup.enter.native="handleSearch"
                 @keydown.native="keyInput(item, $event)"
                 @paste.native="onPaste(item, $event)"
@@ -1572,6 +1578,45 @@ export default {
       return item.inputType === "number"
         ? this.handleOnInput(this.formSearch[item.value], item.value, item.max)
         : null;
+    },
+    /**
+     * Chrome 对 type="number" 输入框在中文输入法上屏非法字符后会残留 bad input 状态，
+     * 导致光标错位到左上角。组合输入结束后强制重置一次原生输入框，清掉该状态。
+     * 注意：必须在 el-input 的 handleInput 之后执行（延迟到下一个 tick），否则会被当成有效值回写。
+     */
+    handleNumberCompositionEnd(item, e) {
+      if (item.inputType !== "number") return;
+      const el = e.target;
+      if (!el) return;
+      setTimeout(() => {
+        if (el.value !== "") return;
+        el.value = "0";
+        el.value = "";
+      }, 0);
+    },
+    /** 数字类型：把 el-input 的字符串值转成数字；非数字（如中文）直接清空 */
+    handleNumberInput(item, val) {
+      if (item.inputType !== "number") return;
+      const key = item.value;
+      if (val === "" || val == null) {
+        this.$set(this.formSearch, key, "");
+        return;
+      }
+      const num = Number(val);
+      this.$set(this.formSearch, key, isNaN(num) ? "" : num);
+    },
+    /** 数字范围：把对应下标的字符串值转成数字；非数字直接清空 */
+    handleNumberRangeInput(item, index, val) {
+      if (item.inputType !== "number") return;
+      const key = item.value;
+      const arr = this.formSearch[key];
+      if (!Array.isArray(arr)) return;
+      let next = "";
+      if (val !== "" && val != null) {
+        const num = Number(val);
+        next = isNaN(num) ? "" : num;
+      }
+      this.$set(arr, index, next);
     },
     keyInput(item, e) {
       if (item.inputType === "number") {

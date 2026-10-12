@@ -60,12 +60,28 @@
               size="mini"
               placeholder="请选择类型"
               @change="handleTypeChange(scope.row)"
-              :disabled="['number', 'picker'].includes(scope.row.inputType)"
+              :disabled="isTypeSelectDisabled(scope.row)"
             >
-              <el-option label="文本" value="text" />
-              <el-option label="数字" value="number" disabled />
-              <el-option label="下拉" value="select" />
-              <el-option label="日期" value="picker" disabled />
+              <el-option
+                label="文本"
+                value="text"
+                :disabled="!isTypeAllowed(scope.row, 'text')"
+              />
+              <el-option
+                label="数字"
+                value="number"
+                :disabled="!isTypeAllowed(scope.row, 'number')"
+              />
+              <el-option
+                label="下拉"
+                value="select"
+                :disabled="!isTypeAllowed(scope.row, 'select')"
+              />
+              <el-option
+                label="日期"
+                value="picker"
+                :disabled="!isTypeAllowed(scope.row, 'picker')"
+              />
             </el-select>
           </template>
         </el-table-column>
@@ -536,6 +552,16 @@ export default {
               item.span = 1;
             }
           });
+          // 补齐最初数据类型：从接口 customs 按 key 匹配 keyType（接口返回的类型不会变）
+          this.configList.forEach(item => {
+            if (item.originKeyType != null) return;
+            const custom = (this.customs || []).find(
+              c => String(c.key).toLowerCase() === String(item.value).toLowerCase()
+            );
+            if (custom && custom.keyType != null) {
+              item.originKeyType = custom.keyType;
+            }
+          });
           this.$nextTick(() => {
             this.initSortable();
           });
@@ -657,16 +683,50 @@ export default {
         this.configList.splice(index, 1);
       });
     },
+    /** 解析该项接口返回的最初数据类型：优先用记录的 originKeyType，其次从 customs 按 key 匹配 */
+    resolveOriginKeyType(row) {
+      if (row.originKeyType != null) return row.originKeyType;
+      const custom = (this.customs || []).find(
+        c => String(c.key).toLowerCase() === String(row.value).toLowerCase()
+      );
+      return custom && custom.keyType != null ? custom.keyType : null;
+    },
+    /** originKeyType → 最初的输入类型：1字符串 2数字 3枚举 4日期；无法确定时退回当前类型 */
+    getOriginInputType(row) {
+      const map = { 1: "text", 2: "number", 3: "select", 4: "picker" };
+      return map[this.resolveOriginKeyType(row)] || row.inputType;
+    },
+    /**
+     * 判断某类型是否允许切换。
+     * 规则：字符串↔下拉、数字↔下拉可互切，字符串↔数字不可互切；枚举、日期固定不可切换。
+     */
+    isTypeAllowed(row, type) {
+      const origin = this.getOriginInputType(row);
+      if (origin === "select" || origin === "picker") {
+        return type === origin;
+      }
+      // 文本/数字：只能切回自身或下拉框，不能文本↔数字
+      return type === origin || type === "select";
+    },
+    /**
+     * 输入类型是否整体禁用。
+     * 只有本源为枚举(3)/日期(4)才锁定；日期选择器本身也不可切换。
+     * 注意：不能按当前 inputType 判断——数字切到下拉后当前类型是 select，会被误锁。
+     */
+    isTypeSelectDisabled(row) {
+      const keyType = this.resolveOriginKeyType(row);
+      return keyType === 3 || keyType === 4 || row.inputType === "picker";
+    },
     handleTypeChange(row) {
-      if (row.inputType === "select" && !row.children) {
-        row.children = [];
-      } else if (row.inputType === "picker") {
-        if (!row.props) {
-          row.props = {};
+      if (row.inputType === "select") {
+        // 切换到下拉框：初始化选项配置
+        if (!row.children) {
+          row.children = [];
         }
-        this.updateDatePickerProps(row);
       } else {
-        row.dateType = "";
+        // 从下拉框切回文本/数字：清除下拉框相关的冗余配置
+        delete row.children;
+        delete row.optionSource;
       }
     },
     handleDateTypeChange(row) {
@@ -1019,6 +1079,7 @@ export default {
         value: custom.key,
         inputType: inputTypeMap[custom.keyType] || "text",
         compare: compareTypeMap[custom.keyType] || "eq",
+        originKeyType: custom.keyType, // 记录接口返回的最初数据类型，用于约束可切换的类型
         span: 1,
         children: [],
         props: {},
