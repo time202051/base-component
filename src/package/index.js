@@ -7,6 +7,7 @@ import OlNumberRange from "./numberRange";
 import OlPrintModel from "./printModel";
 import OlCrud from "./crud";
 import OlExportExcel from "./exportExcel";
+import OlAgentChat from "./agentChat";
 
 import OlPrint, { Hiprint } from "./print";
 import { getFilterConditions } from "./customSearch/src/forcedFilter";
@@ -47,6 +48,7 @@ ${cyan}感谢您的使用，期待您的精彩应用！${reset}
     ["ol-number-range", "数字范围输入"],
     ["ol-customSearch", "自定义搜索配置"],
     ["ol-dropdown-print", "表格下拉打印"],
+    ["ol-agent-chat", "AI 数据库查询助手"],
   ];
   const nameWidth = componentList.reduce((w, [name]) => Math.max(w, name.length), 0) + 2;
   console.log(
@@ -244,7 +246,9 @@ const components = [
   OlPrintModel,
   OlCrud,
   OlExportExcel,
+  OlAgentChat,
 ];
+
 const install = async function (Vue, options) {
   // 设置全局数据
   components.map(item => {
@@ -269,7 +273,13 @@ export {
   OlPrintModel,
   OlCrud,
   OlExportExcel,
+  OlAgentChat,
 };
 export { swaggerInstall, swaggerUnload, Hiprint };
+export {
+  registerVisualComponent,
+  registerVisualComponents,
+  getVisualComponent,
+} from "./agentChat/src/visual/registry.js";
 export { InputHistory };
 // export { getFilterConditions };

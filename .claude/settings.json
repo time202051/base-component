@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"D:\\\\ljp\\\\hangfa\\\\PC\")",
+      "Read(//d/ljp/hangfa/PC/**)",
+      "Bash(cat vite.config.js)",
+      "Bash(cat vite.config.ts)",
+      "Bash(npm view *)",
+      "Bash(npm run *)",
+      "Bash(grep -oP 'getHtml[^}]{0,500}' \"d:\\\\ljp-github\\\\base-component\\\\node_modules\\\\vue-plugin-hiprint\\\\dist\\\\vue-plugin-hiprint.js\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const s=fs.readFileSync\\('d:/ljp-github/base-component/node_modules/vue-plugin-hiprint/dist/vue-plugin-hiprint.js','utf8'\\);const m=s.match\\(/getHtml[^}]{0,800}/g\\);console.log\\(m?.join\\('\\\\n---\\\\n'\\)||'no match'\\)\")",
+      "Bash(yalc push *)"
+    ]
+  }
+}

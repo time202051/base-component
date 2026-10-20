@@ -1,0 +1,107 @@
+/* ============================================================
+   报表视觉规范（全局）
+   所有区块只消费这些变量，禁止在组件内写死颜色/字号。
+   ============================================================ */
+
+.ol-report {
+  --ol-canvas: #f6f8fc;
+  --ol-surface: #ffffff;
+  --ol-surface-2: #f7f9fc;
+  --ol-border: #e8edf5;
+  --ol-text-1: #1f2937;
+  --ol-text-2: #64748b;
+  --ol-text-3: #94a3b8;
+  --ol-primary: #4f7cff;
+  --ol-primary-2: #6aa1ff;
+  --ol-success: #16a34a;
+  --ol-danger: #ef4444;
+  --ol-warning: #f59e0b;
+  --ol-radius: 14px;
+  --ol-radius-sm: 10px;
+  --ol-gap: 12px;
+  --ol-card-hover: 0 6px 18px rgba(16, 24, 40, 0.1);
+  --ol-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 28px rgba(16, 24, 40, 0.07);
+  --ol-number-font: "DIN Alternate", "SF Mono", "Roboto Mono", Consolas, monospace;
+
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ol-text-1);
+  background: var(--ol-canvas);
+  border: 1px solid var(--ol-border);
+  border-radius: var(--ol-radius);
+  box-shadow: var(--ol-shadow);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.ol-report[data-theme="dark"] {
+  --ol-canvas: #0b1220;
+  --ol-surface: #131c2e;
+  --ol-surface-2: #1a2540;
+  --ol-border: rgba(255, 255, 255, 0.08);
+  --ol-text-1: #e6ecf5;
+  --ol-text-2: #9aa7bc;
+  --ol-text-3: #6b7a93;
+  --ol-primary: #5b8cff;
+  --ol-primary-2: #6aa1ff;
+  --ol-success: #34d399;
+  --ol-danger: #f87171;
+  --ol-warning: #fbbf24;
+  --ol-card-hover: 0 8px 22px rgba(0, 0, 0, 0.45);
+  --ol-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.ol-report *,
+.ol-report *::before,
+.ol-report *::after {
+  box-sizing: border-box;
+}
+
+/* 卡片通用 */
+.ol-report__card {
+  background: var(--ol-surface);
+  border: 1px solid var(--ol-border);
+  border-radius: var(--ol-radius-sm);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.ol-report__card:hover {
+  box-shadow: var(--ol-card-hover);
+}
+
+.ol-report__card-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ol-text-1);
+}
+
+.ol-report__card-title::before {
+  content: "";
+  width: 3px;
+  height: 13px;
+  border-radius: 2px;
+  align-self: center;
+  flex: 0 0 auto;
+  background: linear-gradient(180deg, var(--ol-primary), var(--ol-primary-2));
+}
+
+.ol-report__card-sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ol-text-3);
+}
+
+/* 数字统一等宽，避免跳动 */
+.ol-report__num {
+  font-family: var(--ol-number-font);
+  font-variant-numeric: tabular-nums;
+}
