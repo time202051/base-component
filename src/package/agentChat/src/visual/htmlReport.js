@@ -33,10 +33,39 @@ export function escapeHtml(str) {
 }
 
 const BLOCKED_TAGS = ["script", "iframe", "frame", "object", "embed", "link", "meta", "base", "noscript", "form"];
+const MAX_MODEL_CSS_CHARS = 60000;
+
+/**
+ * 消毒模型产出的 CSS：允许自由排版，但禁止外部资源与 CSS 注入执行。
+ * - 不允许 @import / 外链字体 / 外链图片 / expression / behavior
+ * - 允许 data:image 位图与 url(#id)
+ * - 防止 </style> 提前闭合标签
+ */
+export function sanitizeCss(css) {
+  let out = String(css == null ? "" : css);
+  out = out.replace(/<\/style/gi, "<\\/style");
+  out = out.replace(/@import\s+(?:url\()?[^;]+;?/gi, "");
+  out = out.replace(/expression\s*\(/gi, "");
+  out = out.replace(/(?:javascript|vbscript)\s*:/gi, "");
+  out = out.replace(/(?:behavior|-moz-binding)\s*:/gi, "");
+  out = out.replace(/@font-face\s*\{[\s\S]*?\}/gi, "");
+  out = out.replace(/url\(\s*(['"]?)([^)]*?)\1\s*\)/gi, (whole, _quote, target) => {
+    const value = String(target).trim();
+    if (/^data:image\/(png|jpe?g|gif|webp)[;,]/i.test(value)) return whole;
+    if (/^#/.test(value)) return whole;
+    return "none";
+  });
+  return out;
+}
+
+function sanitizeCssAttr(css) {
+  return sanitizeCss(css).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 
 /**
  * 消毒模型产出的 HTML 片段：报告要在沙箱 iframe 里执行，且能下载离线打开，
- * 因此禁掉脚本 / 事件属性 / javascript: 伪协议 / 外部资源。
+ * 因此禁掉脚本 / 事件属性 / javascript: 伪协议 / 外部资源；
+ * 样式允许自由写，但 style 属性与 <style> 内容会先经过 CSS 消毒。
  */
 export function sanitizeReportHtml(html) {
   let out = String(html == null ? "" : html);
@@ -48,6 +77,15 @@ export function sanitizeReportHtml(html) {
   out = out.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "");
   out = out.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "");
   out = out.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "");
+  out = out.replace(/\sstyle\s*=\s*"([^"]*)"/gi, (_m, css) => ` style="${sanitizeCssAttr(css)}"`);
+  out = out.replace(/\sstyle\s*=\s*'([^']*)'/gi, (_m, css) => ` style="${sanitizeCssAttr(css)}"`);
+  out = out.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style\s*>)/gi, (_m, open, css, close) => {
+    return open + sanitizeCss(css) + close;
+  });
+  out = out.replace(
+    /\s(srcset|poster|action|formaction|ping|xlink:href)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi,
+    "",
+  );
   out = out.replace(/(href|src)\s*=\s*"\s*(javascript|vbscript|data:text\/html)[^"]*"/gi, '$1="#"');
   out = out.replace(/(href|src)\s*=\s*'\s*(javascript|vbscript|data:text\/html)[^']*'/gi, "$1='#'");
   out = out.replace(/(src)\s*=\s*"\s*(https?:)?\/\/[^"]*"/gi, '$1=""');
@@ -209,6 +247,53 @@ const INIT_SCRIPT = `
     });
   }
 
+  /* ---- 数字 count-up：只动第一个文本节点，保留单位/后缀；导出前恢复最终值 ---- */
+  function initCounters() {
+    document.querySelectorAll("[data-count]").forEach(function (el) {
+      if (el.getAttribute("data-count-ready")) { return; }
+      var raw = parseFloat(String(el.getAttribute("data-count")).replace(/,/g, ""));
+      if (!isFinite(raw)) { return; }
+      var node = null;
+      for (var i = 0; i < el.childNodes.length; i++) {
+        var child = el.childNodes[i];
+        if (child.nodeType === 3 && String(child.nodeValue || "").trim()) { node = child; break; }
+      }
+      if (!node) { return; }
+      var finalText = node.nodeValue;
+      var decimalPart = (String(raw).split(".")[1] || "");
+      var decimals = decimalPart.length;
+      el.__olCountNode = node;
+      el.__olCountFinal = finalText;
+      el.setAttribute("data-count-ready", "1");
+      var start = 0;
+      var duration = 700;
+      var t0 = 0;
+      function frame(now) {
+        if (!t0) { t0 = now; }
+        var p = Math.min(1, (now - t0) / duration);
+        var eased = 1 - Math.pow(1 - p, 3);
+        var value = start + (raw - start) * eased;
+        node.nodeValue = formatCount(value, decimals);
+        if (p < 1) { requestAnimationFrame(frame); } else { node.nodeValue = finalText; }
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  function finishCounters() {
+    document.querySelectorAll("[data-count]").forEach(function (el) {
+      if (el.__olCountNode && el.__olCountFinal != null) {
+        el.__olCountNode.nodeValue = el.__olCountFinal;
+      }
+    });
+  }
+
+  function formatCount(value, decimals) {
+    var text = decimals > 0 ? value.toFixed(decimals) : String(Math.round(value));
+    var parts = text.split(".");
+    return thousands(parts[0]) + (parts[1] ? "." + parts[1] : "");
+  }
+
   /* ---- 章节信息上报：左侧导航由宿主组件渲染，文档本身保持纯内容 ---- */
   function collectSections() {
     var secs = document.querySelectorAll(".section");
@@ -263,6 +348,7 @@ const INIT_SCRIPT = `
   /* 导出前调用：展开所有折叠/限高，保证导出的长图和 PDF 内容完整 */
   function prepareExport() {
     document.documentElement.classList.add("is-export");
+    finishCounters();
     document.querySelectorAll("tr.is-hide").forEach(function (tr) { tr.classList.remove("is-hide"); });
     document.querySelectorAll(".table-wrap.is-clamped").forEach(function (wrap) {
       wrap.style.maxHeight = "none";
@@ -465,6 +551,7 @@ const INIT_SCRIPT = `
     applyTheme(META.theme);
     initCharts();
     formatNumbers();
+    initCounters();
     normalizeTables();
     clampTables();
     buildFooter();
@@ -515,10 +602,12 @@ export function formatReportTime(date) {
   );
 }
 
-export function buildHtmlReportDoc({ html = "", charts = {}, echartsUmd = "", options = {} } = {}) {
+export function buildHtmlReportDoc({ html = "", charts = {}, css = "", echartsUmd = "", options = {} } = {}) {
   const meta = {
     title: options.title || "",
     theme: options.theme === "dark" ? "dark" : "light",
+    layout: options.layout || "",
+    visualStyle: options.visualStyle || "",
     generatedAt: options.generatedAt || "",
     watermark: options.watermark || "",
     period: options.period || "",
@@ -526,14 +615,18 @@ export function buildHtmlReportDoc({ html = "", charts = {}, echartsUmd = "", op
     sources: Array.isArray(options.sources) ? options.sources.filter(Boolean) : [],
     warnings: Array.isArray(options.warnings) ? options.warnings.filter(Boolean) : [],
   };
+  const modelCss = sanitizeCss(String(css || "").slice(0, MAX_MODEL_CSS_CHARS));
+  const modelStyle = modelCss ? `<style data-ol-model-css>${modelCss}</style>` : "";
   return `<!doctype html>
-<html lang="zh-CN" data-theme="${meta.theme}">
+<html lang="zh-CN" data-theme="${meta.theme}" data-layout="${escapeHtml(meta.layout)}" data-visual-style="${escapeHtml(meta.visualStyle)}">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'" />
 <title>${escapeHtml(meta.title || "分析报告")}</title>
 <script>${echartsUmd}</script>
 <style>${REPORT_CSS}</style>
+${modelStyle}
 </head>
 <body>
 ${sanitizeReportHtml(html)}

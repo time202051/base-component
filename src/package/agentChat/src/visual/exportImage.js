@@ -108,6 +108,13 @@ export async function renderReportImage(doc, { width = 1240, scale = 2, backgrou
         d.documentElement.classList.add("is-export");
       }
       await new Promise(r => setTimeout(r, 320));
+      if (d.fonts && d.fonts.ready) {
+        try {
+          await d.fonts.ready;
+        } catch (e) {
+          /* 字体加载失败不影响截图 */
+        }
+      }
       const full = Math.max(d.body.scrollHeight, d.documentElement.scrollHeight);
       const safeScale = Math.max(1, Math.min(scale, 14000 / Math.max(1, full)));
       const canvas = await win.html2canvas(d.body, {

@@ -1,8 +1,21 @@
 import { globalConfig } from '../config.js';
 import { encryptConfig } from '../crypto.js';
 
-async function buildBody({ messages, conversationId, config, configEnc, base, force }) {
+async function buildBody({
+  messages,
+  conversationId,
+  config,
+  configEnc,
+  base,
+  force,
+  lastLayout,
+  lastVisualStyle,
+  lastElements,
+}) {
   const body = { messages, conversationId };
+  if (lastLayout) body.lastLayout = lastLayout;
+  if (lastVisualStyle) body.lastVisualStyle = lastVisualStyle;
+  if (Array.isArray(lastElements) && lastElements.length) body.lastElements = lastElements;
   if (configEnc) {
     body.configEnc = configEnc;
     return body;
@@ -71,6 +84,9 @@ export function streamChat({
   conversationId,
   config,
   configEnc,
+  lastLayout,
+  lastVisualStyle,
+  lastElements,
   agentBaseUrl,
   handlers = {},
 }) {
@@ -114,7 +130,17 @@ export function streamChat({
   const attempt = async forceKey => {
     let body;
     try {
-      body = await buildBody({ messages, conversationId, config, configEnc, base, force: forceKey });
+      body = await buildBody({
+        messages,
+        conversationId,
+        config,
+        configEnc,
+        lastLayout,
+        lastVisualStyle,
+        lastElements,
+        base,
+        force: forceKey,
+      });
     } catch (e) {
       finish(handlers.onError, (e && e.message) || String(e));
       return 'fatal';

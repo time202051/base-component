@@ -807,15 +807,23 @@ export default {
       };
       this._finalize = finalize;
 
-      const payload = this.messages
-        .filter(m => m !== reply)
-        .map(m => ({ role: m.role, content: m.content }));
+      const history = this.messages.filter(m => m !== reply);
+      const payload = history.map(m => ({ role: m.role, content: m.content }));
+
+      // 把上一份报告的版式带回服务端，用于避免连续生成结构完全相同的报告
+      const lastVisual = [...history]
+        .reverse()
+        .find(m => m.role === "assistant" && m.visuals && m.visuals.length);
+      const lastVisualSpec = lastVisual ? lastVisual.visuals[lastVisual.visuals.length - 1] : null;
 
       this.controller = streamChat({
         agentBaseUrl: this.effectiveAgentBaseUrl,
         config: this.requestConfig,
         messages: payload,
         conversationId: this.conversationId,
+        lastLayout: lastVisualSpec && lastVisualSpec.layout,
+        lastVisualStyle: lastVisualSpec && lastVisualSpec.visualStyle,
+        lastElements: lastVisualSpec && lastVisualSpec.elements,
         handlers: {
           onToken: token => {
             if (reply.loading) reply.loading = false;

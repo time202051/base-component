@@ -9,6 +9,11 @@
         <div class="ol-html-report__title-row">
           <span class="ol-html-report__title">{{ title || "分析报告" }}</span>
           <span v-if="templateLabel" class="ol-html-report__badge">{{ templateLabel }}</span>
+          <span v-if="layoutLabel" class="ol-html-report__badge">{{ layoutLabel }}</span>
+          <span v-if="visualStyle" class="ol-html-report__badge">{{ visualStyle }}</span>
+          <span v-if="elements.length" class="ol-html-report__badge" :title="elements.join(' / ')">
+            元素 {{ elements.length }}
+          </span>
         </div>
         <div v-if="subtitle || period" class="ol-html-report__sub">
           <span v-if="subtitle">{{ subtitle }}</span>
@@ -104,9 +109,18 @@ const TEMPLATE_LABELS = {
   daily: "作业日报",
   weekly: "运营周报",
   monthly: "运营月报",
+  annual: "年度报告",
   inventory: "库存快照",
   exception: "异常专报",
   compare: "多仓对比",
+};
+
+const LAYOUT_LABELS = {
+  executive: "高层摘要",
+  dashboard: "运营看板",
+  narrative: "叙事分析",
+  comparison: "横向对比",
+  timeline: "时间轴复盘",
 };
 
 export default {
@@ -115,7 +129,11 @@ export default {
     title: { type: String, default: "" },
     subtitle: { type: String, default: "" },
     html: { type: String, default: "" },
+    css: { type: String, default: "" },
     charts: { type: Object, default: () => ({}) },
+    layout: { type: String, default: "" },
+    visualStyle: { type: String, default: "" },
+    elements: { type: Array, default: () => [] },
     height: { type: [Number, String], default: 360 },
     maxHeight: { type: [Number, String], default: 1200 },
     theme: { type: String, default: "light" },
@@ -154,6 +172,9 @@ export default {
     },
     templateLabel() {
       return TEMPLATE_LABELS[this.template] || "";
+    },
+    layoutLabel() {
+      return this.layout && this.layout !== "auto" ? LAYOUT_LABELS[this.layout] || "" : "";
     },
     // 内容被限高或全屏时，iframe 自己滚动；否则由宿主页面滚动
     innerScroll() {
@@ -227,11 +248,14 @@ export default {
     buildDoc() {
       return buildHtmlReportDoc({
         html: this.html,
+        css: this.css,
         charts: this.charts,
         echartsUmd: this.echartsUmd,
         options: {
           title: this.title,
           theme: this.currentTheme,
+          layout: this.layout,
+          visualStyle: this.visualStyle,
           generatedAt: this.generatedAt || formatReportTime(),
           watermark: this.watermark,
           period: this.period,
@@ -404,6 +428,7 @@ export default {
 .ol-html-report__title-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   min-width: 0;
 }
