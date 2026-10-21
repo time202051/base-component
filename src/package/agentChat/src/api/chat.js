@@ -8,6 +8,7 @@ async function buildBody({
   configEnc,
   base,
   force,
+  encryptConfig: encryptConfigEnabled,
   lastLayout,
   lastVisualStyle,
   lastElements,
@@ -21,7 +22,11 @@ async function buildBody({
     return body;
   }
   if (config) {
-    if (globalConfig.encryptConfig !== false) {
+    const shouldEncrypt =
+      typeof encryptConfigEnabled === 'boolean'
+        ? encryptConfigEnabled
+        : globalConfig.encryptConfig !== false;
+    if (shouldEncrypt) {
       try {
         body.configEnc = await encryptConfig(config, base, force);
         return body;
@@ -84,10 +89,12 @@ export function streamChat({
   conversationId,
   config,
   configEnc,
+  encryptConfig: encryptConfigEnabled,
   lastLayout,
   lastVisualStyle,
   lastElements,
   agentBaseUrl,
+  resume,
   handlers = {},
 }) {
   const controller = new AbortController();
@@ -110,11 +117,32 @@ export function streamChat({
       case 'tool_start':
         if (handlers.onToolStart) handlers.onToolStart(payload);
         break;
+      case 'tool_end':
+        if (handlers.onToolEnd) handlers.onToolEnd(payload);
+        break;
       case 'tool_result':
         if (handlers.onToolResult) handlers.onToolResult(payload);
         break;
       case 'visual':
         if (handlers.onVisual) handlers.onVisual(payload);
+        break;
+      case 'status':
+        if (handlers.onStatus) handlers.onStatus(payload.message);
+        break;
+      case 'usage':
+        if (handlers.onUsage) handlers.onUsage(payload);
+        break;
+      case 'meta':
+        if (handlers.onMeta) handlers.onMeta(payload);
+        break;
+      case 'suggestions':
+        if (handlers.onSuggestions) handlers.onSuggestions(payload.items || payload);
+        break;
+      case 'heartbeat':
+        if (handlers.onHeartbeat) handlers.onHeartbeat(payload);
+        break;
+      case 'interrupt':
+        finish(handlers.onInterrupt, payload);
         break;
       case 'done':
         finish(handlers.onDone);
@@ -139,17 +167,22 @@ export function streamChat({
         lastVisualStyle,
         lastElements,
         base,
+        encryptConfig: encryptConfigEnabled,
         force: forceKey,
       });
     } catch (e) {
       finish(handlers.onError, (e && e.message) || String(e));
       return 'fatal';
     }
+    if (resume) {
+      body.threadId = resume.threadId;
+      body.decisions = resume.decisions;
+    }
     if (controller.signal.aborted) return 'aborted';
 
     let res;
     try {
-      res = await fetch(base + '/chat/stream', {
+      res = await fetch(base + (resume ? '/chat/resume' : '/chat/stream'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -212,11 +245,20 @@ export function streamChat({
 }
 
 /** 连接自检：校验数据库与大模型是否可用。 */
-export async function checkConfig({ config, agentBaseUrl, signal } = {}) {
+export async function checkConfig({
+  config,
+  agentBaseUrl,
+  encryptConfig: encryptConfigEnabled,
+  signal,
+} = {}) {
   const base = agentBaseUrl || globalConfig.agentBaseUrl;
   const body = {};
   if (config) {
-    if (globalConfig.encryptConfig !== false) {
+    const shouldEncrypt =
+      typeof encryptConfigEnabled === 'boolean'
+        ? encryptConfigEnabled
+        : globalConfig.encryptConfig !== false;
+    if (shouldEncrypt) {
       try {
         body.configEnc = await encryptConfig(config, base);
       } catch (e) {
