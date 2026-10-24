@@ -12,6 +12,8 @@ export const globalConfig = {
   showSql: false,
   // 空状态快捷问题，支持字符串数组或 { label, text, icon } 数组
   examples: [],
+  // 是否显示“继续追问”推荐（规则兜底 + 模型异步生成）；false = 完全关闭
+  suggestions: true,
 
   // ===== 由宿主页面下发的运行时配置（全部随 configEnc 加密传输）=====
   // db 数据库配置（SQL Server 与 Kingbase 通用）：

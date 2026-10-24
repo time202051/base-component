@@ -18,35 +18,23 @@ Vue.use(OlCom, {
 
     // 当前使用人大金仓（PG 模式）
     db: {
-      type: "sqlserver",
-      server: "220.179.227.4,60001",
-      database: "WebWMS_CS",
-      user: "sa",
-      password: "oulide@123",
-      // type: "kingbase",
-      // // 与 SQL Server 统一：server 都写 "host,port"
-      // server: "220.179.227.4,20036",
-      // database: "OLD.WMS.HF2Q.UAT",
+      // type: "sqlserver",
+      // server: "220.179.227.4,60001",
+      // database: "WebWMS_CS",
       // user: "sa",
       // password: "oulide@123",
-      // 只展示 public schema 下的表
+      type: "kingbase",
+      // 与 SQL Server 统一：server 都写 "host,port"
+      server: "220.179.227.4,20036",
+      database: "OLD.WMS.HF2Q.UAT",
+      user: "sa",
+      password: "oulide@123",
+      // 只展示 public schema 下的表（SQL Server 改成 ["dbo"] 或不传）
       schemas: ["public"],
-      // 不在 list_tables 里显示的表（分区/备份表）
-      hiddenTables: [
-        "WMS_StockHistorys_2026*",
-        "WMS_StockHistorys_Default",
-        "WMS_StockHistorys_backup",
-      ],
+      // 不在 list_tables 里显示的表（按实际库配置，知识包不负责这里）
+      hiddenTables: [],
       // 拒绝查询/查看结构的表，按需添加，例如 'ID_Users'
       blockedTables: [],
-      // 'wms' = 注入 WMS 指标口径；'generic' = 不注入业务指标
-      profile: "wms",
-      // 追加到系统提示的业务说明
-      businessPrompt: `
-        库存流水查 "WMS_StockHistorys" 父表；
-        统计库存要加 "IsDeleted" = false；
-        表名/列名必须使用双引号。
-      `,
     },
 
     // 切回 SQL Server 时改成下面这段（其余配置不用动）：
@@ -61,11 +49,18 @@ Vue.use(OlCom, {
     llm: { provider: "", baseUrl: "", model: "" },
     // 报告生成步骤较多（多次查询 + 生成 HTML），放宽 agent 的最大循环次数
     limits: {
-      recursionLimit: 80, // agent 最大工具循环次数
-      commandTimeoutSec: 30, // 单次数据库查询超时（秒）
-      maxRows: 200, // 单次返回行数上限
-      maxSqlQueries: 10, // 单轮 SQL 次数上限
-      maxSchemaCalls: 8, // 单轮表结构查询次数上限
+      recursionLimit: 80,
+      commandTimeoutSec: 60,
+      costLimit: 50,
+      maxRows: 500,
+      maxSqlQueries: 16,
+      maxSchemaCalls: 12,
+      turnTimeoutSec: 120,
+      maxResultChars: 20000,
+      maxTotalToolChars: 120000,
+      maxOutputTokens: 20000,
+      summaryTriggerTokens: 40000,
+      summaryKeepMessages: 12,
     },
     encryptConfig: true,
     checkOnMount: true,

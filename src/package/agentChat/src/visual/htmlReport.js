@@ -1,4 +1,4 @@
-import { REPORT_CSS } from "./reportBaseCss.js";
+import { REPORT_CSS, REPORT_SAFETY_CSS } from "./reportBaseCss.js";
 
 let echartsUmdPromise = null;
 
@@ -627,6 +627,7 @@ export function buildHtmlReportDoc({ html = "", charts = {}, css = "", echartsUm
 <script>${echartsUmd}</script>
 <style>${REPORT_CSS}</style>
 ${modelStyle}
+<style>${REPORT_SAFETY_CSS}</style>
 </head>
 <body>
 ${sanitizeReportHtml(html)}

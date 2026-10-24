@@ -10,7 +10,8 @@
       :title="open ? '收起 AI 助手' : '打开 AI 助手'"
       @click="toggleOpen"
     >
-      <i :class="open ? 'el-icon-close' : 'el-icon-chat-dot-round'"></i>
+      <ai-logo v-if="!open" class="agent-chat-fab__logo" variant="fab" :size="38" />
+      <i v-else class="el-icon-close"></i>
     </button>
 
     <!-- 弹窗 / 内嵌面板 -->
@@ -40,7 +41,7 @@
         <header class="agent-chat-header">
           <div class="agent-chat-header__brand">
             <div class="agent-chat-header__avatar">
-              <i class="el-icon-magic-stick"></i>
+              <ai-logo variant="header" :size="38" />
             </div>
             <div class="agent-chat-header__text">
               <div class="agent-chat-header__title">{{ effectiveTitle }}</div>
@@ -201,12 +202,15 @@
 
           <div class="agent-chat-body" role="log" aria-live="polite" @click="onBodyClick">
             <el-x-bubble-list
+              ref="bubbleList"
               v-if="bubbleList.length"
               :list="bubbleList"
               :max-width="bubbleMaxWidth"
               max-height="100%"
               :always-show-scrollbar="true"
               :show-back-button="true"
+              :btn-loading="false"
+              :back-button-position="{ bottom: '14px', left: 'calc(50% - 17px)' }"
             >
               <template #content="{ item, index }">
                 <div v-if="item.notice" class="ac-status">{{ item.notice }}</div>
@@ -340,7 +344,10 @@
                     <i class="el-icon-copy-document"></i> 复制结论
                   </span>
                 </div>
-                <div v-if="item.suggestions && item.suggestions.length" class="ac-suggestions">
+                <div
+                  v-if="item.suggestions && item.suggestions.length && hasReplyData(item)"
+                  class="ac-suggestions"
+                >
                   <button
                     v-for="suggestion in item.suggestions"
                     :key="suggestion"
@@ -352,10 +359,24 @@
                   </button>
                 </div>
               </template>
+
+              <template #back-to-bottom>
+                <button
+                  type="button"
+                  class="ac-back-bottom"
+                  aria-label="回到最新消息"
+                  @click.stop="onBackToBottom"
+                >
+                  <i class="el-icon-bottom"></i>
+                  <span v-if="hasNewBelow" class="ac-back-bottom__dot"></span>
+                </button>
+              </template>
             </el-x-bubble-list>
             <div v-else class="agent-chat-empty">
-              <div class="agent-chat-empty__logo">
-                <i class="el-icon-magic-stick"></i>
+              <div class="agent-chat-empty__hero">
+                <span class="ac-orbit ac-orbit--1"></span>
+                <span class="ac-orbit ac-orbit--2"></span>
+                <ai-logo variant="hero" :size="84" />
               </div>
               <div class="agent-chat-empty__title">{{ effectiveTitle }}</div>
               <div class="agent-chat-empty__desc">
@@ -482,11 +503,12 @@
 <script>
 import { ElXBubbleList, ElXSender } from "vue-element-ui-x";
 import "highlight.js/styles/github-dark.css";
-import { checkConfig, streamChat } from "./api/chat.js";
+import { checkConfig, streamChat, suggestChat } from "./api/chat.js";
 import { renderMarkdown } from "./markdown.js";
 import { getVisualComponent } from "./visual/registry.js";
 import { globalConfig, llmProviders } from "./config.js";
 import { buildToolDetail, tablesFromSql, toolLabel } from "./toolMeta.js";
+import AiLogo from "./components/AiLogo.vue";
 import TraceTimeline from "./components/TraceTimeline.vue";
 import EvidenceCard from "./components/EvidenceCard.vue";
 import QuickPrompts from "./components/QuickPrompts.vue";
@@ -529,6 +551,7 @@ export default {
   components: {
     "el-x-bubble-list": ElXBubbleList,
     "el-x-sender": ElXSender,
+    "ai-logo": AiLogo,
     "trace-timeline": TraceTimeline,
     "evidence-card": EvidenceCard,
     "quick-prompts": QuickPrompts,
@@ -558,6 +581,8 @@ export default {
       editIndex: null,
       sending: false,
       controller: null,
+      isBubbleNearBottom: true,
+      hasNewBelow: false,
       panelSize: { width: 404, height: 634 },
       configError: "",
       bannerOpen: false,
@@ -590,6 +615,8 @@ export default {
     const w = saved.width || parseInt(this.panelWidth, 10) || 404;
     const h = saved.height || parseInt(this.panelHeight, 10) || 634;
     this.panelSize = { width: w, height: h };
+    this._suggestSeq = 0;
+    this._suggestController = null;
   },
   computed: {
     isLauncher() {
@@ -660,6 +687,11 @@ export default {
       }
       if (this.showSql) return true;
       return this.agentChatConfig.showSql === true || globalConfig.showSql === true;
+    },
+    suggestionsEnabled() {
+      const configured = this.agentChatConfig.suggestions;
+      if (configured !== undefined) return configured !== false;
+      return globalConfig.suggestions !== false;
     },
     requestConfig() {
       const ac = this.agentChatConfig;
@@ -794,6 +826,21 @@ export default {
         });
       }
     },
+    conversationId() {
+      this.resetBubbleScrollState();
+      this.$nextTick(this.bindBubbleScroll);
+    },
+    "messages.length"(newLength, oldLength) {
+      if (newLength > oldLength && !this.isBubbleNearBottom) {
+        this.hasNewBelow = true;
+      }
+      if (!newLength) {
+        this.resetBubbleScrollState();
+        this.unbindBubbleScroll();
+        return;
+      }
+      this.$nextTick(this.bindBubbleScroll);
+    },
   },
   mounted() {
     this.init();
@@ -804,6 +851,7 @@ export default {
     if (shouldCheck && this.effectiveLlm.apiKey) {
       this.checkConnection();
     }
+    this.$nextTick(this.bindBubbleScroll);
     // 忽略浏览器对 ResizeObserver 的良性循环告警（图表/报表自适应尺寸时常见），
     // 避免 dev 环境的报错浮层误弹。捕获阶段拦截，先于 dev-server overlay 的处理。
     this._roGuard = e => {
@@ -828,6 +876,7 @@ export default {
   },
   beforeDestroy() {
     this.cancel();
+    this.unbindBubbleScroll();
     if (this._roGuard) {
       window.removeEventListener("error", this._roGuard, true);
       window.removeEventListener("unhandledrejection", this._roGuard, true);
@@ -1072,6 +1121,42 @@ export default {
       if (!item || !item.content) return;
       this.copyText(item.content);
     },
+    resetBubbleScrollState() {
+      this.hasNewBelow = false;
+      this.isBubbleNearBottom = true;
+    },
+    bindBubbleScroll() {
+      this.unbindBubbleScroll();
+      const list = this.$refs.bubbleList;
+      const el = list && list.$el;
+      if (!el || typeof el.addEventListener !== "function") return;
+      this._bubbleScrollEl = el;
+      el.addEventListener("scroll", this.onBubbleScroll, { passive: true });
+      this.$nextTick(this.onBubbleScroll);
+    },
+    unbindBubbleScroll() {
+      if (this._bubbleScrollEl && this.onBubbleScroll) {
+        this._bubbleScrollEl.removeEventListener("scroll", this.onBubbleScroll);
+      }
+      this._bubbleScrollEl = null;
+    },
+    onBubbleScroll() {
+      const el = this._bubbleScrollEl;
+      if (!el) return;
+      const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+      this.isBubbleNearBottom = distance < 40;
+      if (this.isBubbleNearBottom) this.hasNewBelow = false;
+    },
+    onBackToBottom() {
+      this.hasNewBelow = false;
+      this.isBubbleNearBottom = true;
+      const list = this.$refs.bubbleList;
+      if (list && typeof list.scrollToBottom === "function") {
+        list.scrollToBottom();
+      } else if (this._bubbleScrollEl) {
+        this._bubbleScrollEl.scrollTop = this._bubbleScrollEl.scrollHeight;
+      }
+    },
     toggleOpen() {
       this.open = !this.open;
       if (!this.open) this.showHistory = false;
@@ -1243,6 +1328,7 @@ export default {
     async sendText(text, fromInput) {
       const value = String(text || "").trim();
       if (!value || this.sending) return;
+      this.invalidateSuggestions();
       if (!this.effectiveLlm.apiKey) {
         if (this.$message) this.$message.warning("请先配置模型密钥");
         this.openSettings();
@@ -1287,6 +1373,7 @@ export default {
     },
     regenerate(index) {
       if (this.sending) return;
+      this.invalidateSuggestions();
       this.messages.splice(index);
       this.persist();
       this.runAssistantReply();
@@ -1372,18 +1459,97 @@ export default {
       }
       if (summary.error) step.error = String(summary.error);
     },
+    hasReplyData(reply) {
+      if (!reply) return false;
+      const meta = reply.meta || {};
+      return Boolean(
+        (reply.visuals && reply.visuals.length) ||
+          (reply.table && reply.table.rows && reply.table.rows.length) ||
+          Number(meta.queries) > 0 ||
+          Number(meta.rowCount) > 0 ||
+          (meta.tables && meta.tables.length) ||
+          meta.report ||
+          (reply.steps &&
+            reply.steps.some(
+              step =>
+                step &&
+                (step.sql ||
+                  Number(step.rowCount) > 0 ||
+                  (step.name && String(step.name).indexOf("render") === 0)),
+            )),
+      );
+    },
     deriveSuggestions(reply) {
+      if (!this.suggestionsEnabled || !this.hasReplyData(reply)) return [];
       const visuals = reply.visuals || [];
       const hasReport = visuals.some(
         item => item && (item.component === "ol-html-report" || item.component === "ol-report"),
       );
       if (hasReport) {
+        const layout = (reply.meta && reply.meta.report && reply.meta.report.layout) || "";
+        if (layout === "comparison") {
+          return ["看差距归因", "对比上一周期", "生成整改清单"];
+        }
+        if (layout === "timeline") {
+          return ["对比上一周期", "看下一阶段重点", "生成汇报摘要"];
+        }
+        if (layout === "dashboard") {
+          return ["只看异常项", "查看 Top 10", "按仓库拆分"];
+        }
+        if (layout === "narrative") {
+          return ["继续分析原因", "看关键明细", "生成行动清单"];
+        }
         return ["按仓库拆分看看", "只看异常 Top 10", "对比上一周期"];
       }
       if (reply.table && reply.table.rows && reply.table.rows.length) {
-        return ["按时间趋势看一下", "只看前 10 行", "生成一份分析报告"];
+        const columns = (reply.table.columns || []).map(item => String(item));
+        const hasDate = columns.some(item => /date|time|日期|时间|month|day/i.test(item));
+        return hasDate
+          ? ["按时间趋势看一下", "只看前 10 行", "生成一份分析报告"]
+          : ["按维度拆解看看", "只看前 10 行", "生成一份分析报告"];
       }
-      return ["换一种说法解释", "生成一份分析报告", "继续分析原因"];
+      return ["继续分析原因", "看下明细数据", "生成一份分析报告"];
+    },
+    invalidateSuggestions() {
+      this._suggestSeq = (this._suggestSeq || 0) + 1;
+      if (this._suggestController) {
+        this._suggestController.abort();
+        this._suggestController = null;
+      }
+    },
+    requestSuggestions(reply) {
+      if (!this.suggestionsEnabled || !this.hasReplyData(reply)) return;
+      if (reply.error || reply.interrupt) return;
+      const history = this.messages.filter(item => item !== reply);
+      const lastUser = [...history].reverse().find(item => item.role === "user");
+      const question = lastUser ? lastUser.content : "";
+      const answer = reply.content || "";
+      if (!question || !answer) return;
+
+      this.invalidateSuggestions();
+      const seq = this._suggestSeq;
+      const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+      this._suggestController = controller;
+      suggestChat({
+        agentBaseUrl: this.effectiveAgentBaseUrl,
+        encryptConfig: this.agentChatConfig.encryptConfig,
+        config: this.requestConfig,
+        question,
+        answer,
+        meta: reply.meta,
+        signal: controller ? controller.signal : undefined,
+      })
+        .then(items => {
+          if (seq !== this._suggestSeq) return;
+          if (!Array.isArray(items) || items.length < 2) return;
+          if (this.messages.indexOf(reply) < 0) return;
+          reply.suggestions = items.slice(0, 3);
+          this._suggestController = null;
+          this.persist();
+        })
+        .catch(() => {
+          if (seq === this._suggestSeq) this._suggestController = null;
+        });
     },
     createAssistantReply() {
       return {
@@ -1555,6 +1721,7 @@ export default {
             this._activeReply = null;
             if (!reply.suggestions.length) reply.suggestions = this.deriveSuggestions(reply);
             this.persist();
+            this.requestSuggestions(reply);
           },
           onError: message => {
             finalize();
@@ -1570,6 +1737,7 @@ export default {
       });
     },
     cancel(skipPersist) {
+      this.invalidateSuggestions();
       const reply = this._activeReply;
       const had = !!this._finalize;
       if (this._finalize) this._finalize();
@@ -1672,7 +1840,13 @@ export default {
 <style scoped>
 .agent-chat-root {
   --ac-primary: #4f7cff;
-  --ac-primary-2: #6aa1ff;
+  --ac-primary-2: #22d3ee;
+  --ai-ink: #07111f;
+  --ai-navy: #0d1b3a;
+  --ai-cyan: #22d3ee;
+  --ai-violet: #8b5cf6;
+  --ai-text: #eaf2ff;
+  --ai-glass: rgba(255, 255, 255, 0.08);
 }
 
 /* ===== 悬浮球 ===== */
@@ -1680,8 +1854,8 @@ export default {
   position: fixed;
   right: 24px;
   bottom: 24px;
-  width: 56px;
-  height: 56px;
+  width: 62px;
+  height: 62px;
   border: none;
   border-radius: 50%;
   cursor: pointer;
@@ -1690,19 +1864,70 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--ac-primary), var(--ac-primary-2));
-  box-shadow: 0 8px 24px rgba(79, 124, 255, 0.45);
+  background: transparent;
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.18),
+    0 14px 34px rgba(7, 17, 31, 0.32),
+    0 0 28px rgba(79, 124, 255, 0.24);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   z-index: 1901;
+  isolation: isolate;
+}
+.agent-chat-fab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(34, 211, 238, 0.95),
+    rgba(79, 124, 255, 0.95),
+    rgba(139, 92, 246, 0.9),
+    rgba(34, 211, 238, 0.95)
+  );
+  animation: ac-fab-spin 7s linear infinite;
+  z-index: -2;
+}
+.agent-chat-fab::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 20%, #1b3a7a, var(--ai-ink) 72%);
+  z-index: -1;
 }
 .agent-chat-fab:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(79, 124, 255, 0.55);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.35),
+    0 18px 42px rgba(7, 17, 31, 0.38),
+    0 0 38px rgba(34, 211, 238, 0.3);
 }
 .agent-chat-fab.is-open {
   background: #fff;
   color: var(--ac-primary);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 24px rgba(7, 17, 31, 0.18);
+}
+.agent-chat-fab.is-open::before {
+  background: #fff;
+  animation: none;
+}
+.agent-chat-fab.is-open::after {
+  background: #fff;
+}
+.agent-chat-fab__logo {
+  position: relative;
+  z-index: 1;
+}
+@keyframes ac-fab-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agent-chat-fab::before {
+    animation: none;
+  }
 }
 
 /* ===== 弹窗缩放手柄（锚点在右下角，拖左边/上边/左上角） ===== */
@@ -1756,9 +1981,12 @@ export default {
 .agent-chat-panel--float {
   position: fixed;
   right: 24px;
-  bottom: 96px;
-  border-radius: 16px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+  bottom: 100px;
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 1px rgba(79, 124, 255, 0.14),
+    0 24px 64px rgba(7, 17, 31, 0.26),
+    0 0 42px rgba(34, 211, 238, 0.08);
   z-index: 1900;
 }
 .agent-chat-panel--inline {
@@ -1781,26 +2009,44 @@ export default {
 
 /* ===== 头部 ===== */
 .agent-chat-header {
-  height: 60px;
+  position: relative;
+  height: 64px;
   flex-shrink: 0;
   padding: 0 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #fff;
-  background: linear-gradient(135deg, #4f7cff, #6aa1ff);
+  color: var(--ai-text);
+  background:
+    radial-gradient(circle at 14% -30%, rgba(34, 211, 238, 0.32), transparent 44%),
+    radial-gradient(circle at 92% 130%, rgba(139, 92, 246, 0.28), transparent 46%),
+    linear-gradient(120deg, #07111f 0%, #0d1b3a 56%, #142a5e 100%);
+  overflow: hidden;
+}
+.agent-chat-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent 90%);
+  pointer-events: none;
 }
 .agent-chat-header__brand {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
 }
 .agent-chat-header__avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.22);
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1814,6 +2060,9 @@ export default {
   font-size: 15px;
   font-weight: 600;
   line-height: 1.2;
+  letter-spacing: 0.2px;
+  color: #f2f7ff;
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.24);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1825,7 +2074,7 @@ export default {
   min-width: 0;
   margin-top: 2px;
   font-size: 11px;
-  opacity: 0.9;
+  color: rgba(234, 242, 255, 0.72);
 }
 .ac-conn {
   width: 6px;
@@ -1835,8 +2084,10 @@ export default {
   background: #c0c4cc;
 }
 .ac-conn.is-online {
-  background: #67c23a;
-  box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.25);
+  background: #22d3ee;
+  box-shadow:
+    0 0 0 2px rgba(34, 211, 238, 0.22),
+    0 0 10px rgba(34, 211, 238, 0.85);
 }
 .ac-conn.is-warn {
   background: #e6a23c;
@@ -1857,6 +2108,8 @@ export default {
   white-space: nowrap;
 }
 .agent-chat-header__actions {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1878,10 +2131,11 @@ export default {
   transition: background 0.15s ease;
 }
 .agent-chat-icon:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(34, 211, 238, 0.14);
+  color: #dffbff;
 }
 .agent-chat-icon:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline: 2px solid rgba(34, 211, 238, 0.8);
   outline-offset: 1px;
 }
 
@@ -2126,6 +2380,7 @@ export default {
 
 /* ===== 空状态 ===== */
 .agent-chat-empty {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -2134,46 +2389,113 @@ export default {
   text-align: center;
   padding: 0 18px;
 }
-.agent-chat-empty__logo {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #eef3ff, #dfe9ff);
-  color: #4f7cff;
-  font-size: 26px;
+.agent-chat-empty::before {
+  content: "";
+  position: absolute;
+  inset: 8% 2% 4%;
+  background-image: radial-gradient(circle, rgba(79, 124, 255, 0.12) 1px, transparent 1px);
+  background-size: 16px 16px;
+  mask-image: radial-gradient(circle at 50% 38%, #000 0, transparent 72%);
+  pointer-events: none;
+}
+.agent-chat-empty > * {
+  position: relative;
+  z-index: 1;
+}
+.agent-chat-empty__hero {
+  position: relative;
+  width: 124px;
+  height: 124px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
+}
+.ac-orbit {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.ac-orbit--1 {
+  inset: 4px;
+  border: 1px solid rgba(79, 124, 255, 0.18);
+  animation: ac-orbit-spin 14s linear infinite;
+}
+.ac-orbit--1::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--ai-cyan);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.9);
+}
+.ac-orbit--2 {
+  inset: 18px;
+  border: 1px dashed rgba(139, 92, 246, 0.18);
+  animation: ac-orbit-spin 22s linear infinite reverse;
 }
 .agent-chat-empty__title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
   margin-bottom: 6px;
+  background: linear-gradient(90deg, #1f3b8f, #4f7cff 52%, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #4f7cff;
 }
 .agent-chat-empty__desc {
+  max-width: 300px;
   font-size: 13px;
-  color: #909399;
-  line-height: 1.6;
+  color: #7b8496;
+  line-height: 1.65;
 }
 .ac-empty-cta {
   margin-top: 14px;
-  padding: 8px 16px;
-  border: none;
+  padding: 8px 18px;
+  border: 1px solid rgba(79, 124, 255, 0.22);
   border-radius: 999px;
   color: #fff;
   font-size: 12.5px;
   cursor: pointer;
-  background: linear-gradient(135deg, #4f7cff, #6aa1ff);
-  box-shadow: 0 6px 16px rgba(79, 124, 255, 0.28);
+  background: linear-gradient(135deg, #4f7cff, #22d3ee);
+  box-shadow:
+    0 8px 20px rgba(79, 124, 255, 0.24),
+    0 0 20px rgba(34, 211, 238, 0.16);
+}
+.ac-empty-cta:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 10px 24px rgba(79, 124, 255, 0.32),
+    0 0 26px rgba(34, 211, 238, 0.24);
+}
+@keyframes ac-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ac-orbit {
+    animation: none;
+  }
 }
 
 /* ===== 输入区 ===== */
 .agent-chat-sender {
+  position: relative;
   padding: 8px 12px 12px;
   border-top: 1px solid #f0f2f5;
   flex-shrink: 0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.agent-chat-sender:focus-within {
+  border-top-color: rgba(34, 211, 238, 0.4);
+  box-shadow: 0 -10px 28px rgba(34, 211, 238, 0.08);
 }
 .ac-edit-tip {
   display: flex;
@@ -2218,9 +2540,10 @@ export default {
   color: #4f7cff;
 }
 .ac-mode.is-active {
-  border-color: rgba(79, 124, 255, 0.35);
-  color: #4f7cff;
-  background: #eef3ff;
+  border-color: rgba(34, 211, 238, 0.36);
+  color: #2563eb;
+  background: linear-gradient(135deg, rgba(79, 124, 255, 0.1), rgba(34, 211, 238, 0.1));
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.12);
 }
 .ac-mode-hint {
   min-width: 0;
@@ -2541,6 +2864,82 @@ export default {
 }
 .agent-chat-panel .el-x-bubble-content-wrapper {
   overflow-x: hidden;
+}
+
+/* 回到最新按钮（覆盖 el-x-bubble-list 默认样式） */
+.el-x-bubble-list-default-back-button.el-x-bubble-list-back-to-bottom-solt {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(79, 124, 255, 0.18);
+  box-shadow:
+    0 8px 24px rgba(7, 17, 31, 0.14),
+    0 0 16px rgba(34, 211, 238, 0.08);
+  backdrop-filter: blur(8px);
+  animation: ac-back-in 0.18s ease-out both;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.el-x-bubble-list-default-back-button.el-x-bubble-list-back-to-bottom-solt:hover {
+  border-color: rgba(34, 211, 238, 0.4);
+  box-shadow:
+    0 10px 28px rgba(7, 17, 31, 0.18),
+    0 0 22px rgba(34, 211, 238, 0.16);
+}
+.ac-back-bottom {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  border-radius: inherit;
+  background: transparent;
+  color: #4f7cff;
+  font-size: 16px;
+  cursor: pointer;
+}
+.ac-back-bottom i {
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+.ac-back-bottom:hover i {
+  color: #22d3ee;
+  transform: translateY(2px);
+}
+.ac-back-bottom__dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22d3ee;
+  border: 1px solid #fff;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.85);
+}
+@keyframes ac-back-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .el-x-bubble-list-default-back-button.el-x-bubble-list-back-to-bottom-solt {
+    animation: none;
+  }
+  .ac-back-bottom i {
+    transition: none;
+  }
+  .ac-back-bottom:hover i {
+    transform: none;
+  }
 }
 
 /* 消息操作栏（默认隐藏，悬停/最后一条/键盘聚焦时显示） */

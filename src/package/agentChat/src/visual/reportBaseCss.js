@@ -53,7 +53,7 @@ img{max-width:100%}
 .meta-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:var(--rp-surface);border:1px solid var(--rp-border);font-size:11.5px;color:var(--rp-t2)}
 .section{margin-top:22px}
 .section-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.section-no{width:28px;height:28px;flex:0 0 auto;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;background:linear-gradient(135deg,var(--rp-primary),var(--rp-primary-2));box-shadow:0 4px 10px rgba(79,124,255,.3)}
+.section-no{width:28px;max-width:56px;height:28px;flex:0 0 auto;overflow:hidden;white-space:nowrap;text-overflow:clip;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;background:linear-gradient(135deg,var(--rp-primary),var(--rp-primary-2));box-shadow:0 4px 10px rgba(79,124,255,.3)}
 .section-title{font-size:16px;font-weight:700;line-height:1.25}
 .section-sub{margin-top:1px;font-size:11px;color:var(--rp-t3)}
 .card{background:var(--rp-surface);border:1px solid var(--rp-border);border-radius:var(--rp-radius);box-shadow:var(--rp-shadow);padding:14px 16px;margin-top:var(--rp-gap)}
@@ -384,4 +384,16 @@ html.is-export .margin-note{float:none;width:auto;margin:8px 0}
   .ol-chart:not([data-ol-ready]):empty::after{content:""}
   @page{size:A4;margin:12mm 10mm 14mm}
 }
+`;
+
+/**
+ * 旧报告兜底 CSS（注入在模型 CSS 之后）：
+ * - 模型可能把 "01 / OVERVIEW" 写进 .section-no，导致编号溢出盖住标题
+ * - 模型可能给章节标题/编号加绝对定位，窄屏直接叠字
+ * 这里只做最小保护，不改变正常布局。
+ */
+export const REPORT_SAFETY_CSS = `
+.section-no{max-width:56px;overflow:hidden!important;white-space:nowrap!important;text-overflow:clip!important}
+.section-divider__no{max-width:120px;overflow:hidden!important;white-space:nowrap!important}
+.section-no,.section-divider__no,.section-head,.section-title,.section-sub{position:static!important}
 `;

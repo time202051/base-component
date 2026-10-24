@@ -1,22 +1,10 @@
 import { globalConfig } from '../config.js';
 import { encryptConfig } from '../crypto.js';
 
-async function buildBody({
-  messages,
-  conversationId,
-  config,
-  configEnc,
-  base,
-  force,
-  encryptConfig: encryptConfigEnabled,
-  lastLayout,
-  lastVisualStyle,
-  lastElements,
-}) {
-  const body = { messages, conversationId };
-  if (lastLayout) body.lastLayout = lastLayout;
-  if (lastVisualStyle) body.lastVisualStyle = lastVisualStyle;
-  if (Array.isArray(lastElements) && lastElements.length) body.lastElements = lastElements;
+async function attachConfig(
+  body,
+  { config, configEnc, base, force, encryptConfig: encryptConfigEnabled },
+) {
   if (configEnc) {
     body.configEnc = configEnc;
     return body;
@@ -37,6 +25,25 @@ async function buildBody({
     body.config = config;
   }
   return body;
+}
+
+async function buildBody({
+  messages,
+  conversationId,
+  config,
+  configEnc,
+  base,
+  force,
+  encryptConfig: encryptConfigEnabled,
+  lastLayout,
+  lastVisualStyle,
+  lastElements,
+}) {
+  const body = { messages, conversationId };
+  if (lastLayout) body.lastLayout = lastLayout;
+  if (lastVisualStyle) body.lastVisualStyle = lastVisualStyle;
+  if (Array.isArray(lastElements) && lastElements.length) body.lastElements = lastElements;
+  return attachConfig(body, { config, configEnc, base, force, encryptConfig: encryptConfigEnabled });
 }
 
 function parseSseBlock(text) {
@@ -242,6 +249,52 @@ export function streamChat({
   run();
 
   return controller;
+}
+
+/** 生成追问建议：轻量 JSON 接口，失败/超时返回空数组，由前端保留本地兜底。 */
+export async function suggestChat({
+  agentBaseUrl,
+  encryptConfig: encryptConfigEnabled,
+  config,
+  question,
+  answer,
+  meta,
+  signal,
+  timeoutMs = 8000,
+} = {}) {
+  const base = agentBaseUrl || globalConfig.agentBaseUrl;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const onAbort = () => controller.abort();
+  if (signal) {
+    if (signal.aborted) controller.abort();
+    else signal.addEventListener('abort', onAbort, { once: true });
+  }
+  try {
+    const body = await attachConfig(
+      { question, answer, meta },
+      { config, base, encryptConfig: encryptConfigEnabled },
+    );
+    const res = await fetch(base + '/chat/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      await readError(res);
+      return [];
+    }
+    const data = await res.json();
+    return Array.isArray(data && data.items)
+      ? data.items.map(String).filter(Boolean).slice(0, 3)
+      : [];
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', onAbort);
+  }
 }
 
 /** 连接自检：校验数据库与大模型是否可用。 */

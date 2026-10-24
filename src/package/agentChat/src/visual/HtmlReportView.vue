@@ -536,7 +536,11 @@ export default {
 }
 .ol-html-report__rail-no {
   flex: 0 0 20px;
+  max-width: 20px;
   height: 20px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: clip;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
